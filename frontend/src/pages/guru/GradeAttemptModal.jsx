@@ -2,6 +2,7 @@ import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 import { attemptsApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
+import { ChoiceContent, QuestionBody } from '../../components/QuestionContent'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
 import Spinner from '../../components/Spinner'
@@ -38,7 +39,7 @@ function ChoiceAnswer({ question }) {
             }`}
           >
             <span className="font-semibold">{choiceLetter(index)}.</span>
-            <span className="flex-1">{choice}</span>
+            <ChoiceContent question={question} index={index} />
             {isChosen && <span className="text-xs font-medium">jawaban siswa</span>}
             {isCorrect && <Check className="size-4" aria-label="jawaban benar" />}
             {isChosen && !isCorrect && <X className="size-4" aria-label="salah" />}
@@ -159,9 +160,9 @@ export default function GradeAttemptModal({ attemptId, onClose, onSaved }) {
           {questions.map((q, index) => (
             <section key={q.id} className="rounded-lg p-4 ring-1 ring-slate-200">
               <div className="mb-2 flex items-start justify-between gap-3">
-                <p className="font-medium text-slate-900">
-                  {index + 1}. <span className="whitespace-pre-line">{q.text}</span>
-                </p>
+                <div className="min-w-0 flex-1">
+                  <QuestionBody question={q} number={index + 1} />
+                </div>
                 <span className="shrink-0 text-xs text-slate-500">{q.points} poin</span>
               </div>
               {q.kind === 'choice' ? (

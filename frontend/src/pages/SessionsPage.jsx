@@ -1,3 +1,5 @@
+import TemplatePicker from '../components/TemplatePicker'
+import { SESSION_TEMPLATES } from '../utils/formTemplates'
 import { MapPin, Video } from 'lucide-react'
 import { useState } from 'react'
 import { sessionsApi } from '../api/sessions'
@@ -64,6 +66,10 @@ function SessionFormModal({ session, onClose, onSaved }) {
       submitting={submitting}
       error={generalError}
     >
+      <TemplatePicker
+        templates={SESSION_TEMPLATES}
+        onPick={(values) => setForm((f) => ({ ...f, ...values }))}
+      />
       {!session && (
         <AssignmentSelect
           label="Kelas & mapel"

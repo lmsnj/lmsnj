@@ -1,3 +1,5 @@
+import TemplatePicker from '../components/TemplatePicker'
+import { ANNOUNCEMENT_TEMPLATES } from '../utils/formTemplates'
 import { useState } from 'react'
 import { assignmentsApi } from '../api/academics'
 import { announcementsApi } from '../api/announcements'
@@ -67,6 +69,10 @@ function AnnouncementFormModal({ announcement, targets, onClose, onSaved }) {
       submitting={submitting}
       error={generalError}
     >
+      <TemplatePicker
+        templates={ANNOUNCEMENT_TEMPLATES}
+        onPick={(values) => setForm((f) => ({ ...f, ...values }))}
+      />
       <SelectField
         label="Ditujukan untuk"
         name="target"

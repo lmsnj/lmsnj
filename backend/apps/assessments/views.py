@@ -4,15 +4,22 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.academics.selectors import teaching_assignments_for
 from apps.accounts.models import Role
 from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStudent, IsTeacher
+from apps.common.excel import import_response, is_dry_run, template_response
+from apps.common.files import file_response
 from apps.common.mixins import ProtectedDeleteMixin
 from apps.tasks.gradebook import roster_students
 
-from .models import Assessment, Attempt, Question
+from .images import image_error, read_zip, save_image
+from .models import Assessment, Attempt, ImageSlot, Question, QuestionImage
+from .question_import import build_question_template, parse_excel, parse_text, prepare, preview
+from .question_import import save as save_imported
 from .serializers import (
     AssessmentSerializer,
     GradeSerializer,
@@ -58,7 +65,7 @@ def assessments_for(user):
 
 def attempt_with_answers():
     return Attempt.objects.select_related("assessment", "student").prefetch_related(
-        "answers", "assessment__questions"
+        "answers", "assessment__questions__images"
     )
 
 
@@ -98,7 +105,33 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     def questions(self, request, pk=None):
         """Soal lengkap dengan kunci jawaban, untuk guru pengampu (dan admin)."""
         assessment = self.get_object()
-        return Response(QuestionSerializer(assessment.questions.all(), many=True).data)
+        return Response(QuestionSerializer(assessment.questions.prefetch_related("images"), many=True).data)
+
+    @action(detail=False, url_path="question-template", permission_classes=[IsAdminOrTeacher])
+    def question_template(self, request):
+        """Template Excel soal (contoh rumus, soal Arab, gambar, dan lembar Contekan Rumus)."""
+        return template_response(build_question_template(), "Template Soal Asesmen.xlsx")
+
+    @action(detail=True, methods=["post"], url_path="import-questions", permission_classes=[IsTeacher])
+    def import_questions(self, request, pk=None):
+        """Impor soal. mode=excel (file .xlsx) atau mode=text (soal ditempel), + ZIP gambar opsional.
+        dry_run=true (bawaan) hanya memeriksa; false menyimpan jika SEMUA soal benar."""
+        assessment = self.get_object()
+        ensure_editable(assessment)
+        if request.data.get("mode") == "text":
+            text = request.data.get("text", "")
+            if not text.strip():
+                raise ValidationError({"text": "Tempelkan soal terlebih dahulu."})
+            items = parse_text(text)
+            if not items:
+                raise ValidationError(
+                    {"text": 'Tidak ada soal yang dikenali. Awali setiap soal dengan nomor, mis. "1."'}
+                )
+        else:
+            items = parse_excel(request.FILES.get("file"))
+        zip_images = read_zip(request.FILES.get("images"))
+        rows = prepare(assessment, request, items, zip_images)
+        return import_response(preview(rows), is_dry_run(request), lambda: save_imported(rows, zip_images))
 
     @action(detail=True, methods=["post"], permission_classes=[IsStudent])
     def start(self, request, pk=None):
@@ -110,7 +143,9 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         return Response(
             {
                 "attempt": attempt_summary(attempt),
-                "questions": StudentQuestionSerializer(assessment.questions.all(), many=True).data,
+                "questions": StudentQuestionSerializer(
+                    assessment.questions.prefetch_related("images"), many=True
+                ).data,
                 # Jawaban sementara di server, dipulihkan jika pindah perangkat / cache terhapus.
                 "draft": attempt.draft_answers,
                 "rules": {
@@ -203,11 +238,43 @@ class QuestionViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        return Question.objects.filter(assessment__teaching_assignment__teacher=self.request.user)
+        return Question.objects.filter(
+            assessment__teaching_assignment__teacher=self.request.user
+        ).prefetch_related("images")
 
     def perform_destroy(self, instance):
         ensure_editable(instance.assessment)
         instance.delete()
+
+    @action(detail=True, methods=["post", "delete"])
+    def images(self, request, pk=None):
+        """Pasang (POST: slot, index, file) atau hapus (DELETE ?slot=&index=) gambar soal.
+        slot: stimulus | question | choice (index = nomor pilihan, 0 = A)."""
+        question = self.get_object()
+        ensure_editable(question.assessment)
+        params = request.data if request.method == "POST" else request.query_params
+        slot = params.get("slot")
+        raw_index = str(params.get("index") or 0)
+        index = int(raw_index) if raw_index.isdigit() else -1
+        if slot not in ImageSlot.values:
+            raise ValidationError({"slot": "Letak gambar harus stimulus, question, atau choice."})
+        if slot != ImageSlot.CHOICE:
+            index = 0
+        elif not 0 <= index < len(question.choices):
+            raise ValidationError({"index": "Nomor pilihan tidak ada pada soal ini."})
+        if request.method == "DELETE":
+            question.images.filter(slot=slot, index=index).delete()
+            return Response(status=204)
+        file = request.FILES.get("file")
+        if file is None:
+            raise ValidationError({"file": "Pilih file gambar."})
+        data = file.read()
+        error = image_error(file.name, data)
+        if error:
+            raise ValidationError({"file": error})
+        save_image(question, slot, index, file.name, data)
+        # Ambil ulang: daftar gambar hasil prefetch di objek lama belum memuat gambar baru.
+        return Response(self.get_serializer(self.get_queryset().get(pk=question.pk)).data)
 
 
 class AttemptViewSet(viewsets.GenericViewSet):
@@ -243,3 +310,21 @@ class AttemptViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         grade_answers(attempt, serializer.validated_data["grades"])
         return self.retrieve(request, pk)
+
+
+class AssessmentImageView(APIView):
+    """Kirim gambar soal. Siswa baru bisa melihatnya setelah mulai mengerjakan asesmen itu."""
+
+    def get(self, request, pk):
+        image = get_object_or_404(QuestionImage.objects.select_related("question__assessment"), pk=pk)
+        assessment = image.question.assessment
+        if not assessments_for(request.user).filter(pk=assessment.pk).exists():
+            raise NotFound()
+        if (
+            request.user.role == Role.STUDENT
+            and not assessment.attempts.filter(student=request.user).exists()
+        ):
+            raise NotFound()
+        response = file_response(image.file, image.original_filename or "gambar")
+        response["Cache-Control"] = "private, max-age=3600"
+        return response

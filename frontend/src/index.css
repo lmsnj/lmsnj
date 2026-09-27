@@ -18,11 +18,22 @@
   --color-surface: #f4f6f5;
 
   /* Font dibundel bersama aplikasi (tetap tampil walau jaringan sekolah tanpa internet). */
-  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  /* Huruf Arab otomatis memakai Noto Naskh Arabic (dibatasi unicode-range di file font-nya). */
+  --font-sans:
+    'Plus Jakarta Sans Variable', 'Noto Naskh Arabic', ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', serif;
 }
 
 @layer base {
   body {
     @apply bg-surface text-slate-800 antialiased;
   }
+}
+
+/* Teks Arab di soal: lebih besar & berjarak baris lega agar harakat tidak bertumpuk. */
+@utility arabic-text {
+  font-family: var(--font-arabic);
+  font-size: 1.35em;
+  line-height: 2;
+  unicode-bidi: isolate;
 }

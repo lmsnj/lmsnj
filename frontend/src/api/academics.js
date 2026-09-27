@@ -31,3 +31,15 @@ export const assignmentsApi = {
   update: (id, data) => patch(`/teaching-assignments/${id}/`, data),
   remove: (id) => api.delete(`/teaching-assignments/${id}/`),
 }
+
+// Impor Excel khusus admin: kind = 'subjects' | 'classrooms' | 'teaching-assignments'.
+export const adminImportApi = {
+  template: (kind) =>
+    api.get(`/${kind}/import-template/`, { responseType: 'blob' }).then((res) => res.data),
+  run: (kind, file, dryRun) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('dry_run', dryRun ? 'true' : 'false')
+    return post(`/${kind}/import/`, form)
+  },
+}

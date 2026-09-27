@@ -1,8 +1,9 @@
-import { ArrowDown, ArrowUp, Check, Lock } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, FileUp, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { assessmentsApi, questionsApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
+import { ChoiceContent, QuestionBody } from '../../components/QuestionContent'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import DataTable from '../../components/DataTable'
@@ -18,6 +19,7 @@ import { formatDate } from '../../utils/media'
 import { formatScore } from '../../utils/tasks'
 import AssessmentFormModal from './AssessmentFormModal'
 import GradeAttemptModal from './GradeAttemptModal'
+import ImportQuestionsModal from './ImportQuestionsModal'
 import QuestionFormModal from './QuestionFormModal'
 
 const TABS = [
@@ -27,8 +29,9 @@ const TABS = [
 
 function QuestionsTab({ assessment, onChanged }) {
   const questions = useFetch(assessmentsApi.questions, assessment.id)
-  const [dialog, setDialog] = useState(null) // { type: 'form' | 'delete', question, kind }
+  const [dialog, setDialog] = useState(null) // { type: 'form' | 'delete' | 'import', question, kind }
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const locked = assessment.locked
   const list = questions.data ?? []
 
@@ -67,8 +70,14 @@ function QuestionsTab({ assessment, onChanged }) {
           <Button variant="secondary" onClick={() => setDialog({ type: 'form', kind: 'essay' })}>
             + Soal Esai
           </Button>
+          <Button variant="secondary" onClick={() => setDialog({ type: 'import' })}>
+            <FileUp className="size-4" aria-hidden="true" /> Impor Soal (Word / Excel)
+          </Button>
         </div>
       )}
+      <Alert type="success" className="mb-3">
+        {notice}
+      </Alert>
       <Alert type="error">{error || questions.error}</Alert>
 
       {questions.loading && !questions.data ? (
@@ -127,7 +136,9 @@ function QuestionsTab({ assessment, onChanged }) {
                   </div>
                 )}
               </div>
-              <p className="mt-2 whitespace-pre-line text-slate-800">{q.text}</p>
+              <div className="mt-2 text-slate-800">
+                <QuestionBody question={q} />
+              </div>
               {q.kind === 'choice' && (
                 <ul className="mt-2 space-y-1 text-sm">
                   {q.choices.map((choice, i) => (
@@ -139,7 +150,7 @@ function QuestionsTab({ assessment, onChanged }) {
                           : 'text-slate-600'
                       }`}
                     >
-                      <span>{choiceLetter(i)}.</span> <span className="flex-1">{choice}</span>
+                      <span>{choiceLetter(i)}.</span> <ChoiceContent question={q} index={i} />
                       {i === q.correct_choice && (
                         <Check className="size-4" aria-label="jawaban benar" />
                       )}
@@ -152,6 +163,16 @@ function QuestionsTab({ assessment, onChanged }) {
         </ol>
       )}
 
+      {dialog?.type === 'import' && (
+        <ImportQuestionsModal
+          assessmentId={assessment.id}
+          onClose={() => setDialog(null)}
+          onImported={(count) => {
+            setNotice(`${count} soal berhasil ditambahkan.`)
+            refresh()
+          }}
+        />
+      )}
       {dialog?.type === 'form' && (
         <QuestionFormModal
           question={dialog.question}

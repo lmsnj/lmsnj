@@ -136,6 +136,9 @@ Pola yang wajib dipakai ulang:
 - Tampilan responsif (banyak siswa mengakses dari HP).
 - Setiap halaman menangani state *loading*, *error*, dan *data kosong*.
 - Format kode dengan Prettier (`npm run format`), lint dengan oxlint (`npm run lint`).
+- Test frontend (`npm test`) memakai runner bawaan Node (`node --test`) untuk fungsi murni di
+  `src/**/*.test.js` (tanpa browser). Logika yang rawan salah dipisah menjadi fungsi murni agar bisa
+  diuji, contoh `utils/richText.js` dan `utils/examMonitor.js`.
 
 ## Aturan Tampilan (UI)
 
@@ -184,6 +187,9 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
 - Tooltip (`components/Tooltip.jsx`) muncul saat hover **dan** fokus, agar bisa dipakai dengan
   keyboard dan ketuk di HP. Menu dropdown (`components/Dropdown.jsx`) tertutup dengan klik di luar
   atau tombol Escape.
+- Form yang sering diisi diberi `TemplatePicker` ("Gunakan contoh"); isi contoh ada di
+  `utils/formTemplates.js`. Impor massal memakai pola template Excel → Periksa → Impor
+  (`ImportExcelModal` untuk data admin, `ImportQuestionsModal` untuk soal).
 - Pakai ulang komponen yang ada sebelum membuat yang baru: `PageHeader`, `DataTable`, `FormModal`,
   `DeleteDialog`, `MaterialList`, `TaskList`, `AssignmentSelect`, `StatCard`, `Panel`, `EmptyState`.
 
@@ -214,6 +220,23 @@ npm run format
 Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`.
 
 ### Fitur tambahan — aturan penting
+- **Teks soal kaya (rumus, Arab, gambar):** teks stimulus/pertanyaan/pilihan boleh berisi LaTeX di
+  antara `$...$` (dalam kalimat) atau `$$...$$` (baris sendiri); `\$` = dolar biasa, dan `$5 dan $10`
+  tidak dianggap rumus. Selalu tampilkan dengan `RichText` / `QuestionBody` / `ChoiceContent`
+  (KaTeX, `trust` mati). Teks Arab disimpan APA ADANYA — jangan dinormalisasi (NFC/NFKC) atau
+  dirapikan spasinya; hanya karakter kontrol arah tak terlihat (LRM/RLM/isolate/BOM) yang dibuang
+  saat impor. Arah teks per soal: `text_direction` auto/rtl/ltr (`dir` di HTML); potongan Arab
+  otomatis memakai font Noto Naskh Arabic lebih besar (utility `arabic-text`). Gambar soal
+  (`QuestionImage`: stimulus/question/choice) hanya lewat `/api/assessment-images/{id}/` — siswa
+  baru bisa melihatnya setelah mulai mengerjakan; tampilkan dengan `AuthImage`. PNG/JPG/GIF/WEBP
+  saja (SVG ditolak), dicek dari isi file. File gambar dihapus lewat sinyal `post_delete`.
+- **Impor soal** (`apps/assessments/question_import.py`): Excel (lembar Soal + Contekan Rumus) atau
+  teks tempel dari Word, plus ZIP gambar (nama file dicocokkan tanpa folder & huruf besar). Setiap
+  soal divalidasi `QuestionSerializer` (sama dengan form). Semua-atau-tidak-sama-sekali.
+- **Impor data admin** (`apps/academics/imports.py`): mapel, kelas, pengampu — helper bersama di
+  `apps/common/excel.py` (`Column`, `build_template`, `read_rows`, `import_response`).
+- Editor rumus visual MathLive dimuat lazy (`MathFieldDialog`); font-nya dari `mathlive/fonts.css`
+  (`fontsDirectory = null`), jadi tetap jalan tanpa internet.
 - **Pengumuman:** `teaching_assignment` kosong = seluruh sekolah (hanya admin); guru wajib memilih
   kelas-mapel miliknya. Ubah/hapus: penulis atau admin.
 - **Laporan nilai kelas** (`apps/tasks/reports.py`): dibangun dari `build_gradebook`, jadi rata-ratanya
@@ -277,6 +300,11 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET    | `/api/assessments/{id}/questions/`, `.../results/` | Guru pengampu/admin |
 | POST/GET | `/api/assessments/{id}/start/`, `.../submit/`, `.../my-attempt/`, `.../draft/`, `.../violation/` | Siswa |
 | CRUD   | `/api/assessment-questions/` | Guru pengampu (terkunci setelah ada pengerjaan) |
+| POST/DELETE | `/api/assessment-questions/{id}/images/` (`slot`, `index`, `file`) | Guru pengampu |
+| GET    | `/api/assessment-images/{id}/` | Guru pengampu/admin; siswa setelah mulai mengerjakan |
+| GET    | `/api/assessments/question-template/` | Guru/admin: template Excel soal |
+| POST   | `/api/assessments/{id}/import-questions/` (`mode` excel/text, `file`/`text`, `images` ZIP, `dry_run`) | Guru pengampu |
+| GET/POST | `/api/{subjects,classrooms,teaching-assignments}/import-template/` dan `.../import/` | Admin |
 | GET/PATCH | `/api/assessment-attempts/{id}/`, `.../grade/` | Guru pengampu (grade), admin (lihat) |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
 

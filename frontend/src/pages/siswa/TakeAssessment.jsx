@@ -2,6 +2,7 @@ import { Clock, Maximize, ShieldAlert } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { assessmentsApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
+import { ChoiceContent, QuestionBody } from '../../components/QuestionContent'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
 import useExamGuard, {
@@ -9,7 +10,7 @@ import useExamGuard, {
   exitFullscreen,
   fullscreenSupported,
 } from '../../hooks/useExamGuard'
-import { choiceLetter, formatCountdown } from '../../utils/assessments'
+import { choiceLetter, questionDir, formatCountdown } from '../../utils/assessments'
 import { getErrorMessage } from '../../utils/errors'
 
 const DRAFT_SYNC_MS = 1500
@@ -232,14 +233,15 @@ export default function TakeAssessment({ assessment, data, onSubmitted }) {
               className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
-                <p className="font-medium text-slate-900">
-                  {index + 1}. <span className="whitespace-pre-line">{q.text}</span>
-                </p>
+                <div className="min-w-0 flex-1">
+                  <QuestionBody question={q} number={index + 1} />
+                </div>
                 <span className="shrink-0 text-xs text-slate-500">{q.points} poin</span>
               </div>
               {q.kind === 'choice' ? (
                 <div
                   className="space-y-2"
+                  dir={questionDir(q)}
                   role="radiogroup"
                   aria-label={`Pilihan soal ${index + 1}`}
                 >
@@ -260,7 +262,7 @@ export default function TakeAssessment({ assessment, data, onSubmitted }) {
                         className="size-4 text-brand-600"
                       />
                       <span className="font-semibold text-slate-500">{choiceLetter(i)}.</span>
-                      <span className="text-slate-800">{choice}</span>
+                      <ChoiceContent question={q} index={i} />
                     </label>
                   ))}
                 </div>

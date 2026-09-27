@@ -1,3 +1,5 @@
+import TemplatePicker from '../../components/TemplatePicker'
+import { MATERIAL_TEMPLATES } from '../../utils/formTemplates'
 import { useState } from 'react'
 import { materialsApi } from '../../api/materials'
 import AssignmentSelect from '../../components/AssignmentSelect'
@@ -57,6 +59,10 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
       submitting={submitting}
       error={generalError}
     >
+      <TemplatePicker
+        templates={MATERIAL_TEMPLATES}
+        onPick={(values) => setForm((f) => ({ ...f, ...values }))}
+      />
       {!isEdit && !assignmentId && (
         <AssignmentSelect
           label="Kelas & mapel"

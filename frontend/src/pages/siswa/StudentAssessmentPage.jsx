@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { assessmentsApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
+import { ChoiceContent, QuestionBody } from '../../components/QuestionContent'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
@@ -65,9 +66,9 @@ function ResultView({ assessment, data }) {
           return (
             <li key={q.id} className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
               <div className="mb-2 flex items-start justify-between gap-3">
-                <p className="font-medium text-slate-900">
-                  {index + 1}. <span className="whitespace-pre-line">{q.text}</span>
-                </p>
+                <div className="min-w-0 flex-1">
+                  <QuestionBody question={q} number={index + 1} />
+                </div>
                 <span className="shrink-0 text-sm font-semibold text-slate-700">
                   {answer?.points === null || answer?.points === undefined
                     ? '…'
@@ -92,7 +93,7 @@ function ResultView({ assessment, data }) {
                         }`}
                       >
                         <span className="font-semibold">{choiceLetter(i)}.</span>
-                        <span className="flex-1">{choice}</span>
+                        <ChoiceContent question={q} index={i} />
                         {chosen && <span className="text-xs font-medium">jawaban Anda</span>}
                         {correct && <Check className="size-4" aria-label="jawaban benar" />}
                         {revealed && chosen && !correct && (

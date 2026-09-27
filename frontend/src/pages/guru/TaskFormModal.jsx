@@ -1,3 +1,5 @@
+import TemplatePicker from '../../components/TemplatePicker'
+import { TASK_TEMPLATES } from '../../utils/formTemplates'
 import { useState } from 'react'
 import { tasksApi } from '../../api/tasks'
 import AssignmentSelect from '../../components/AssignmentSelect'
@@ -54,6 +56,10 @@ export default function TaskFormModal({ task, assignmentId, onClose, onSaved }) 
       submitting={submitting}
       error={generalError}
     >
+      <TemplatePicker
+        templates={TASK_TEMPLATES}
+        onPick={(values) => setForm((f) => ({ ...f, ...values }))}
+      />
       {!isEdit && !assignmentId && (
         <AssignmentSelect
           label="Kelas & mapel"

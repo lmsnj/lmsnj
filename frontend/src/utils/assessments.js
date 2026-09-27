@@ -37,3 +37,6 @@ export function formatCountdown(ms) {
   const seconds = String(total % 60).padStart(2, '0')
   return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`
 }
+
+// Arah teks soal: 'auto' | 'rtl' | 'ltr' (diatur guru per soal).
+export const questionDir = (question) => question.text_direction || 'auto'

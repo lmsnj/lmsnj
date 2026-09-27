@@ -2,12 +2,23 @@ import { useEffect } from 'react'
 
 const SIZES = { md: 'max-w-lg', lg: 'max-w-4xl' }
 
+// Tumpukan modal yang sedang terbuka. Tombol Escape hanya menutup modal paling atas
+// (mis. dialog rumus di atas form soal), agar isian di modal bawahnya tidak ikut hilang.
+const openModals = []
+
 export default function Modal({ open, title, onClose, children, footer, size = 'md' }) {
   useEffect(() => {
     if (!open) return
-    const handleKey = (event) => event.key === 'Escape' && onClose()
+    const token = {}
+    openModals.push(token)
+    const handleKey = (event) => {
+      if (event.key === 'Escape' && openModals.at(-1) === token) onClose()
+    }
     document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('keydown', handleKey)
+      openModals.splice(openModals.indexOf(token), 1)
+    }
   }, [open, onClose])
 
   if (!open) return null

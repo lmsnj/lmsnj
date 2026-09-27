@@ -3,9 +3,12 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils import timezone
 
 from apps.academics.models import TeachingAssignment
+from apps.common.files import RandomUploadPath, delete_file
 
 
 class Assessment(models.Model):
@@ -57,11 +60,25 @@ class QuestionKind(models.TextChoices):
     ESSAY = "essay", "Esai"
 
 
+class TextDirection(models.TextChoices):
+    AUTO = "auto", "Otomatis"
+    RTL = "rtl", "Kanan ke kiri (Arab)"
+    LTR = "ltr", "Kiri ke kanan"
+
+
 class Question(models.Model):
+    """Soal. Teks (stimulus, pertanyaan, pilihan) boleh berisi rumus LaTeX di antara $...$ atau
+    $$...$$ dan teks Arab berharakat; disimpan apa adanya (tidak dinormalisasi) agar tidak rusak."""
+
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="questions")
     order = models.PositiveIntegerField("urutan", default=0)
     kind = models.CharField("jenis", max_length=10, choices=QuestionKind.choices, default=QuestionKind.CHOICE)
+    # Bacaan/konteks sebelum pertanyaan (opsional), mis. teks bacaan atau keterangan grafik.
+    stimulus = models.TextField("stimulus", blank=True)
     text = models.TextField("pertanyaan")
+    text_direction = models.CharField(
+        "arah teks", max_length=4, choices=TextDirection.choices, default=TextDirection.AUTO
+    )
     points = models.PositiveSmallIntegerField(
         "poin", default=1, validators=[MinValueValidator(1), MaxValueValidator(100)]
     )
@@ -150,3 +167,32 @@ class AttemptEvent(models.Model):
         verbose_name = "catatan pengawasan"
         verbose_name_plural = "catatan pengawasan"
         ordering = ["created_at"]
+
+
+class ImageSlot(models.TextChoices):
+    STIMULUS = "stimulus", "Gambar stimulus"
+    QUESTION = "question", "Gambar soal"
+    CHOICE = "choice", "Gambar pilihan"
+
+
+class QuestionImage(models.Model):
+    """Gambar pada soal. Untuk slot `choice`, `index` = nomor pilihan (0 = A)."""
+
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="images")
+    slot = models.CharField("letak", max_length=10, choices=ImageSlot.choices)
+    index = models.PositiveSmallIntegerField("nomor pilihan", default=0)
+    file = models.FileField("file", upload_to=RandomUploadPath("assessment-images"))
+    original_filename = models.CharField("nama file asli", max_length=255, blank=True)
+
+    class Meta:
+        verbose_name = "gambar soal"
+        verbose_name_plural = "gambar soal"
+        constraints = [
+            models.UniqueConstraint(fields=["question", "slot", "index"], name="unique_question_image_slot")
+        ]
+
+
+@receiver(post_delete, sender=QuestionImage)
+def delete_question_image_file(sender, instance, **kwargs):
+    # Sinyal (bukan override delete) agar file ikut terhapus saat soal/asesmen dihapus lewat CASCADE.
+    delete_file(instance.file)

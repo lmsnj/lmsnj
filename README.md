@@ -11,6 +11,8 @@ dapat dipakai sebagai contoh proyek pembelajaran bagi siswa.
 | **Admin** | Mengelola akun guru & siswa (termasuk **impor massal dari Excel**), kelas, mata pelajaran, dan pengampu. Pengumuman sekolah, laporan nilai per kelas (+ CSV), dan dashboard statistik. |
 | **Guru** | Membagikan materi (PDF, video YouTube, link), tugas dengan tenggat, **lembar asesmen/kuis** (pilihan ganda otomatis + esai), menilai dengan umpan balik, rekap nilai + CSV, jadwal **sesi mengajar** (tatap muka/online), pengumuman kelas, dan laporan kelas wali. |
 | **Siswa** | Membaca materi, mengumpulkan tugas, mengerjakan lembar asesmen dengan timer, melihat nilai & progres, jadwal sesi, dan pengumuman. |
+| **Guru (tambahan)** | Impor soal dari **Word (tempel teks) atau Excel + ZIP gambar**, dengan **rumus matematika** (LaTeX + editor rumus visual) dan **teks Arab berharakat** (RTL otomatis). Form diberi contoh isian cepat. |
+| **Admin (tambahan)** | Impor mata pelajaran, kelas, dan pengampu dari Excel. |
 | **Semua** | **Ruang obrolan** (pesan langsung; siswa hanya dengan guru di kelasnya, wali kelas, dan admin). |
 
 Tampilan responsif (bisa dipakai di HP) dan seluruh teks berbahasa Indonesia.
@@ -86,6 +88,7 @@ server sekolah yang asli. Untuk membuat akun admin pertama tanpa data demo:
 | `python -m black apps config` dan `python -m isort apps config` | Merapikan kode Python |
 | `npm run lint` | Memeriksa kode frontend (oxlint) |
 | `npm run format` | Merapikan kode frontend (Prettier) |
+| `npm test` | Menjalankan test frontend (rumus, teks Arab, pengawasan ujian) |
 | `npm run build` | Membuat versi produksi frontend ke `frontend/dist/` |
 
 ## Struktur Proyek

@@ -1,3 +1,4 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from . import views
@@ -7,4 +8,6 @@ router.register("assessments", views.AssessmentViewSet, basename="assessment")
 router.register("assessment-questions", views.QuestionViewSet, basename="assessment-question")
 router.register("assessment-attempts", views.AttemptViewSet, basename="assessment-attempt")
 
-urlpatterns = router.urls
+urlpatterns = router.urls + [
+    path("assessment-images/<int:pk>/", views.AssessmentImageView.as_view(), name="assessment-image"),
+]

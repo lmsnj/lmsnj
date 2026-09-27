@@ -5,7 +5,8 @@ from rest_framework import serializers
 
 from apps.academics.models import TeachingAssignment
 
-from .models import Assessment, Question, QuestionKind, ViolationKind
+from .images import images_data
+from .models import Assessment, ImageSlot, Question, QuestionKind, ViolationKind
 from .services import ensure_editable, ensure_publishable
 
 MAX_CHOICES = 6
@@ -41,10 +42,31 @@ class QuestionSerializer(serializers.ModelSerializer):
     """Soal versi GURU (berisi kunci jawaban). Jangan pernah dipakai untuk siswa."""
 
     assessment = serializers.PrimaryKeyRelatedField(queryset=Assessment.objects.none())
+    images = serializers.SerializerMethodField()
+    # Nomor pilihan yang akan diberi gambar: pilihan tersebut boleh tanpa teks (pilihan bergambar).
+    image_choices = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), write_only=True, required=False
+    )
 
     class Meta:
         model = Question
-        fields = ["id", "assessment", "order", "kind", "text", "points", "choices", "correct_choice"]
+        fields = [
+            "id",
+            "assessment",
+            "order",
+            "kind",
+            "stimulus",
+            "text",
+            "text_direction",
+            "points",
+            "choices",
+            "correct_choice",
+            "images",
+            "image_choices",
+        ]
+
+    def get_images(self, obj):
+        return images_data(obj)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -63,14 +85,22 @@ class QuestionSerializer(serializers.ModelSerializer):
         assessment = attrs.get("assessment") or self.instance.assessment
         ensure_editable(assessment)
         kind = attrs.get("kind", getattr(self.instance, "kind", QuestionKind.CHOICE))
+        with_image = set(attrs.pop("image_choices", []) or [])
+        if self.instance:
+            with_image |= set(
+                self.instance.images.filter(slot=ImageSlot.CHOICE).values_list("index", flat=True)
+            )
         if kind == QuestionKind.CHOICE:
             choices = attrs.get("choices", getattr(self.instance, "choices", []))
             if not isinstance(choices, list) or not all(isinstance(c, str) for c in choices):
                 raise serializers.ValidationError({"choices": "Pilihan harus berupa daftar teks."})
             choices = [c.strip() for c in choices]
-            if not 2 <= len(choices) <= MAX_CHOICES or not all(choices):
+            empty = [i for i, c in enumerate(choices) if not c and i not in with_image]
+            if not 2 <= len(choices) <= MAX_CHOICES or empty:
                 raise serializers.ValidationError(
-                    {"choices": f"Isi 2 sampai {MAX_CHOICES} pilihan, tidak boleh kosong."}
+                    {
+                        "choices": f"Isi 2 sampai {MAX_CHOICES} pilihan. Pilihan tanpa teks harus diberi gambar."
+                    }
                 )
             correct = attrs.get("correct_choice", getattr(self.instance, "correct_choice", None))
             if correct is None or correct >= len(choices):
@@ -83,13 +113,24 @@ class QuestionSerializer(serializers.ModelSerializer):
             attrs["correct_choice"] = None
         return attrs
 
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        # Gambar milik pilihan yang sudah dihapus ikut dihapus.
+        instance.images.filter(slot=ImageSlot.CHOICE, index__gte=len(instance.choices)).delete()
+        return instance
+
 
 class StudentQuestionSerializer(serializers.ModelSerializer):
     """Soal versi SISWA: tanpa kunci jawaban."""
 
+    images = serializers.SerializerMethodField()
+
     class Meta:
         model = Question
-        fields = ["id", "order", "kind", "text", "points", "choices"]
+        fields = ["id", "order", "kind", "stimulus", "text", "text_direction", "points", "choices", "images"]
+
+    def get_images(self, obj):
+        return images_data(obj)
 
 
 class AssessmentSerializer(serializers.ModelSerializer):

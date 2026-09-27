@@ -5,6 +5,7 @@ import Alert from '../../components/Alert'
 import Button from '../../components/Button'
 import DataTable from '../../components/DataTable'
 import DeleteDialog from '../../components/DeleteDialog'
+import ImportExcelModal from '../../components/ImportExcelModal'
 import PageHeader from '../../components/PageHeader'
 import Pagination from '../../components/Pagination'
 import SelectField from '../../components/SelectField'
@@ -77,9 +78,14 @@ export default function AssignmentsPage() {
         title="Pengampu"
         description="Guru yang mengajar suatu mapel di suatu kelas."
         actions={
-          <Button onClick={() => setDialog({ type: 'form', assignment: null })}>
-            + Tambah Pengampu
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => setDialog({ type: 'import' })}>
+              Impor Excel
+            </Button>
+            <Button onClick={() => setDialog({ type: 'form', assignment: null })}>
+              + Tambah Pengampu
+            </Button>
+          </>
         }
       />
 
@@ -131,6 +137,26 @@ export default function AssignmentsPage() {
           assignment={dialog.assignment}
           onClose={closeDialog}
           onSaved={handleSaved}
+        />
+      )}
+      {dialog?.type === 'import' && (
+        <ImportExcelModal
+          kind="teaching-assignments"
+          title="Impor Pengampu dari Excel"
+          description="Tetapkan banyak guru ke mapel & kelas sekaligus. Kelas, mapel, dan akun guru harus sudah ada."
+          templateName="Template Impor Pengampu.xlsx"
+          columns={[
+            { key: 'classroom', header: 'Kelas' },
+            { key: 'academic_year', header: 'Tahun Ajaran' },
+            { key: 'subject', header: 'Mapel' },
+            { key: 'teacher', header: 'Guru' },
+          ]}
+          onClose={closeDialog}
+          onImported={(count) => {
+            closeDialog()
+            setNotice(`${count} pengampu berhasil diimpor.`)
+            assignments.reload()
+          }}
         />
       )}
       <DeleteDialog

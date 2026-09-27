@@ -5,6 +5,7 @@ import Button from '../../components/Button'
 import DataTable from '../../components/DataTable'
 import DeleteDialog from '../../components/DeleteDialog'
 import FormModal from '../../components/FormModal'
+import ImportExcelModal from '../../components/ImportExcelModal'
 import PageHeader from '../../components/PageHeader'
 import Pagination from '../../components/Pagination'
 import TextField from '../../components/TextField'
@@ -92,7 +93,14 @@ export default function SubjectsPage() {
         title="Mata Pelajaran"
         description="Daftar mapel yang diajarkan di sekolah."
         actions={
-          <Button onClick={() => setDialog({ type: 'form', subject: null })}>+ Tambah Mapel</Button>
+          <>
+            <Button variant="secondary" onClick={() => setDialog({ type: 'import' })}>
+              Impor Excel
+            </Button>
+            <Button onClick={() => setDialog({ type: 'form', subject: null })}>
+              + Tambah Mapel
+            </Button>
+          </>
         }
       />
 
@@ -129,6 +137,24 @@ export default function SubjectsPage() {
           onSaved={(saved, isEdit) => {
             closeDialog()
             setNotice(`Mapel ${saved.name} ${isEdit ? 'diperbarui' : 'ditambahkan'}.`)
+            subjects.reload()
+          }}
+        />
+      )}
+      {dialog?.type === 'import' && (
+        <ImportExcelModal
+          kind="subjects"
+          title="Impor Mata Pelajaran dari Excel"
+          description="Tambah banyak mata pelajaran sekaligus. Kode dibuat huruf besar otomatis."
+          templateName="Template Impor Mapel.xlsx"
+          columns={[
+            { key: 'code', header: 'Kode' },
+            { key: 'name', header: 'Nama Mapel' },
+          ]}
+          onClose={closeDialog}
+          onImported={(count) => {
+            closeDialog()
+            setNotice(`${count} mata pelajaran berhasil diimpor.`)
             subjects.reload()
           }}
         />

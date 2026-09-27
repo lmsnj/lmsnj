@@ -6,8 +6,10 @@ from rest_framework.response import Response
 
 from apps.accounts.models import Role, User
 from apps.accounts.permissions import IsAdmin, IsAdminOrReadOnly
+from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.mixins import ProtectedDeleteMixin
 
+from . import imports
 from .models import Classroom, Subject, TeachingAssignment
 from .selectors import classrooms_for, teaching_assignments_for
 from .serializers import (
@@ -73,6 +75,17 @@ class ClassroomViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         )
         return Response({"detail": f"{updated} siswa dikeluarkan dari {classroom.name}."})
 
+    @action(detail=False, url_path="import-template", permission_classes=[IsAdmin])
+    def import_template(self, request):
+        """Template Excel untuk impor kelas."""
+        return template_response(imports.classroom_template(), "Template Impor Kelas.xlsx")
+
+    @action(detail=False, methods=["post"], url_path="import", permission_classes=[IsAdmin])
+    def import_rows(self, request):
+        """Impor kelas dari Excel. dry_run=true (bawaan) hanya memeriksa."""
+        rows, save = imports.check_classrooms(request.FILES.get("file"))
+        return import_response(rows, is_dry_run(request), save)
+
     def _require_admin(self, request):
         if not IsAdmin().has_permission(request, self):
             raise PermissionDenied("Hanya admin yang dapat mengatur siswa di kelas.")
@@ -85,6 +98,17 @@ class SubjectViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     search_fields = ["code", "name"]
     ordering_fields = ["code", "name"]
     protected_message = "Mapel ini masih diampu di beberapa kelas. Hapus data pengampunya terlebih dahulu."
+
+    @action(detail=False, url_path="import-template", permission_classes=[IsAdmin])
+    def import_template(self, request):
+        """Template Excel untuk impor mata pelajaran."""
+        return template_response(imports.subject_template(), "Template Impor Mapel.xlsx")
+
+    @action(detail=False, methods=["post"], url_path="import", permission_classes=[IsAdmin])
+    def import_rows(self, request):
+        """Impor mata pelajaran dari Excel. dry_run=true (bawaan) hanya memeriksa."""
+        rows, save = imports.check_subjects(request.FILES.get("file"))
+        return import_response(rows, is_dry_run(request), save)
 
 
 class TeachingAssignmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
@@ -108,3 +132,14 @@ class TeachingAssignmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             .annotate(student_count=Count("classroom__students", distinct=True))
             .order_by(*TeachingAssignment._meta.ordering)
         )
+
+    @action(detail=False, url_path="import-template", permission_classes=[IsAdmin])
+    def import_template(self, request):
+        """Template Excel untuk impor pengampu."""
+        return template_response(imports.assignment_template(), "Template Impor Pengampu.xlsx")
+
+    @action(detail=False, methods=["post"], url_path="import", permission_classes=[IsAdmin])
+    def import_rows(self, request):
+        """Impor pengampu dari Excel. dry_run=true (bawaan) hanya memeriksa."""
+        rows, save = imports.check_assignments(request.FILES.get("file"))
+        return import_response(rows, is_dry_run(request), save)

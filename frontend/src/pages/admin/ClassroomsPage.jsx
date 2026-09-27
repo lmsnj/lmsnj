@@ -5,6 +5,7 @@ import Alert from '../../components/Alert'
 import Button from '../../components/Button'
 import DataTable from '../../components/DataTable'
 import DeleteDialog from '../../components/DeleteDialog'
+import ImportExcelModal from '../../components/ImportExcelModal'
 import PageHeader from '../../components/PageHeader'
 import Pagination from '../../components/Pagination'
 import SelectField from '../../components/SelectField'
@@ -84,9 +85,14 @@ export default function ClassroomsPage() {
         title="Kelas"
         description="Klik nama kelas untuk mengatur siswa dan mapel di kelas tersebut."
         actions={
-          <Button onClick={() => setDialog({ type: 'form', classroom: null })}>
-            + Tambah Kelas
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => setDialog({ type: 'import' })}>
+              Impor Excel
+            </Button>
+            <Button onClick={() => setDialog({ type: 'form', classroom: null })}>
+              + Tambah Kelas
+            </Button>
+          </>
         }
       />
 
@@ -136,6 +142,28 @@ export default function ClassroomsPage() {
           onSaved={(saved, isEdit) => {
             closeDialog()
             setNotice(`Kelas ${saved.name} ${isEdit ? 'diperbarui' : 'ditambahkan'}.`)
+            classrooms.reload()
+            years.reload()
+          }}
+        />
+      )}
+      {dialog?.type === 'import' && (
+        <ImportExcelModal
+          kind="classrooms"
+          title="Impor Kelas dari Excel"
+          description="Tambah banyak kelas sekaligus beserta wali kelasnya (username guru)."
+          templateName="Template Impor Kelas.xlsx"
+          columns={[
+            { key: 'name', header: 'Kelas' },
+            { key: 'grade', header: 'Tingkat' },
+            { key: 'major', header: 'Jurusan' },
+            { key: 'academic_year', header: 'Tahun Ajaran' },
+            { key: 'homeroom', header: 'Wali Kelas' },
+          ]}
+          onClose={closeDialog}
+          onImported={(count) => {
+            closeDialog()
+            setNotice(`${count} kelas berhasil diimpor.`)
             classrooms.reload()
             years.reload()
           }}
