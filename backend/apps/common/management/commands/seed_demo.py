@@ -24,6 +24,8 @@ from apps.materials.models import Material, MaterialType
 from apps.schedule.models import TeachingSession
 from apps.tasks.models import Submission, Task
 
+from . import _demo_exam as demo_exam
+
 PASSWORDS = {
     Role.ADMIN: "AdminSmknj#2026",
     Role.TEACHER: "Belajar#Koding26",
@@ -350,6 +352,8 @@ class Command(BaseCommand):
                 text="Jelaskan perbedaan tag <div> dan <span>.",
             )  # fmt: skip
 
+        self.seed_demo_exam(web)
+
         student = User.objects.filter(username="rizki").first()
         if student:
             first, second = sorted([web.teacher, student], key=lambda u: u.id)
@@ -366,6 +370,25 @@ class Command(BaseCommand):
                 conversation.last_message_at = reply.created_at
                 conversation.save(update_fields=["last_message_at"])
             self.count("obrolan", created)
+
+    def seed_demo_exam(self, web):
+        """Ujian contoh bergaya simulasi TKA (lihat _demo_exam.py) untuk mencoba mode ujian siswa."""
+        assessment, created = Assessment.objects.get_or_create(
+            teaching_assignment=web,
+            title=demo_exam.TITLE,
+            defaults={
+                "instructions": demo_exam.INSTRUCTIONS,
+                "due_at": self.now + timedelta(days=14),
+                "duration_minutes": 60,
+                "max_violations": 5,
+                "is_published": True,
+                "created_by": web.teacher,
+            },
+        )
+        self.count("asesmen", created)
+        if created:
+            for order, question in enumerate(demo_exam.QUESTIONS):
+                Question.objects.create(assessment=assessment, order=order, **question)
 
     def seed_submissions(self, task, past_due):
         """Tugas yang sudah lewat: sebagian besar siswa kumpul (beberapa terlambat) dan sudah dinilai.

@@ -1,16 +1,16 @@
-import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 import { attemptsApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
-import { ChoiceContent, QuestionBody } from '../../components/QuestionContent'
+import AnswerReview from '../../components/AnswerReview'
+import { QuestionBody } from '../../components/QuestionContent'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
 import Spinner from '../../components/Spinner'
 import TextAreaField from '../../components/TextAreaField'
 import TextField from '../../components/TextField'
 import useFetch from '../../hooks/useFetch'
-import { choiceLetter } from '../../utils/assessments'
 import { getErrorMessage } from '../../utils/errors'
+import { sharedStimuli } from '../../utils/exam'
 import { formatScore, parseScore } from '../../utils/tasks'
 
 const timeFormat = new Intl.DateTimeFormat('id-ID', {
@@ -19,37 +19,6 @@ const timeFormat = new Intl.DateTimeFormat('id-ID', {
   second: '2-digit',
 })
 const formatTime = (value) => timeFormat.format(new Date(value))
-
-function ChoiceAnswer({ question }) {
-  const chosen = question.answer?.choice
-  return (
-    <ul className="space-y-1 text-sm">
-      {question.choices.map((choice, index) => {
-        const isCorrect = index === question.correct_choice
-        const isChosen = index === chosen
-        return (
-          <li
-            key={index}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 ${
-              isCorrect
-                ? 'bg-brand-50 text-brand-800'
-                : isChosen
-                  ? 'bg-red-50 text-red-700'
-                  : 'text-slate-600'
-            }`}
-          >
-            <span className="font-semibold">{choiceLetter(index)}.</span>
-            <ChoiceContent question={question} index={index} />
-            {isChosen && <span className="text-xs font-medium">jawaban siswa</span>}
-            {isCorrect && <Check className="size-4" aria-label="jawaban benar" />}
-            {isChosen && !isCorrect && <X className="size-4" aria-label="salah" />}
-          </li>
-        )
-      })}
-      {chosen === null && <li className="px-3 text-xs text-slate-500">Tidak dijawab.</li>}
-    </ul>
-  )
-}
 
 // Periksa satu pengerjaan: pilihan ganda sudah otomatis, esai diberi poin & umpan balik.
 export default function GradeAttemptModal({ attemptId, onClose, onSaved }) {
@@ -60,6 +29,7 @@ export default function GradeAttemptModal({ attemptId, onClose, onSaved }) {
   const [error, setError] = useState('')
 
   const questions = sheet.data?.questions ?? []
+  const shared = sharedStimuli(questions)
   const valueFor = (q, field) =>
     grades[q.answer.id]?.[field] ??
     (field === 'points'
@@ -161,13 +131,13 @@ export default function GradeAttemptModal({ attemptId, onClose, onSaved }) {
             <section key={q.id} className="rounded-lg p-4 ring-1 ring-slate-200">
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <QuestionBody question={q} number={index + 1} />
+                  <QuestionBody question={q} number={index + 1} shared={shared[index]} />
                 </div>
                 <span className="shrink-0 text-xs text-slate-500">{q.points} poin</span>
               </div>
-              {q.kind === 'choice' ? (
+              {q.kind !== 'essay' ? (
                 <>
-                  <ChoiceAnswer question={q} />
+                  <AnswerReview question={q} answer={q.answer ?? {}} who="siswa" />
                   <p className="mt-2 text-right text-sm text-slate-600">
                     Poin: <strong>{formatScore(q.answer?.points)}</strong>
                   </p>

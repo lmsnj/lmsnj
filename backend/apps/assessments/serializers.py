@@ -10,6 +10,30 @@ from .models import Assessment, ImageSlot, Question, QuestionKind, ViolationKind
 from .services import ensure_editable, ensure_publishable
 
 MAX_CHOICES = 6
+DEFAULT_CATEGORY_LABELS = ["Benar", "Salah"]
+
+
+def is_index_list(value):
+    """Daftar bilangan bulat >= 0 (bool tidak dihitung sebagai angka)."""
+    return isinstance(value, list) and all(
+        isinstance(v, int) and not isinstance(v, bool) and v >= 0 for v in value
+    )
+
+
+def checked_choices(choices, with_image, kind):
+    """Periksa daftar pilihan (atau pernyataan untuk soal kategori). Pilihan bergambar boleh tanpa teks."""
+    if not isinstance(choices, list) or not all(isinstance(c, str) for c in choices):
+        raise serializers.ValidationError({"choices": "Pilihan harus berupa daftar teks."})
+    choices = [c.strip() for c in choices]
+    empty = [i for i, c in enumerate(choices) if not c and i not in with_image]
+    if kind == QuestionKind.CATEGORY:
+        if not 1 <= len(choices) <= MAX_CHOICES or empty:
+            raise serializers.ValidationError({"choices": f"Isi 1 sampai {MAX_CHOICES} pernyataan."})
+    elif not 2 <= len(choices) <= MAX_CHOICES or empty:
+        raise serializers.ValidationError(
+            {"choices": f"Isi 2 sampai {MAX_CHOICES} pilihan. Pilihan tanpa teks harus diberi gambar."}
+        )
+    return choices
 
 
 def attempt_summary(attempt):
@@ -55,12 +79,15 @@ class QuestionSerializer(serializers.ModelSerializer):
             "assessment",
             "order",
             "kind",
+            "group",
             "stimulus",
             "text",
             "text_direction",
             "points",
             "choices",
             "correct_choice",
+            "correct_choices",
+            "category_labels",
             "images",
             "image_choices",
         ]
@@ -81,36 +108,55 @@ class QuestionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Soal tidak bisa dipindah ke asesmen lain.")
         return value
 
+    def validate_group(self, value):
+        return value.strip()
+
     def validate(self, attrs):
         assessment = attrs.get("assessment") or self.instance.assessment
         ensure_editable(assessment)
-        kind = attrs.get("kind", getattr(self.instance, "kind", QuestionKind.CHOICE))
+
+        def current(field, default):
+            return attrs.get(field, getattr(self.instance, field, default))
+
+        kind = current("kind", QuestionKind.CHOICE)
         with_image = set(attrs.pop("image_choices", []) or [])
         if self.instance:
             with_image |= set(
                 self.instance.images.filter(slot=ImageSlot.CHOICE).values_list("index", flat=True)
             )
+        if kind == QuestionKind.ESSAY:
+            attrs.update(choices=[], correct_choice=None, correct_choices=[], category_labels=[])
+            return attrs
+
+        choices = checked_choices(current("choices", []), with_image, kind)
+        attrs["choices"] = choices
         if kind == QuestionKind.CHOICE:
-            choices = attrs.get("choices", getattr(self.instance, "choices", []))
-            if not isinstance(choices, list) or not all(isinstance(c, str) for c in choices):
-                raise serializers.ValidationError({"choices": "Pilihan harus berupa daftar teks."})
-            choices = [c.strip() for c in choices]
-            empty = [i for i, c in enumerate(choices) if not c and i not in with_image]
-            if not 2 <= len(choices) <= MAX_CHOICES or empty:
-                raise serializers.ValidationError(
-                    {
-                        "choices": f"Isi 2 sampai {MAX_CHOICES} pilihan. Pilihan tanpa teks harus diberi gambar."
-                    }
-                )
-            correct = attrs.get("correct_choice", getattr(self.instance, "correct_choice", None))
+            correct = current("correct_choice", None)
             if correct is None or correct >= len(choices):
                 raise serializers.ValidationError(
                     {"correct_choice": "Tandai satu pilihan sebagai jawaban benar."}
                 )
-            attrs["choices"] = choices
+            attrs.update(correct_choices=[], category_labels=[])
+        elif kind == QuestionKind.MULTIPLE:
+            correct = current("correct_choices", [])
+            if not is_index_list(correct) or len(set(correct)) < 2 or max(correct) >= len(choices):
+                raise serializers.ValidationError(
+                    {"correct_choices": "Tandai minimal dua pilihan sebagai jawaban benar."}
+                )
+            attrs.update(correct_choices=sorted(set(correct)), correct_choice=None, category_labels=[])
         else:
-            attrs["choices"] = []
-            attrs["correct_choice"] = None
+            labels = current("category_labels", []) or DEFAULT_CATEGORY_LABELS
+            labels = [str(label).strip() for label in labels] if isinstance(labels, list) else []
+            if len(labels) != 2 or not all(labels) or any(len(label) > 30 for label in labels):
+                raise serializers.ValidationError(
+                    {"category_labels": "Isi dua label jawaban, mis. Benar dan Salah (maks. 30 huruf)."}
+                )
+            correct = current("correct_choices", [])
+            if not is_index_list(correct) or len(correct) != len(choices) or any(c > 1 for c in correct):
+                raise serializers.ValidationError(
+                    {"correct_choices": "Tentukan jawaban benar untuk setiap pernyataan."}
+                )
+            attrs.update(category_labels=labels, correct_choices=correct, correct_choice=None)
         return attrs
 
     def update(self, instance, validated_data):
@@ -127,7 +173,19 @@ class StudentQuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ["id", "order", "kind", "stimulus", "text", "text_direction", "points", "choices", "images"]
+        fields = [
+            "id",
+            "order",
+            "kind",
+            "group",
+            "stimulus",
+            "text",
+            "text_direction",
+            "points",
+            "choices",
+            "category_labels",
+            "images",
+        ]
 
     def get_images(self, obj):
         return images_data(obj)
@@ -211,7 +269,16 @@ class AssessmentSerializer(serializers.ModelSerializer):
 class SubmitAnswerSerializer(serializers.Serializer):
     question = serializers.IntegerField()
     choice = serializers.IntegerField(required=False, allow_null=True, min_value=0)
+    # PG kompleks: pilihan yang dicentang. Kategori: indeks label per pernyataan (null = belum dijawab).
+    choices = serializers.ListField(
+        child=serializers.IntegerField(min_value=0, allow_null=True),
+        required=False,
+        default=list,
+        max_length=MAX_CHOICES,
+    )
     text = serializers.CharField(required=False, allow_blank=True, default="", max_length=10000)
+    # Tanda "ragu-ragu" dari siswa; hanya disimpan di jawaban sementara, tidak memengaruhi nilai.
+    flagged = serializers.BooleanField(required=False, default=False)
 
 
 class SubmitSerializer(serializers.Serializer):
@@ -243,6 +310,7 @@ def answer_sheet(attempt, reveal_answers, include_key=False):
             {
                 "id": answer.id,
                 "choice": answer.choice,
+                "choices": answer.choices,
                 "text": answer.text,
                 "points": float(answer.points) if answer.points is not None else None,
                 "feedback": answer.feedback,
@@ -250,6 +318,9 @@ def answer_sheet(attempt, reveal_answers, include_key=False):
             if answer
             else None
         )
-        item["correct_choice"] = question.correct_choice if include_key or reveal_answers else None
+        show_key = include_key or reveal_answers
+        item["key_revealed"] = show_key
+        item["correct_choice"] = question.correct_choice if show_key else None
+        item["correct_choices"] = question.correct_choices if show_key else None
         sheet.append(item)
     return sheet

@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 
 from apps.academics.models import Classroom, TeachingAssignment
 from apps.accounts.models import Role, User
+from apps.assessments.models import Assessment
 from apps.materials.models import Material
 from apps.tasks.models import Submission, Task
 
@@ -57,6 +58,17 @@ class SeedDemoTests(APITestCase):
         # Ada nilai dan pengumpulan terlambat untuk demo rekap nilai.
         self.assertTrue(Submission.objects.filter(score__isnull=False).exists())
         self.assertTrue(Submission.objects.filter(is_late=True).exists())
+
+        # Ujian contoh simulasi TKA berisi semua bentuk soal dan bisa dikerjakan siswa.
+        exam = Assessment.objects.get(title__startswith="Simulasi TKA")
+        questions = list(exam.questions.all())
+        self.assertEqual({q.kind for q in questions}, {"choice", "multiple", "category", "essay"})
+        self.assertTrue(all(q.has_answer_key for q in questions))
+        self.assertEqual(len([q for q in questions if q.group == "G1"]), 3)
+        self.assertTrue(any(q.text_direction == "rtl" for q in questions))
+        self.assertTrue(any("|---|" in q.stimulus for q in questions))
+        res = self.client.post(reverse("assessment-start", args=[exam.id]))
+        self.assertEqual(len(res.data["questions"]), len(questions))
 
     def test_existing_passwords_are_kept(self):
         User.objects.create_user(

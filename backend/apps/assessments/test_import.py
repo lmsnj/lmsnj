@@ -95,7 +95,8 @@ class QuestionImportTests(AssessmentTestBase):
         res = self.client.get(reverse("assessment-question-template"))
         workbook = load_workbook(io.BytesIO(res.content))
         sheet = workbook["Soal"]
-        sheet.append(["pg", "", "", MATH_QUESTION, "", "otomatis", 2, r"$\frac{3}{4}$", r"$\frac{2}{6}$"]
+        # Urutan kolom: Jenis, Grup, Stimulus, Gambar Stimulus, Pertanyaan, ...
+        sheet.append(["pg", "", "", "", MATH_QUESTION, "", "otomatis", 2, r"$\frac{3}{4}$", r"$\frac{2}{6}$"]
                      + [""] * 8 + ["A"])  # fmt: skip
         buffer = io.BytesIO()
         workbook.save(buffer)

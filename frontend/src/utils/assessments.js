@@ -23,8 +23,12 @@ export function attemptStatus(attempt) {
 
 export const QUESTION_KINDS = {
   choice: 'Pilihan ganda',
+  multiple: 'PG kompleks',
+  category: 'Kategori (Benar/Salah)',
   essay: 'Esai',
 }
+
+export const KIND_COLORS = { choice: 'blue', multiple: 'green', category: 'amber', essay: 'gray' }
 
 // Huruf pilihan: 0 -> A, 1 -> B, dst.
 export const choiceLetter = (index) => String.fromCharCode(65 + index)

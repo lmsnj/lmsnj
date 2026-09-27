@@ -1,9 +1,10 @@
-import { Check, ShieldAlert, X } from 'lucide-react'
+import { ShieldAlert } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { assessmentsApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
-import { ChoiceContent, QuestionBody } from '../../components/QuestionContent'
+import AnswerReview from '../../components/AnswerReview'
+import { QuestionBody } from '../../components/QuestionContent'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
@@ -11,8 +12,9 @@ import PageHeader from '../../components/PageHeader'
 import Spinner from '../../components/Spinner'
 import { enterFullscreen, fullscreenSupported } from '../../hooks/useExamGuard'
 import useFetch from '../../hooks/useFetch'
-import { choiceLetter, studentAssessmentStatus } from '../../utils/assessments'
+import { studentAssessmentStatus } from '../../utils/assessments'
 import { getErrorMessage } from '../../utils/errors'
+import { sharedStimuli } from '../../utils/exam'
 import { formatDate } from '../../utils/media'
 import { formatScore } from '../../utils/tasks'
 import TakeAssessment from './TakeAssessment'
@@ -40,8 +42,9 @@ function ResultView({ assessment, data }) {
           <>
             <p className="font-medium text-slate-900">Jawaban sudah dikumpulkan.</p>
             <p className="text-sm text-slate-600">
-              Nilai pilihan ganda: <strong>{formatScore(attempt.auto_score)}</strong>. Nilai akhir
-              muncul setelah guru menilai {attempt.ungraded} jawaban esai.
+              Nilai soal otomatis (pilihan ganda, PG kompleks, kategori):{' '}
+              <strong>{formatScore(attempt.auto_score)}</strong>. Nilai akhir muncul setelah guru
+              menilai {attempt.ungraded} jawaban esai.
             </p>
           </>
         )}
@@ -60,14 +63,17 @@ function ResultView({ assessment, data }) {
       </section>
 
       <ol className="space-y-3">
-        {data.questions.map((q, index) => {
+        {data.questions.map((q, index, all) => {
           const answer = q.answer
-          const revealed = q.correct_choice !== null
           return (
             <li key={q.id} className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <QuestionBody question={q} number={index + 1} />
+                  <QuestionBody
+                    question={q}
+                    number={index + 1}
+                    shared={sharedStimuli(all)[index]}
+                  />
                 </div>
                 <span className="shrink-0 text-sm font-semibold text-slate-700">
                   {answer?.points === null || answer?.points === undefined
@@ -76,33 +82,13 @@ function ResultView({ assessment, data }) {
                   <span className="font-normal text-slate-500">/{q.points}</span>
                 </span>
               </div>
-              {q.kind === 'choice' ? (
-                <ul className="space-y-1 text-sm">
-                  {q.choices.map((choice, i) => {
-                    const chosen = answer?.choice === i
-                    const correct = revealed && i === q.correct_choice
-                    return (
-                      <li
-                        key={i}
-                        className={`flex items-center gap-2 rounded-lg px-3 py-1.5 ${
-                          correct
-                            ? 'bg-brand-50 text-brand-800'
-                            : chosen
-                              ? 'bg-slate-100 text-slate-900'
-                              : 'text-slate-600'
-                        }`}
-                      >
-                        <span className="font-semibold">{choiceLetter(i)}.</span>
-                        <ChoiceContent question={q} index={i} />
-                        {chosen && <span className="text-xs font-medium">jawaban Anda</span>}
-                        {correct && <Check className="size-4" aria-label="jawaban benar" />}
-                        {revealed && chosen && !correct && (
-                          <X className="size-4 text-red-600" aria-label="salah" />
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
+              {q.kind !== 'essay' ? (
+                <AnswerReview
+                  question={q}
+                  answer={answer ?? {}}
+                  showKey={Boolean(q.key_revealed)}
+                  who="Anda"
+                />
               ) : (
                 <div className="rounded-lg bg-slate-50 p-3 text-sm whitespace-pre-wrap text-slate-800 ring-1 ring-slate-200">
                   {answer?.text || <span className="text-slate-400">(tidak dijawab)</span>}
@@ -267,7 +253,7 @@ export default function StudentAssessmentPage() {
               ? `Waktu ${a.duration_minutes} menit langsung berjalan dan tidak bisa dijeda. `
               : ''}
             Asesmen hanya bisa dikerjakan <strong>satu kali</strong>. Jawaban tersimpan otomatis
-            sampai Anda menekan Kumpulkan.
+            sampai Anda menekan Selesai Ujian.
           </p>
           <div className="rounded-lg bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200">
             <p className="flex items-center gap-2 font-semibold">

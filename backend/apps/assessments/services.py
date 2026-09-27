@@ -1,10 +1,12 @@
 """Aturan bisnis lembar asesmen.
 
 - Soal hanya bisa diubah selama BELUM ada siswa yang mulai mengerjakan (agar penilaian adil).
-- Terbit hanya jika ada minimal 1 soal dan setiap soal pilihan ganda punya kunci jawaban.
+- Terbit hanya jika ada minimal 1 soal dan setiap soal yang dinilai otomatis punya kunci jawaban.
 - Siswa mulai mengerjakan sebelum tenggat, satu kali. Batas waktu = mulai + durasi (maks. tenggat).
 - Jawaban yang dikirim lewat batas waktu tetap disimpan tetapi ditandai terlambat.
-- Pilihan ganda dinilai otomatis; esai kosong otomatis 0; esai berisi dinilai guru.
+- Pilihan ganda, PG kompleks, dan kategori dinilai otomatis. PG kompleks & kategori: poin penuh
+  hanya jika SEMUA benar (semua pilihan benar dicentang tanpa pilihan salah / semua pernyataan
+  tepat), selain itu 0. Esai kosong otomatis 0; esai berisi dinilai guru.
 - Nilai akhir terisi setelah semua jawaban dinilai.
 - Pengawasan: setiap kali siswa keluar dari halaman ujian dicatat (AttemptEvent). Jika guru
   memasang batas (max_violations), jawaban sementara otomatis dikumpulkan saat batas tercapai.
@@ -18,7 +20,7 @@ from django.db.models import F
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from .models import Answer, Attempt, AttemptEvent, QuestionKind
+from .models import AUTO_GRADED_KINDS, Answer, Attempt, AttemptEvent, QuestionKind
 
 # Toleransi keterlambatan jaringan saat mengumpulkan tepat di akhir waktu.
 SUBMIT_GRACE = timedelta(seconds=60)
@@ -35,11 +37,7 @@ def ensure_publishable(assessment):
     questions = list(assessment.questions.all())
     if not questions:
         raise ValidationError({"is_published": "Tambahkan minimal satu soal sebelum menerbitkan."})
-    missing = [
-        str(index)
-        for index, q in enumerate(questions, start=1)
-        if q.kind == QuestionKind.CHOICE and q.correct_choice is None
-    ]
+    missing = [str(index) for index, q in enumerate(questions, start=1) if not q.has_answer_key]
     if missing:
         raise ValidationError({"is_published": f"Soal nomor {', '.join(missing)} belum punya kunci jawaban."})
 
@@ -60,21 +58,46 @@ def recompute_score(attempt):
 
 
 def _checked_answers(questions, answers):
-    """Periksa jawaban kiriman siswa. Mengembalikan {question_id: {"choice", "text"}}."""
+    """Periksa jawaban kiriman siswa.
+    Mengembalikan {question_id: {"choice", "choices", "text", "flagged"}}."""
     given = {}
     for item in answers:
         question = questions.get(item.get("question"))
         if question is None:
             raise ValidationError({"answers": "Ada jawaban untuk soal yang tidak ada di asesmen ini."})
+        count = len(question.choices)
         choice = item.get("choice")
-        if (
-            question.kind == QuestionKind.CHOICE
-            and choice is not None
-            and not 0 <= choice < len(question.choices)
-        ):
+        choices = list(item.get("choices") or [])
+        if question.kind == QuestionKind.CHOICE:
+            valid = choice is None or 0 <= choice < count
+        elif question.kind == QuestionKind.MULTIPLE:
+            valid = all(c is not None and 0 <= c < count for c in choices)
+            choices = sorted(set(choices))
+        elif question.kind == QuestionKind.CATEGORY:
+            valid = len(choices) <= count and all(c in (None, 0, 1) for c in choices)
+            choices = (choices + [None] * count)[:count]
+        else:
+            valid = True
+        if not valid:
             raise ValidationError({"answers": "Pilihan jawaban tidak valid."})
-        given[question.id] = {"choice": choice, "text": item.get("text") or ""}
+        given[question.id] = {
+            "choice": choice if question.kind == QuestionKind.CHOICE else None,
+            "choices": choices if question.kind in (QuestionKind.MULTIPLE, QuestionKind.CATEGORY) else [],
+            "text": item.get("text") or "",
+            "flagged": bool(item.get("flagged")),
+        }
     return given
+
+
+def auto_points(question, choice, choices):
+    """Poin soal yang dinilai otomatis: penuh jika jawabannya tepat sama dengan kunci, selain itu 0."""
+    if question.kind == QuestionKind.CHOICE:
+        correct = choice == question.correct_choice
+    elif question.kind == QuestionKind.MULTIPLE:
+        correct = choices == sorted(question.correct_choices)
+    else:
+        correct = choices == list(question.correct_choices)
+    return Decimal(question.points) if correct else Decimal(0)
 
 
 def save_draft(attempt, answers):
@@ -114,14 +137,21 @@ def submit_attempt(attempt, answers, auto=False):
     for question in questions.values():
         item = given.get(question.id, {})
         choice = item.get("choice")
+        choices = item.get("choices") or []
         text = (item.get("text") or "").strip()
-        if question.kind == QuestionKind.CHOICE:
-            points = Decimal(question.points) if choice == question.correct_choice else Decimal(0)
+        if question.kind in AUTO_GRADED_KINDS:
+            if question.kind == QuestionKind.CATEGORY and not choices:
+                choices = [None] * len(question.choices)
+            points = auto_points(question, choice, choices)
             text = ""
         else:
-            choice = None
+            choice, choices = None, []
             points = Decimal(0) if not text else None  # esai kosong langsung 0
-        rows.append(Answer(attempt=attempt, question=question, choice=choice, text=text, points=points))
+        rows.append(
+            Answer(
+                attempt=attempt, question=question, choice=choice, choices=choices, text=text, points=points
+            )
+        )
     Answer.objects.bulk_create(rows)
 
     now = timezone.now()

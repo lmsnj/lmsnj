@@ -1,4 +1,3 @@
-import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { questionImportApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
@@ -7,8 +6,9 @@ import Button from '../../components/Button'
 import FileDownloadButton from '../../components/FileDownloadButton'
 import FileInput from '../../components/FileInput'
 import Modal from '../../components/Modal'
-import { ChoiceContent, QuestionBody } from '../../components/QuestionContent'
-import { choiceLetter } from '../../utils/assessments'
+import AnswerReview from '../../components/AnswerReview'
+import { QuestionBody } from '../../components/QuestionContent'
+import { KIND_COLORS, QUESTION_KINDS } from '../../utils/assessments'
 import { getErrorMessage, getFieldErrors } from '../../utils/errors'
 
 // Contoh format tempel (tombol "Isi contoh format"): rumus, bahasa Arab, esai.
@@ -35,7 +35,31 @@ Arah: rtl
 4. Arti kata «الْمَدْرَسَةُ» adalah ...
 A. Sekolah
 B. Masjid
-Kunci: A`
+Kunci: A
+
+5. [pg kompleks] Bilangan yang nilainya sama dengan $\frac{1}{2}$ adalah ...
+A. $\frac{2}{4}$
+B. $0{,}5$
+C. $\frac{3}{5}$
+Kunci: A, B
+
+Stimulus: Perhatikan tabel nilai (*score*) berikut.
+| Nama | Nilai |
+|---|---|
+| Ani | 90 |
+| Budi | 75 |
+6. [kategori] Tentukan kesesuaian pernyataan dengan tabel.
+A. Nilai Ani lebih tinggi daripada Budi.
+B. Nilai Budi 90.
+Label: Sesuai / Tidak sesuai
+Kunci: S, T
+Grup: G1
+
+7. Siapa yang nilainya di bawah 80?
+A. Ani
+B. Budi
+Kunci: B
+Grup: G1`
 
 const FORMAT_HELP = [
   ['1. Pertanyaan', 'awal setiap soal (angka Arab ١. juga bisa)'],
@@ -44,6 +68,12 @@ const FORMAT_HELP = [
   ['Poin: 2', 'opsional'],
   ['Arah: rtl', 'opsional, untuk soal berbahasa Arab'],
   ['[esai]', 'setelah nomor; soal tanpa pilihan juga dianggap esai'],
+  ['[pg kompleks]', 'jawaban benar lebih dari satu: Kunci: A, C (atau *A. dan *C.)'],
+  ['[kategori]', 'pilihan = pernyataan; Kunci: B, S, B (Benar/Salah per pernyataan)'],
+  ['Label: Sesuai / Tidak sesuai', 'opsional untuk kategori (bawaan Benar / Salah)'],
+  ['Grup: G1', 'soal dengan grup sama memakai stimulus bersama (isi di soal pertama)'],
+  ['| a | b |', 'tabel; baris |---| memisah judul dan isi; sel < = gabung dengan sel kiri'],
+  ['*miring* / **tebal**', 'huruf miring (mis. istilah asing) / tebal'],
   ['Stimulus: ...', 'bacaan untuk soal sesudahnya'],
   ['Gambar: nama.png', 'gambar soal; [gambar: a.png] di akhir pilihan; unggah ZIP-nya'],
   ['$...$ / $$...$$', 'rumus LaTeX (lihat lembar Contekan Rumus di template Excel)'],
@@ -59,29 +89,19 @@ function PreviewRow({ row }) {
     >
       <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
         <span className="font-semibold text-slate-500">{row.row}</span>
-        <Badge color={row.kind === 'choice' ? 'blue' : 'gray'}>
-          {row.kind === 'choice' ? 'Pilihan ganda' : 'Esai'}
+        <Badge color={KIND_COLORS[row.kind] ?? 'gray'}>
+          {QUESTION_KINDS[row.kind] ?? row.kind}
         </Badge>
+        {row.group && <Badge color="gray">Grup {row.group}</Badge>}
         <span className="text-slate-500">{row.points} poin</span>
         {row.text_direction === 'rtl' && <Badge color="amber">RTL</Badge>}
         {!row.errors.length && <Badge color="green">Siap</Badge>}
       </div>
       <QuestionBody question={question} imageNames={row.images} />
-      {row.kind === 'choice' && (
-        <ul dir={row.text_direction} className="mt-2 space-y-1 text-sm">
-          {row.choices.map((_, i) => (
-            <li
-              key={i}
-              className={`flex items-center gap-2 rounded px-2 py-1 ${
-                i === row.correct_choice ? 'bg-brand-50 text-brand-800' : 'text-slate-700'
-              }`}
-            >
-              <span className="font-semibold">{choiceLetter(i)}.</span>
-              <ChoiceContent question={question} index={i} imageName={row.images.choices[i]} />
-              {i === row.correct_choice && <Check className="size-4" aria-label="kunci" />}
-            </li>
-          ))}
-        </ul>
+      {row.kind !== 'essay' && (
+        <div className="mt-2">
+          <AnswerReview question={question} imageNames={row.images} />
+        </div>
       )}
       {row.errors.length > 0 && (
         <ul className="mt-2 list-disc pl-5 text-xs text-red-700">

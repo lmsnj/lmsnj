@@ -1,9 +1,10 @@
-import { ArrowDown, ArrowUp, Check, FileUp, Lock } from 'lucide-react'
+import { ArrowDown, ArrowUp, FileUp, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { assessmentsApi, questionsApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
-import { ChoiceContent, QuestionBody } from '../../components/QuestionContent'
+import AnswerReview from '../../components/AnswerReview'
+import { QuestionBody } from '../../components/QuestionContent'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import DataTable from '../../components/DataTable'
@@ -13,7 +14,7 @@ import PageHeader from '../../components/PageHeader'
 import Spinner from '../../components/Spinner'
 import useFetch from '../../hooks/useFetch'
 import { useTabs } from '../../hooks/useTabs'
-import { attemptStatus, choiceLetter, QUESTION_KINDS } from '../../utils/assessments'
+import { attemptStatus, KIND_COLORS, QUESTION_KINDS } from '../../utils/assessments'
 import { getErrorMessage, getFieldErrors } from '../../utils/errors'
 import { formatDate } from '../../utils/media'
 import { formatScore } from '../../utils/tasks'
@@ -65,10 +66,16 @@ function QuestionsTab({ assessment, onChanged }) {
       ) : (
         <div className="mb-4 flex flex-wrap gap-2">
           <Button onClick={() => setDialog({ type: 'form', kind: 'choice' })}>
-            + Soal Pilihan Ganda
+            + Pilihan Ganda
+          </Button>
+          <Button variant="secondary" onClick={() => setDialog({ type: 'form', kind: 'multiple' })}>
+            + PG Kompleks
+          </Button>
+          <Button variant="secondary" onClick={() => setDialog({ type: 'form', kind: 'category' })}>
+            + Kategori (Benar/Salah)
           </Button>
           <Button variant="secondary" onClick={() => setDialog({ type: 'form', kind: 'essay' })}>
-            + Soal Esai
+            + Esai
           </Button>
           <Button variant="secondary" onClick={() => setDialog({ type: 'import' })}>
             <FileUp className="size-4" aria-hidden="true" /> Impor Soal (Word / Excel)
@@ -85,7 +92,9 @@ function QuestionsTab({ assessment, onChanged }) {
           <Spinner />
         </div>
       ) : list.length === 0 ? (
-        <EmptyState title="Belum ada soal">Tambahkan soal pilihan ganda atau esai.</EmptyState>
+        <EmptyState title="Belum ada soal">
+          Tambahkan soal pilihan ganda, PG kompleks, kategori, atau esai.
+        </EmptyState>
       ) : (
         <ol className="space-y-3">
           {list.map((q, index) => (
@@ -93,9 +102,8 @@ function QuestionsTab({ assessment, onChanged }) {
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-bold text-slate-900">{index + 1}.</span>
-                  <Badge color={q.kind === 'choice' ? 'blue' : 'gray'}>
-                    {QUESTION_KINDS[q.kind]}
-                  </Badge>
+                  <Badge color={KIND_COLORS[q.kind]}>{QUESTION_KINDS[q.kind]}</Badge>
+                  {q.group && <Badge color="gray">Grup {q.group}</Badge>}
                   <span className="text-xs text-slate-500">{q.points} poin</span>
                 </div>
                 {!locked && (
@@ -139,24 +147,10 @@ function QuestionsTab({ assessment, onChanged }) {
               <div className="mt-2 text-slate-800">
                 <QuestionBody question={q} />
               </div>
-              {q.kind === 'choice' && (
-                <ul className="mt-2 space-y-1 text-sm">
-                  {q.choices.map((choice, i) => (
-                    <li
-                      key={i}
-                      className={`flex items-center gap-2 rounded-lg px-3 py-1 ${
-                        i === q.correct_choice
-                          ? 'bg-brand-50 font-medium text-brand-800'
-                          : 'text-slate-600'
-                      }`}
-                    >
-                      <span>{choiceLetter(i)}.</span> <ChoiceContent question={q} index={i} />
-                      {i === q.correct_choice && (
-                        <Check className="size-4" aria-label="jawaban benar" />
-                      )}
-                    </li>
-                  ))}
-                </ul>
+              {q.kind !== 'essay' && (
+                <div className="mt-2">
+                  <AnswerReview question={q} />
+                </div>
               )}
             </li>
           ))}

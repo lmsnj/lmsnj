@@ -4,6 +4,9 @@
 - Teks Arab berharakat disimpan apa adanya (tidak dinormalisasi). Hanya karakter kontrol arah
   yang tidak terlihat (sering terbawa dari Word) yang dibuang.
 - Gambar stimulus/soal/pilihan ditulis sebagai NAMA FILE, dan filenya diunggah dalam satu ZIP.
+- Jenis soal: pg, pg kompleks (kunci lebih dari satu, mis. "A, C"), kategori (setiap pernyataan
+  dijawab Benar/Salah, kunci mis. "B, S, B"), dan esai. Kolom Grup = soal dengan stimulus bersama.
+- Tabel ditulis dengan garis tegak: | Kolom 1 | Kolom 2 | (lihat utils/richText.js di frontend).
 - Setiap soal diperiksa dengan QuestionSerializer (aturan yang sama dengan form tambah soal).
   Impor hanya dijalankan jika SEMUA soal benar.
 """
@@ -23,7 +26,8 @@ SHEET = "Soal"
 LETTERS = "ABCDE"
 
 COLUMNS = [
-    Column("kind", "Jenis", required=True, width=10, choices=["pg", "esai"]),
+    Column("kind", "Jenis", required=True, width=12, choices=["pg", "pg kompleks", "kategori", "esai"]),
+    Column("group", "Grup", width=8, text=True),
     Column("stimulus", "Stimulus", width=36, text=True),
     Column("stimulus_image", "Gambar Stimulus", width=18, text=True),
     Column("text", "Pertanyaan", required=True, width=50, text=True),
@@ -32,13 +36,18 @@ COLUMNS = [
     Column("points", "Poin", width=8),
     *[Column(f"choice_{letter}", f"Pilihan {letter}", width=26, text=True) for letter in LETTERS],
     *[Column(f"image_{letter}", f"Gambar {letter}", width=14, text=True) for letter in LETTERS],
-    Column("key", "Kunci", width=8, choices=list(LETTERS)),
+    Column("key", "Kunci", width=12, text=True),
+    Column("labels", "Label Kategori", width=18, text=True),
 ]
 
 KIND_ALIASES = {
     "pg": QuestionKind.CHOICE, "pilihan ganda": QuestionKind.CHOICE, "pilihan": QuestionKind.CHOICE,
-    "choice": QuestionKind.CHOICE, "esai": QuestionKind.ESSAY, "essay": QuestionKind.ESSAY,
-    "uraian": QuestionKind.ESSAY,
+    "choice": QuestionKind.CHOICE,
+    "pg kompleks": QuestionKind.MULTIPLE, "pgk": QuestionKind.MULTIPLE, "mcma": QuestionKind.MULTIPLE,
+    "pilihan ganda kompleks": QuestionKind.MULTIPLE, "multiple": QuestionKind.MULTIPLE,
+    "kategori": QuestionKind.CATEGORY, "benar salah": QuestionKind.CATEGORY,
+    "benar/salah": QuestionKind.CATEGORY, "category": QuestionKind.CATEGORY,
+    "esai": QuestionKind.ESSAY, "essay": QuestionKind.ESSAY, "uraian": QuestionKind.ESSAY,
 }  # fmt: skip
 DIRECTION_ALIASES = {
     "": TextDirection.AUTO, "otomatis": TextDirection.AUTO, "auto": TextDirection.AUTO,
@@ -46,9 +55,11 @@ DIRECTION_ALIASES = {
 }  # fmt: skip
 # Kunci boleh huruf Latin (A-E), huruf Arab (أ ب ج د هـ), atau angka 1-5.
 ARABIC_LETTER_INDEX = {"أ": 0, "ا": 0, "ب": 1, "ج": 2, "د": 3, "هـ": 4, "ه": 4}
+DEFAULT_LABELS = ["Benar", "Salah"]
 FIELD_LABELS = {
-    "text": "Pertanyaan", "choices": "Pilihan", "correct_choice": "Kunci", "points": "Poin",
-    "kind": "Jenis", "text_direction": "Arah teks", "stimulus": "Stimulus",
+    "text": "Pertanyaan", "choices": "Pilihan", "correct_choice": "Kunci", "correct_choices": "Kunci",
+    "points": "Poin", "kind": "Jenis", "text_direction": "Arah teks", "stimulus": "Stimulus",
+    "category_labels": "Label kategori", "group": "Grup",
 }  # fmt: skip
 
 # Karakter kontrol arah yang TIDAK terlihat (LRM, RLM, embedding, override, isolate) dan BOM.
@@ -62,11 +73,19 @@ NBSP = chr(0xA0)
 QUESTION_RE = re.compile(r"^\s*([0-9٠-٩]+)\s*[.)]\s*(.*)$")
 OPTION_RE = re.compile(r"^\s*(\*)?\s*\(?\s*([A-Ea-e]|هـ|[أابجده])\s*[.)]\s*(.*)$")
 META_RE = re.compile(
-    r"^\s*(kunci|jawaban|poin|nilai|arah(?: teks)?|jenis|stimulus|gambar stimulus|gambar soal|gambar)\s*:\s*(.*)$",
+    r"^\s*(kunci|jawaban|poin|nilai|arah(?: teks)?|jenis|grup|label(?: kategori)?|stimulus|gambar stimulus"
+    r"|gambar soal|gambar)\s*:\s*(.*)$",
     re.IGNORECASE,
 )
 INLINE_IMAGE_RE = re.compile(r"\s*\[gambar\s*:\s*([^\]]+)\]\s*$", re.IGNORECASE)
-ESSAY_TAG_RE = re.compile(r"^\s*\[(esai|essay|uraian)\]\s*", re.IGNORECASE)
+# Penanda jenis setelah nomor soal, mis. "3. [pg kompleks] Pilih ..." atau "4. [kategori] ...".
+KIND_TAG_RE = re.compile(
+    r"^\s*\[(esai|essay|uraian|pg kompleks|pgk|mcma|kategori|benar salah|benar/salah)\]\s*", re.IGNORECASE
+)
+# Pemisah kunci PG kompleks: "A, C" / "A;C" / "A C". Kategori: "B, S, B" atau "Benar; Salah".
+KEY_SPLIT_RE = re.compile(r"[\s,;/]+")
+CATEGORY_KEY_SPLIT_RE = re.compile(r"\s*[,;]\s*")
+LABEL_SPLIT_RE = re.compile(r"\s*[/;|]\s*")
 
 
 def clean(text):
@@ -86,6 +105,21 @@ def key_index(value):
     return int(digits) - 1 if digits.isdigit() and int(digits) >= 1 else -1
 
 
+def category_index(token, labels):
+    """Jawaban satu pernyataan kategori -> indeks label: 'Benar' / 'B' / '1' -> 0, 'Salah' / 'S' / '2' -> 1.
+    Mengikuti label soal (mis. 'Sesuai' / 'S', 'Tidak sesuai' / 'T'). -1 jika tidak dikenali."""
+    value = token.strip().rstrip(".").lower()
+    lowered = [label.lower() for label in labels]
+    if value in lowered:
+        return lowered.index(value)
+    initials = [label[:1] for label in lowered]
+    if len(set(initials)) == len(initials) and value in initials:
+        return initials.index(value)
+    if value in ("1", "2"):
+        return int(value) - 1
+    return {"benar": 0, "b": 0, "ya": 0, "salah": 1, "s": 1, "tidak": 1}.get(value, -1)
+
+
 def empty_images():
     return {"stimulus": "", "question": "", "choices": {}}
 
@@ -95,13 +129,17 @@ def normalize_item(label, raw):
     errors = list(raw.get("errors", []))
     kind_text = clean(raw.get("kind", "")).strip().lower()
     choices = [clean(c).strip() for c in raw.get("choices", [])]
+    starred = list(raw.get("starred") or [])
     if kind_text:
         kind = KIND_ALIASES.get(kind_text)
         if kind is None:
-            errors.append("Jenis harus 'pg' (pilihan ganda) atau 'esai'.")
+            errors.append("Jenis harus 'pg', 'pg kompleks', 'kategori', atau 'esai'.")
             kind = QuestionKind.CHOICE
+    elif not choices:
+        kind = QuestionKind.ESSAY
     else:
-        kind = QuestionKind.CHOICE if choices else QuestionKind.ESSAY
+        # Lebih dari satu pilihan bertanda * = PG kompleks.
+        kind = QuestionKind.MULTIPLE if len(starred) > 1 else QuestionKind.CHOICE
 
     direction = DIRECTION_ALIASES.get(clean(raw.get("direction", "")).strip().lower())
     if direction is None:
@@ -112,25 +150,49 @@ def normalize_item(label, raw):
     if points_text:
         points = int(points_text) if points_text.isdigit() else points_text
     else:
-        points = 1 if kind == QuestionKind.CHOICE else 5
+        points = 5 if kind == QuestionKind.ESSAY else 1
 
-    correct = raw.get("starred")
-    if raw.get("key"):
-        correct = key_index(raw["key"])
-    if kind == QuestionKind.CHOICE and correct is not None and not 0 <= correct < len(choices):
-        errors.append(f"Kunci '{clean(raw.get('key'))}' tidak cocok dengan pilihan yang ada.")
-        correct = None
+    key_text = clean(raw.get("key", "")).strip()
+    correct, correct_list, labels = None, [], []
+    if kind == QuestionKind.CHOICE:
+        correct = key_index(key_text) if key_text else (starred[0] if starred else None)
+        if correct is not None and not 0 <= correct < len(choices):
+            errors.append(f"Kunci '{key_text}' tidak cocok dengan pilihan yang ada.")
+            correct = None
+    elif kind == QuestionKind.MULTIPLE:
+        if key_text:
+            correct_list = [key_index(token) for token in KEY_SPLIT_RE.split(key_text) if token]
+        else:
+            correct_list = starred
+        if any(i is None or not 0 <= i < len(choices) for i in correct_list):
+            errors.append(f"Kunci '{key_text}' tidak cocok dengan pilihan yang ada (tulis mis. A, C).")
+            correct_list = []
+    elif kind == QuestionKind.CATEGORY:
+        labels = [
+            x for x in LABEL_SPLIT_RE.split(clean(raw.get("labels", "")).strip()) if x
+        ] or DEFAULT_LABELS
+        splitter = CATEGORY_KEY_SPLIT_RE if re.search(r"[,;]", key_text) else re.compile(r"\s+")
+        correct_list = [category_index(token, labels) for token in splitter.split(key_text) if token]
+        if -1 in correct_list or len(correct_list) != len(choices):
+            errors.append(
+                f"Kunci kategori harus berisi {len(choices)} jawaban (satu per pernyataan), "
+                f"mis. {', '.join(label[:1] for label in labels[:2])}."
+            )
+            correct_list = []
 
     return {
         "row": label,
         "data": {
             "kind": kind,
+            "group": clean(raw.get("group", "")).strip(),
             "stimulus": clean(raw.get("stimulus", "")).strip(),
             "text": clean(raw.get("text", "")).strip(),
             "text_direction": direction,
             "points": points,
-            "choices": choices if kind == QuestionKind.CHOICE else [],
-            "correct_choice": correct if kind == QuestionKind.CHOICE else None,
+            "choices": choices if kind != QuestionKind.ESSAY else [],
+            "correct_choice": correct,
+            "correct_choices": correct_list,
+            "category_labels": labels,
         },
         "images": raw.get("images") or empty_images(),
         "errors": errors,
@@ -174,6 +236,10 @@ def parse_text(text):
     Poin: 2
     Arah: rtl
     2. [esai] Jelaskan ...                  <- soal tanpa pilihan otomatis dianggap esai
+    3. [pg kompleks] Pilih ...              <- kunci lebih dari satu: "Kunci: A, C" atau *A. dan *C.
+    4. [kategori] Tentukan benar/salah ...  <- pilihan = pernyataan; "Kunci: B, S, B"
+    Label: Sesuai / Tidak sesuai            <- opsional (bawaan Benar / Salah)
+    Grup: G1                                <- soal dengan grup sama memakai stimulus bersama
     """
     items, current = [], None
     stimulus, stimulus_image, mode = [], "", None
@@ -195,8 +261,9 @@ def parse_text(text):
             body = question.group(2)
             current = {
                 "number": question.group(1).translate(ARABIC_DIGITS),
-                "text": ESSAY_TAG_RE.sub("", body),
-                "kind": "esai" if ESSAY_TAG_RE.match(body) else "",
+                "text": KIND_TAG_RE.sub("", body),
+                "kind": tag.group(1).lower() if (tag := KIND_TAG_RE.match(body)) else "",
+                "starred": [],
                 "stimulus": "\n".join(stimulus).strip(),
                 "choices": [],
                 "images": {**empty_images(), "stimulus": stimulus_image},
@@ -223,6 +290,10 @@ def parse_text(text):
                     current["direction"] = value
                 elif name == "jenis":
                     current["kind"] = value
+                elif name == "grup":
+                    current["group"] = value
+                elif name.startswith("label"):
+                    current["labels"] = value
                 else:  # gambar / gambar soal
                     current["images"]["question"] = value
                 mode = "meta"
@@ -243,7 +314,7 @@ def parse_text(text):
                 current["images"]["choices"][len(current["choices"])] = image.group(1).strip()
                 body = body[: image.start()]
             if option.group(1):
-                current["starred"] = len(current["choices"])
+                current["starred"].append(len(current["choices"]))
             current["choices"].append(body)
             mode = "option"
         elif mode == "option":
@@ -354,29 +425,70 @@ FORMULA_CHEATSHEET = [
 ]
 
 _BLANK_IMAGES = ["", "", "", "", ""]
+
+
+def example(kind, text, choices=(), key="", points="", group="", stimulus="", stimulus_image="",
+            direction="otomatis", labels=""):  # fmt: skip
+    """Satu baris contoh sesuai urutan COLUMNS."""
+    choices = [*choices, *[""] * (len(LETTERS) - len(choices))]
+    return [kind, group, stimulus, stimulus_image, text, "", direction, points, *choices, *_BLANK_IMAGES,
+            key, labels]  # fmt: skip
+
+
+EXAMPLE_TABLE = (
+    "Perhatikan tabel peserta ekstrakurikuler (*extracurricular*) berikut.\n\n"
+    "| Kegiatan | Kelas X | < |\n"
+    "| | Laki-laki | Perempuan |\n"
+    "|---|---|---|\n"
+    "| Pramuka | 6 | 4 |\n"
+    "| Robotik | 8 | 2 |"
+)
+EXAMPLE_READING = (
+    "Bacalah teks berikut untuk menjawab soal nomor 5 dan 6.\n\n"
+    "Setiap pagi para santri menyetor hafalan sebelum berangkat ke sekolah. Setelah pulang, mereka "
+    "mengikuti kegiatan praktik di laboratorium komputer."
+)
 EXAMPLES = [
-    ["pg", "", "", r"Nilai dari $\frac{1}{2} + \frac{1}{4}$ adalah ...", "", "otomatis", 2,
-     r"$\frac{3}{4}$", r"$\frac{2}{6}$", r"$\frac{1}{6}$", r"$\frac{2}{4}$", "", *_BLANK_IMAGES, "A"],
-    ["pg", "", "", r"Hasil dari $\int_{0}^{2} 3x^{2}\,dx$ adalah ...", "", "otomatis", 2,
-     "4", "6", "8", "12", "", *_BLANK_IMAGES, "C"],
-    ["esai", "", "", r"Tentukan nilai $x$ dan $y$ dari $$\begin{cases} x + y = 5 \\ x - y = 1 \end{cases}$$",
-     "", "otomatis", 5, "", "", "", "", "", *_BLANK_IMAGES, ""],
-    ["pg", "", "", "Arti kata «الْمَدْرَسَةُ» dalam bahasa Indonesia adalah ...", "", "otomatis", 1,
-     "Sekolah", "Masjid", "Rumah", "Pasar", "", *_BLANK_IMAGES, "A"],
-    ["pg", "اِقْرَأِ النَّصَّ التَّالِيَ: ذَهَبَ أَحْمَدُ إِلَى الْمَدْرَسَةِ صَبَاحًا.", "",
-     "إِلَى أَيْنَ ذَهَبَ أَحْمَدُ؟", "", "rtl", 1,
-     "إِلَى الْمَدْرَسَةِ", "إِلَى السُّوْقِ", "إِلَى الْبَيْتِ", "إِلَى الْمَسْجِدِ", "", *_BLANK_IMAGES, "A"],
-    ["pg", "Perhatikan gambar rangkaian listrik berikut.", "rangkaian1.png",
-     r"Jika $R_{1} = 4\,\Omega$ dan $R_{2} = 6\,\Omega$ disusun seri, hambatan totalnya adalah ...",
-     "", "otomatis", 2, r"$10\,\Omega$", r"$2{,}4\,\Omega$", r"$24\,\Omega$", r"$2\,\Omega$", "",
-     *_BLANK_IMAGES, "A"],
+    example("pg", r"Nilai dari $\frac{1}{2} + \frac{1}{4}$ adalah ...",
+            [r"$\frac{3}{4}$", r"$\frac{2}{6}$", r"$\frac{1}{6}$", r"$\frac{2}{4}$"], "A", 2),
+    example("pg", "Bagian siswa kelas X yang mengikuti Pramuka adalah ...",
+            [r"$\frac{1}{2}$", r"$\frac{1}{4}$", r"$\frac{2}{5}$", r"$\frac{3}{10}$"], "A", 2,
+            stimulus=EXAMPLE_TABLE),
+    example("pg kompleks", r"Bilangan yang nilainya sama dengan $\frac{1}{2}$ adalah ...",
+            [r"$\frac{2}{4}$", r"$0{,}5$", r"$50\%$", r"$\frac{3}{5}$"], "A, B, C", 2),
+    example("kategori", "Tentukan benar atau salah setiap pernyataan tentang HTML berikut.",
+            ["Tag <br> tidak memerlukan tag penutup.", "Atribut href dipakai untuk alamat gambar pada <img>.",
+             "Tag <h1> menghasilkan judul paling besar."], "B, S, B", 3, labels="Benar / Salah"),
+    example("pg", "Kegiatan santri setelah pulang sekolah adalah ...",
+            ["Menyetor hafalan", "Praktik di laboratorium komputer", "Berangkat ke sekolah"], "B",
+            group="G1", stimulus=EXAMPLE_READING),
+    example("kategori", "Tentukan kesesuaian pernyataan berikut dengan teks.",
+            ["Santri menyetor hafalan pada pagi hari.", "Praktik dilakukan sebelum berangkat sekolah."],
+            "S, T", 2, group="G1", labels="Sesuai / Tidak sesuai"),
+    example("esai", r"Tentukan nilai $x$ dan $y$ dari $$\begin{cases} x + y = 5 \\ x - y = 1 \end{cases}$$",
+            points=5),
+    example("pg", "Arti kata «الْمَدْرَسَةُ» dalam bahasa Indonesia adalah ...",
+            ["Sekolah", "Masjid", "Rumah", "Pasar"], "A"),
+    example("pg", "إِلَى أَيْنَ ذَهَبَ أَحْمَدُ؟",
+            ["إِلَى الْمَدْرَسَةِ", "إِلَى السُّوْقِ", "إِلَى الْبَيْتِ", "إِلَى الْمَسْجِدِ"], "A",
+            stimulus="اِقْرَأِ النَّصَّ التَّالِيَ: ذَهَبَ أَحْمَدُ إِلَى الْمَدْرَسَةِ صَبَاحًا.", direction="rtl"),
+    example("pg", r"Jika $R_{1} = 4\,\Omega$ dan $R_{2} = 6\,\Omega$ disusun seri, hambatan totalnya adalah ...",
+            [r"$10\,\Omega$", r"$2{,}4\,\Omega$", r"$24\,\Omega$", r"$2\,\Omega$"], "A", 2,
+            stimulus="Perhatikan gambar rangkaian listrik berikut.", stimulus_image="rangkaian1.png"),
 ]  # fmt: skip
 
 GUIDE = [
-    "Jenis*    : pg (pilihan ganda) atau esai. Pertanyaan* wajib diisi.",
-    "Stimulus  : bacaan/keterangan sebelum pertanyaan (opsional).",
-    "Pilihan   : isi Pilihan A-E seperlunya (minimal 2 untuk pg). Kunci: A-E.",
-    "Poin      : kosong = 1 (pg) atau 5 (esai).",
+    "Jenis*    : pg (pilihan ganda), pg kompleks (jawaban benar lebih dari satu), kategori, atau esai.",
+    "Pertanyaan* wajib diisi. Poin: kosong = 1 (pg/pg kompleks/kategori) atau 5 (esai).",
+    "Stimulus  : bacaan/keterangan/tabel sebelum pertanyaan (opsional).",
+    "Pilihan   : isi Pilihan A-E seperlunya (minimal 2). Kunci pg: A-E. Kunci pg kompleks: mis. A, C.",
+    "KATEGORI  : Pilihan A-E = pernyataan. Kunci = jawaban tiap pernyataan, mis. B, S, B (Benar, Salah, Benar).",
+    "            Label Kategori: kosong = Benar / Salah; bisa diganti mis. Sesuai / Tidak sesuai (kunci: S, T).",
+    "GRUP      : soal dengan kode Grup yang sama (mis. G1) memakai stimulus bersama.",
+    "            Isi stimulus hanya di soal PERTAMA grup itu; soal berikutnya kosongkan stimulusnya.",
+    "TABEL     : tulis tiap baris dengan garis tegak, mis. | Nama | Nilai |  lalu baris |---|---| di bawah judul.",
+    "            Baris sebelum |---| = judul tabel; sel berisi < = gabung dengan sel di kirinya. Alt+Enter = baris baru di sel.",
+    "MIRING    : *istilah asing* (satu bintang) = huruf miring; **teks** = tebal.",
     "RUMUS     : tulis LaTeX di antara $...$ (dalam kalimat) atau $$...$$ (baris sendiri). Lihat lembar 'Contekan Rumus'.",
     "ARAB      : ketik/salin teks Arab berharakat langsung. Arah Teks 'rtl' untuk soal berbahasa Arab; 'otomatis' untuk campuran.",
     "GAMBAR    : isi kolom Gambar Stimulus / Gambar Soal / Gambar A-E dengan NAMA FILE (mis. grafik1.png),",

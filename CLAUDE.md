@@ -230,9 +230,18 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   (`QuestionImage`: stimulus/question/choice) hanya lewat `/api/assessment-images/{id}/` — siswa
   baru bisa melihatnya setelah mulai mengerjakan; tampilkan dengan `AuthImage`. PNG/JPG/GIF/WEBP
   saja (SVG ditolak), dicek dari isi file. File gambar dihapus lewat sinyal `post_delete`.
+  Format tambahan (`utils/richText.js` → `parseBlocks`, `parseEmphasis`): baris kosong = paragraf
+  baru; `*miring*`, `**tebal**`; tabel dengan garis tegak `| a | b |` — baris sebelum `|---|` =
+  judul (baris pertama merah marun serif, berikutnya sub-judul merah muda), sel `<` = gabung dengan
+  sel kiri (colspan), `\|` = garis tegak biasa. Format ini hanya dibaca di frontend; backend
+  menyimpan teks apa adanya.
 - **Impor soal** (`apps/assessments/question_import.py`): Excel (lembar Soal + Contekan Rumus) atau
   teks tempel dari Word, plus ZIP gambar (nama file dicocokkan tanpa folder & huruf besar). Setiap
-  soal divalidasi `QuestionSerializer` (sama dengan form). Semua-atau-tidak-sama-sekali.
+  soal divalidasi `QuestionSerializer` (sama dengan form). Semua-atau-tidak-sama-sekali. Kolom Jenis:
+  pg / pg kompleks / kategori / esai; Kunci PG kompleks "A, C", kategori "B, S, B" (mengikuti huruf
+  awal label); kolom Grup & Label Kategori. Semua contoh di template harus lolos impor (ada test).
+- **Data demo:** `seed_demo` juga membuat ujian contoh "Simulasi TKA" (isi di
+  `apps/common/management/commands/_demo_exam.py`) berisi semua bentuk soal.
 - **Impor data admin** (`apps/academics/imports.py`): mapel, kelas, pengampu — helper bersama di
   `apps/common/excel.py` (`Column`, `build_template`, `read_rows`, `import_response`).
 - Editor rumus visual MathLive dimuat lazy (`MathFieldDialog`); font-nya dari `mathlive/fonts.css`
@@ -246,11 +255,28 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   sejalan — ada test yang memeriksa semua pasangan). Siswa–siswa tidak boleh. Pesan baru dicek
   berkala (polling 4 detik saat percakapan terbuka, 30 detik untuk badge), bukan WebSocket.
   Kirim pesan dibatasi 30/menit.
-- **Lembar asesmen:** soal terkunci setelah ada `Attempt`; kunci jawaban (`correct_choice`) hanya
-  lewat `QuestionSerializer` (guru) — siswa memakai `StudentQuestionSerializer` dan `answer_sheet`
-  membuka kunci hanya setelah tenggat jika `show_answers`. Batas waktu = mulai + durasi (maks.
-  tenggat); lewat batas tetap disimpan tapi `is_late`. Pilihan ganda dinilai otomatis, esai kosong
-  = 0, esai berisi dinilai guru; `Attempt.score` terisi setelah semua jawaban dinilai.
+- **Lembar asesmen:** soal terkunci setelah ada `Attempt`; kunci jawaban (`correct_choice`,
+  `correct_choices`) hanya lewat `QuestionSerializer` (guru) — siswa memakai
+  `StudentQuestionSerializer` dan `answer_sheet` membuka kunci hanya setelah tenggat jika
+  `show_answers` (`key_revealed`). Batas waktu = mulai + durasi (maks. tenggat); lewat batas tetap
+  disimpan tapi `is_late`. Esai kosong = 0, esai berisi dinilai guru; `Attempt.score` terisi setelah
+  semua jawaban dinilai.
+- **Jenis soal** (`QuestionKind`): `choice` (PG, `correct_choice`), `multiple` (PG kompleks/MCMA,
+  `correct_choices` minimal 2), `category` (pilihan = pernyataan, `category_labels` 2 label mis.
+  Benar/Salah, `correct_choices` = indeks label per pernyataan), `essay`. Jawaban PG kompleks &
+  kategori disimpan di `Answer.choices`. Penilaian otomatis (`services.auto_points`): poin penuh
+  hanya jika jawaban tepat sama dengan kunci, selain itu 0 (tidak ada nilai sebagian).
+  **Soal grup:** `Question.group` sama = stimulus bersama dari soal pertama grup yang punya
+  stimulus (`utils/exam.js::sharedStimuli`, grup minimal 2 soal).
+- **Tampilan mengerjakan soal** (`pages/siswa/TakeAssessment.jsx`, gaya simulasi TKA): header tipis
+  (judul, nama siswa, ukuran huruf A-/A/A+, timer — merah < 5 menit), sidebar "Nomor Soal" (grid 5
+  kolom; abu = belum, putih+oranye = aktif, hijau = terjawab, kuning+ikon bendera = ragu-ragu), satu
+  soal per layar, kotak "Petunjuk Pengerjaan" otomatis per jenis soal (`instructionFor`), navigasi
+  bawah Sebelumnya / Ragu-ragu / Berikutnya (soal terakhir: Selesai). Soal grup: stimulus di panel
+  kiri yang bisa digulir (layar lebar). Di HP sidebar diganti tombol melayang "Nomor Soal".
+  Pintasan: panah kiri/kanan pindah soal, A-E memilih opsi PG sederhana. Tanda ragu-ragu ikut
+  disimpan di `draft_answers` (`flagged`), tidak memengaruhi nilai. Logika murni ada di
+  `utils/exam.js` (ada test-nya); tampilan kunci/jawaban memakai `components/AnswerReview.jsx`.
 - **Pengawasan ujian (asesmen):** website tidak bisa melarang pindah tab/aplikasi; yang dilakukan:
   mode ujian menutupi aplikasi, `useBlocker` menahan navigasi (butuh *data router* — itulah
   sebabnya `App.jsx` memakai `createBrowserRouter`), `beforeunload` meminta konfirmasi, dan

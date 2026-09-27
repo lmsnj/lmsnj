@@ -12,7 +12,8 @@ from apps.common.files import RandomUploadPath, delete_file
 
 
 class Assessment(models.Model):
-    """Lembar asesmen (kuis online): soal pilihan ganda (dinilai otomatis) dan esai (dinilai guru)."""
+    """Lembar asesmen (kuis online): pilihan ganda, PG kompleks, dan kategori (dinilai otomatis),
+    serta esai (dinilai guru)."""
 
     teaching_assignment = models.ForeignKey(
         TeachingAssignment, verbose_name="kelas-mapel", on_delete=models.PROTECT, related_name="assessments"
@@ -57,7 +58,15 @@ class Assessment(models.Model):
 
 class QuestionKind(models.TextChoices):
     CHOICE = "choice", "Pilihan ganda"
+    # PG kompleks MCMA: jawaban benar lebih dari satu.
+    MULTIPLE = "multiple", "PG kompleks"
+    # PG kompleks kategori: setiap pernyataan dijawab Benar/Salah (label bisa diganti guru).
+    CATEGORY = "category", "Kategori (Benar/Salah)"
     ESSAY = "essay", "Esai"
+
+
+# Jenis soal yang dinilai otomatis dengan kunci jawaban.
+AUTO_GRADED_KINDS = (QuestionKind.CHOICE, QuestionKind.MULTIPLE, QuestionKind.CATEGORY)
 
 
 class TextDirection(models.TextChoices):
@@ -73,8 +82,11 @@ class Question(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="questions")
     order = models.PositiveIntegerField("urutan", default=0)
     kind = models.CharField("jenis", max_length=10, choices=QuestionKind.choices, default=QuestionKind.CHOICE)
-    # Bacaan/konteks sebelum pertanyaan (opsional), mis. teks bacaan atau keterangan grafik.
+    # Bacaan/konteks sebelum pertanyaan (opsional), mis. teks bacaan, tabel, atau keterangan grafik.
     stimulus = models.TextField("stimulus", blank=True)
+    # Soal grup: soal dengan kode grup yang sama memakai stimulus bersama, yaitu stimulus soal
+    # pertama di grup itu (soal lain di grup boleh tanpa stimulus).
+    group = models.CharField("grup stimulus", max_length=30, blank=True)
     text = models.TextField("pertanyaan")
     text_direction = models.CharField(
         "arah teks", max_length=4, choices=TextDirection.choices, default=TextDirection.AUTO
@@ -82,9 +94,15 @@ class Question(models.Model):
     points = models.PositiveSmallIntegerField(
         "poin", default=1, validators=[MinValueValidator(1), MaxValueValidator(100)]
     )
-    # Pilihan ganda: daftar teks pilihan, dan indeks (mulai 0) jawaban yang benar.
+    # Pilihan ganda & PG kompleks: daftar teks pilihan. Kategori: daftar pernyataan.
     choices = models.JSONField("pilihan", default=list, blank=True)
+    # Pilihan ganda: indeks (mulai 0) jawaban yang benar.
     correct_choice = models.PositiveSmallIntegerField("jawaban benar", null=True, blank=True)
+    # PG kompleks: indeks semua pilihan yang benar, mis. [0, 2].
+    # Kategori: untuk setiap pernyataan, indeks label yang benar (0 = label pertama), mis. [0, 1, 0].
+    correct_choices = models.JSONField("jawaban benar (PG kompleks/kategori)", default=list, blank=True)
+    # Kategori: dua label jawaban, mis. ["Benar", "Salah"] atau ["Sesuai", "Tidak sesuai"].
+    category_labels = models.JSONField("label kategori", default=list, blank=True)
 
     class Meta:
         verbose_name = "soal"
@@ -93,6 +111,16 @@ class Question(models.Model):
 
     def __str__(self):
         return self.text[:50]
+
+    @property
+    def has_answer_key(self):
+        if self.kind == QuestionKind.CHOICE:
+            return self.correct_choice is not None
+        if self.kind == QuestionKind.MULTIPLE:
+            return bool(self.correct_choices)
+        if self.kind == QuestionKind.CATEGORY:
+            return bool(self.choices) and len(self.correct_choices) == len(self.choices)
+        return True
 
 
 class Attempt(models.Model):
@@ -135,6 +163,8 @@ class Answer(models.Model):
     attempt = models.ForeignKey(Attempt, on_delete=models.CASCADE, related_name="answers")
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")
     choice = models.PositiveSmallIntegerField("pilihan", null=True, blank=True)
+    # PG kompleks: indeks pilihan yang dicentang. Kategori: indeks label per pernyataan (None = kosong).
+    choices = models.JSONField("pilihan (PG kompleks/kategori)", default=list, blank=True)
     text = models.TextField("jawaban", blank=True)
     # Kosong = belum dinilai (hanya terjadi pada esai yang diisi siswa).
     points = models.DecimalField("poin", max_digits=6, decimal_places=2, null=True, blank=True)
