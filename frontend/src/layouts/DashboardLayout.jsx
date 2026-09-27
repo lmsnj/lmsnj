@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import ErrorBoundary from '../components/ErrorBoundary'
 import useAuth from '../hooks/useAuth'
 import { NAV_ITEMS, ROLE_LABELS } from '../utils/constants'
 
@@ -12,6 +13,7 @@ function navClass({ isActive }) {
 export default function DashboardLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const items = [...NAV_ITEMS[user.role], { to: '/profil', label: 'Profil Saya' }]
@@ -68,15 +70,18 @@ export default function DashboardLayout() {
               <path d="M3 5h14v2H3zM3 9h14v2H3zM3 13h14v2H3z" />
             </svg>
           </button>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-sm font-medium text-slate-900">{user.full_name}</p>
+          <span className="ml-2 font-bold text-brand-700 lg:hidden">LMS SMKNJ</span>
+          <div className="ml-auto flex min-w-0 items-center gap-3">
+            <div className="min-w-0 text-right">
+              <p className="max-w-[40vw] truncate text-sm font-medium text-slate-900 sm:max-w-xs">
+                {user.full_name}
+              </p>
               <p className="text-xs text-slate-500">{ROLE_LABELS[user.role]}</p>
             </div>
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-lg px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50"
+              className="shrink-0 rounded-lg px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50"
             >
               Keluar
             </button>
@@ -84,7 +89,10 @@ export default function DashboardLayout() {
         </header>
 
         <main className="mx-auto max-w-6xl p-4 sm:p-6">
-          <Outlet />
+          {/* key: error di satu halaman tidak terbawa saat pindah halaman. */}
+          <ErrorBoundary key={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

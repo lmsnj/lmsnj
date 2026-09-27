@@ -133,6 +133,13 @@ class ClassroomTests(AcademicsTestBase):
         res = self.client.post(url, {"student_ids": [self.teacher.id]}, format="json")
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_list_is_ordered_by_year_grade_name(self):
+        Classroom.objects.create(name="X RPL 1", grade="X", major="RPL", academic_year="2025/2026")
+        Classroom.objects.create(name="X TKJ 1", grade="X", major="TKJ", academic_year="2026/2027")
+        self.client.force_authenticate(self.admin)
+        names = [c["name"] for c in self.client.get(self.url).data["results"]]
+        self.assertEqual(names, ["X TKJ 1", "XI RPL 1", "XI TKJ 1", "X RPL 1"])
+
     def test_academic_years(self):
         Classroom.objects.create(name="X RPL 1", grade="X", major="RPL", academic_year="2025/2026")
         self.client.force_authenticate(self.admin)

@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -9,6 +10,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.common.files import validate_upload
 from apps.common.mixins import ProtectedDeleteMixin
 
 from .models import User
@@ -21,6 +23,9 @@ from .serializers import (
     UserSerializer,
     UserWriteSerializer,
 )
+from .user_import import build_template, create_users, read_rows, validate_rows
+
+XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 class LoginView(TokenObtainPairView):
@@ -70,8 +75,8 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     search_fields = ["username", "full_name", "email", "nis", "nip"]
     ordering_fields = ["full_name", "username", "date_joined", "last_login"]
     protected_message = (
-        "Guru ini masih mengampu mapel. Hapus data pengampunya terlebih dahulu, "
-        "atau nonaktifkan akunnya saja."
+        "Pengguna ini masih memiliki data terkait (mengampu mapel atau sudah mengumpulkan tugas). "
+        "Nonaktifkan akunnya saja agar datanya tetap tersimpan."
     )
 
     def get_serializer_class(self):
@@ -102,3 +107,57 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         user.set_password(serializer.validated_data["new_password"])
         user.save(update_fields=["password"])
         return Response({"detail": f"Password {user.full_name} berhasil direset."})
+
+    @action(detail=False, url_path="import-template")
+    def import_template(self, request):
+        """Template Excel untuk impor pengguna (dropdown kelas diisi dari data kelas terbaru)."""
+        response = HttpResponse(build_template(), content_type=XLSX_CONTENT_TYPE)
+        response["Content-Disposition"] = 'attachment; filename="Template Impor Pengguna.xlsx"'
+        return response
+
+    @action(detail=False, methods=["post"], url_path="import")
+    def import_users(self, request):
+        """Unggah file Excel. dry_run=true (bawaan): hanya diperiksa. dry_run=false: disimpan,
+        tetapi hanya jika SEMUA baris benar (semua atau tidak sama sekali)."""
+        file = request.FILES.get("file")
+        if file is None:
+            raise ValidationError({"file": "Pilih file Excel yang akan diimpor."})
+        try:
+            validate_upload(file, {".xlsx"})
+        except ValidationError as error:
+            # Beri nama field agar frontend tahu error ini milik isian file.
+            raise ValidationError({"file": error.detail})
+        results = validate_rows(read_rows(file))
+        invalid = [r for r in results if r["errors"]]
+        summary = {"total": len(results), "valid": len(results) - len(invalid), "invalid": len(invalid)}
+        preview = [
+            {
+                "row": r["row"],
+                "full_name": r["full_name"],
+                "username": r["username"],
+                "role": r["role"],
+                "nis": r["nis"],
+                "nip": r["nip"],
+                "classroom": r["classroom"].name if r["classroom"] else "",
+                "password_generated": not r["password"],
+                "errors": r["errors"],
+            }
+            for r in results
+        ]
+
+        dry_run = str(request.data.get("dry_run", "true")).lower() != "false"
+        if dry_run:
+            return Response({"imported": False, "summary": summary, "rows": preview})
+        if invalid:
+            return Response(
+                {
+                    "detail": f"{len(invalid)} baris masih salah. Perbaiki file lalu unggah ulang.",
+                    "summary": summary,
+                    "rows": preview,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        accounts = create_users(results)
+        return Response(
+            {"imported": True, "summary": summary, "accounts": accounts}, status=status.HTTP_201_CREATED
+        )

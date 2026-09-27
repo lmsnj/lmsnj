@@ -15,6 +15,7 @@ import useDebounce from '../../hooks/useDebounce'
 import useFetch from '../../hooks/useFetch'
 import { ALL, toOptions } from '../../utils/academic'
 import { ROLE_LABELS, ROLES } from '../../utils/constants'
+import ImportUsersModal from './ImportUsersModal'
 import ResetPasswordModal from './ResetPasswordModal'
 import UserFormModal from './UserFormModal'
 
@@ -39,7 +40,7 @@ export default function UsersPage() {
   const [filters, setFilters] = useState({ role: '', is_active: '', classroom: '', search: '' })
   const [page, setPage] = useState(1)
   const [notice, setNotice] = useState('')
-  // Modal yang sedang terbuka: { type: 'form' | 'reset' | 'delete', user }
+  // Modal yang sedang terbuka: { type: 'form' | 'reset' | 'delete' | 'import', user }
   const [dialog, setDialog] = useState(null)
 
   const search = useDebounce(filters.search)
@@ -141,7 +142,14 @@ export default function UsersPage() {
         title="Pengguna"
         description="Kelola akun admin, guru, dan siswa."
         actions={
-          <Button onClick={() => setDialog({ type: 'form', user: null })}>+ Tambah Pengguna</Button>
+          <>
+            <Button variant="secondary" onClick={() => setDialog({ type: 'import' })}>
+              Impor Excel
+            </Button>
+            <Button onClick={() => setDialog({ type: 'form', user: null })}>
+              + Tambah Pengguna
+            </Button>
+          </>
         }
       />
 
@@ -198,6 +206,16 @@ export default function UsersPage() {
           user={dialog.user}
           onClose={closeDialog}
           onSaved={handleSaved}
+        />
+      )}
+      {dialog?.type === 'import' && (
+        <ImportUsersModal
+          onClose={closeDialog}
+          onImported={(count) => {
+            // Modal tetap terbuka agar admin sempat mengunduh daftar password.
+            setNotice(`${count} pengguna berhasil diimpor dari Excel.`)
+            users.reload()
+          }}
         />
       )}
       {dialog?.type === 'reset' && (

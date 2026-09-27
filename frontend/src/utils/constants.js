@@ -36,3 +36,16 @@ export const NAV_ITEMS = {
 }
 
 export const PAGE_SIZE = 20
+
+// Batas ukuran upload; harus sama dengan MAX_UPLOAD_SIZE_MB di backend.
+export const MAX_UPLOAD_MB = 10
+
+export const MATERIAL_TYPES = {
+  pdf: { label: 'PDF', color: 'red' },
+  video: { label: 'Video', color: 'blue' },
+  link: { label: 'Link', color: 'gray' },
+}
+
+// Tipe file untuk lampiran tugas & jawaban siswa; harus sama dengan ALLOWED_TASK_EXTENSIONS di backend.
+export const TASK_FILE_ACCEPT =
+  '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z,.jpg,.jpeg,.png'

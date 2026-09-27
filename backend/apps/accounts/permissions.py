@@ -43,3 +43,24 @@ class IsAdminOrReadOnly(BasePermission):
         if not (user and user.is_authenticated):
             return False
         return request.method in SAFE_METHODS or user.role == Role.ADMIN
+
+
+class ContentPermission(BasePermission):
+    """Untuk konten kelas (materi, tugas).
+
+    Baca: semua user login (data dibatasi lewat get_queryset). Tambah/ubah: guru.
+    Hapus: guru atau admin. Guru hanya bisa menyentuh konten di kelas-mapel miliknya
+    karena queryset-nya sudah dibatasi.
+    """
+
+    message = "Anda tidak memiliki akses untuk mengubah data ini."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not (user and user.is_authenticated):
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        if request.method == "DELETE":
+            return user.role in (Role.TEACHER, Role.ADMIN)
+        return user.role == Role.TEACHER

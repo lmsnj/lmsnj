@@ -12,10 +12,13 @@ import LoginPage from '../pages/auth/LoginPage'
 import MyClassesPage from '../pages/guru/MyClassesPage'
 import TeacherClassPage from '../pages/guru/TeacherClassPage'
 import TeacherDashboard from '../pages/guru/TeacherDashboard'
+import TeacherTaskPage from '../pages/guru/TeacherTaskPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import ProfilePage from '../pages/ProfilePage'
 import MySubjectsPage from '../pages/siswa/MySubjectsPage'
 import StudentDashboard from '../pages/siswa/StudentDashboard'
+import StudentSubjectPage from '../pages/siswa/StudentSubjectPage'
+import StudentTaskPage from '../pages/siswa/StudentTaskPage'
 import { ROLE_HOME, ROLES } from '../utils/constants'
 import ProtectedRoute from './ProtectedRoute'
 
@@ -46,11 +49,14 @@ export default function AppRoutes() {
             <Route index element={<TeacherDashboard />} />
             <Route path="kelas" element={<MyClassesPage />} />
             <Route path="kelas/:id" element={<TeacherClassPage />} />
+            <Route path="tugas/:id" element={<TeacherTaskPage />} />
           </Route>
 
           <Route path="siswa" element={<ProtectedRoute roles={[ROLES.STUDENT]} />}>
             <Route index element={<StudentDashboard />} />
             <Route path="mapel" element={<MySubjectsPage />} />
+            <Route path="mapel/:id" element={<StudentSubjectPage />} />
+            <Route path="tugas/:id" element={<StudentTaskPage />} />
           </Route>
 
           <Route path="profil" element={<ProfilePage />} />

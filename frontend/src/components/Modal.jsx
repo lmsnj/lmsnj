@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 
-export default function Modal({ open, title, onClose, children, footer }) {
+const SIZES = { md: 'max-w-lg', lg: 'max-w-4xl' }
+
+export default function Modal({ open, title, onClose, children, footer, size = 'md' }) {
   useEffect(() => {
     if (!open) return
     const handleKey = (event) => event.key === 'Escape' && onClose()
@@ -17,7 +19,7 @@ export default function Modal({ open, title, onClose, children, footer }) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative flex max-h-[90vh] w-full max-w-lg flex-col rounded-xl bg-white shadow-xl"
+        className={`relative flex max-h-[90vh] w-full ${SIZES[size]} flex-col rounded-xl bg-white shadow-xl`}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-semibold text-slate-900">{title}</h2>

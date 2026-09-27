@@ -42,6 +42,7 @@ export default function MySubjectsPage() {
           {items.map((a) => (
             <SubjectCard
               key={a.id}
+              to={`/siswa/mapel/${a.id}`}
               title={a.subject_name}
               subtitle={`Guru: ${a.teacher_name}`}
               meta={a.subject_code}

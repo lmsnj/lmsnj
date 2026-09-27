@@ -8,7 +8,7 @@ from apps.accounts.models import Role, User
 from apps.accounts.permissions import IsAdmin, IsAdminOrReadOnly
 from apps.common.mixins import ProtectedDeleteMixin
 
-from .models import Classroom, Subject
+from .models import Classroom, Subject, TeachingAssignment
 from .selectors import classrooms_for, teaching_assignments_for
 from .serializers import (
     ClassroomSerializer,
@@ -34,6 +34,8 @@ class ClassroomViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             classrooms_for(self.request.user)
             .select_related("homeroom_teacher")
             .annotate(student_count=Count("students", distinct=True))
+            # Meta.ordering tidak berlaku pada query dengan annotate(Count), jadi ditulis ulang.
+            .order_by(*Classroom._meta.ordering)
         )
 
     @action(detail=False, url_path="academic-years", pagination_class=None)
@@ -85,8 +87,13 @@ class SubjectViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     protected_message = "Mapel ini masih diampu di beberapa kelas. Hapus data pengampunya terlebih dahulu."
 
 
-class TeachingAssignmentViewSet(viewsets.ModelViewSet):
+class TeachingAssignmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     """Admin: kelola pengampu. Guru: mapel yang ia ampu. Siswa: mapel di kelasnya."""
+
+    protected_message = (
+        "Pengampu ini sudah memiliki materi atau tugas. Jika gurunya berganti, "
+        "cukup ubah guru pada data pengampu ini."
+    )
 
     serializer_class = TeachingAssignmentSerializer
     permission_classes = [IsAdminOrReadOnly]
@@ -99,4 +106,5 @@ class TeachingAssignmentViewSet(viewsets.ModelViewSet):
             teaching_assignments_for(self.request.user)
             .select_related("teacher", "subject", "classroom")
             .annotate(student_count=Count("classroom__students", distinct=True))
+            .order_by(*TeachingAssignment._meta.ordering)
         )

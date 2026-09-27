@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
@@ -14,7 +12,10 @@ urlpatterns = [
     path("api/health/", health, name="health"),
     path("api/", include("apps.accounts.urls")),
     path("api/", include("apps.academics.urls")),
+    path("api/", include("apps.materials.urls")),
+    path("api/", include("apps.tasks.urls")),
+    path("api/", include("apps.dashboard.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Sengaja TIDAK menyajikan MEDIA_ROOT secara publik: file materi & tugas hanya boleh
+# diambil lewat endpoint download yang mengecek login dan hak akses.
