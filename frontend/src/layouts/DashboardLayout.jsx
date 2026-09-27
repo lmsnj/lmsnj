@@ -7,7 +7,8 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import Spinner from '../components/Spinner'
 import useAuth from '../hooks/useAuth'
 import useUnreadMessages from '../hooks/useUnreadMessages'
-import { ROLE_HOME, SCHOOL } from '../utils/constants'
+import useBranding from '../hooks/useBranding'
+import { ROLE_HOME } from '../utils/constants'
 import { LanguageMenu, NotificationBell, UserMenu } from './HeaderMenus'
 import { NAVIGATION } from './navigation'
 
@@ -110,6 +111,7 @@ function NavBar({ nav, badges }) {
 
 // Menu versi HP: panel dari kiri berisi semua item (termasuk "Lainnya").
 function MobileMenu({ nav, badges, onClose }) {
+  const { branding } = useBranding()
   const items = [...nav.main, ...nav.more]
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
@@ -121,7 +123,7 @@ function MobileMenu({ nav, badges, onClose }) {
         <div className="flex items-center justify-between border-b border-slate-100 p-4">
           <div className="flex items-center gap-2">
             <SchoolLogo className="size-9" />
-            <span className="font-bold text-slate-900">{SCHOOL.name}</span>
+            <span className="font-bold text-slate-900">{branding.school_name}</span>
           </div>
           <button
             type="button"
@@ -170,6 +172,7 @@ function MobileMenu({ nav, badges, onClose }) {
 
 export default function DashboardLayout() {
   const { user } = useAuth()
+  const { branding } = useBranding()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const nav = NAVIGATION[user.role]
@@ -195,10 +198,10 @@ export default function DashboardLayout() {
             <SchoolLogo className="size-10 shrink-0" />
             <span className="min-w-0">
               <span className="block truncate font-extrabold text-slate-900 sm:text-lg">
-                {SCHOOL.name}
+                {branding.school_name}
               </span>
               <span className="hidden truncate text-xs text-slate-500 sm:block">
-                {SCHOOL.slogan}
+                {branding.slogan}
               </span>
             </span>
           </Link>

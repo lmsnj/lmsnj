@@ -53,7 +53,8 @@ lms-smknj/
 │   │   ├── announcements/   # Pengumuman sekolah (admin) & kelas-mapel (guru)
 │   │   ├── schedule/        # Jadwal sesi mengajar (TeachingSession); bukan "sessions" (bentrok app Django)
 │   │   ├── chat/            # Ruang obrolan; rules.py = siapa boleh mengobrol dengan siapa
-│   │   └── assessments/     # Lembar asesmen (kuis); services.py = aturan mengerjakan & menilai
+│   │   ├── assessments/     # Lembar asesmen (kuis); services.py = aturan mengerjakan & menilai
+│   │   └── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
 │   └── media/               # File upload (tidak di-commit, TIDAK disajikan publik)
 └── frontend/
     ├── index.html
@@ -145,8 +146,11 @@ Pola yang wajib dipakai ulang:
 Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
 
 ### Identitas & gaya
-- Identitas sekolah sendiri: `SCHOOL` di `frontend/src/utils/constants.js` (nama, slogan) dan logo
-  placeholder `components/brand/SchoolLogo.jsx` (ganti dengan logo resmi, lihat komentar di file).
+- Identitas sekolah diatur admin di menu **Identitas Sekolah** (`/admin/identitas`): nama sekolah,
+  slogan, nama aplikasi (judul tab), dan logo. Disimpan di `SiteSettings` (satu baris, `load()`),
+  dimuat sekali oleh `context/BrandingProvider.jsx`; komponen membaca lewat `useBranding()` —
+  JANGAN menulis nama sekolah langsung di komponen. `SCHOOL` di `utils/constants.js` hanya nilai
+  bawaan. `SchoolLogo` menampilkan logo unggahan, atau logo placeholder bawaan jika belum ada.
   **Jangan** menyalin merek, logo, atau ilustrasi dari produk lain.
 - Warna utama hijau `brand-600` = `#1F8A4C` (palet `brand-50`–`brand-900` di `src/index.css`).
   Latar halaman `bg-surface` (abu-abu sangat muda). Jangan menulis kode warna hex langsung di
@@ -362,6 +366,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET    | `/api/assessments/question-template/` | Guru/admin: template Excel soal |
 | POST   | `/api/assessments/{id}/import-questions/` (`mode` excel/text, `file`/`text`, `images` ZIP, `dry_run`) | Guru pengampu |
 | GET/POST | `/api/{subjects,classrooms,teaching-assignments}/import-template/` dan `.../import/` | Admin |
+| GET/PATCH | `/api/branding/` (multipart `school_name`, `slogan`, `app_name`, `logo`, `remove_logo`) | GET publik (halaman login), PATCH admin |
+| GET    | `/api/branding/logo/` | Publik; alamat diberi `?v=` (cache lama aman) |
 | GET/PATCH | `/api/assessment-attempts/{id}/`, `.../grade/` | Guru pengampu (grade), admin (lihat) |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
 

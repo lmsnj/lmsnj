@@ -11,6 +11,7 @@ import ProtectedRoute from './ProtectedRoute'
 // untuk internet sekolah yang lambat. Tampilan "memuat" diatur oleh <Suspense> di layout.
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'))
 const AssignmentsPage = lazy(() => import('../pages/admin/AssignmentsPage'))
+const BrandingPage = lazy(() => import('../pages/admin/BrandingPage'))
 const ClassroomDetailPage = lazy(() => import('../pages/admin/ClassroomDetailPage'))
 const ClassroomsPage = lazy(() => import('../pages/admin/ClassroomsPage'))
 const SubjectsPage = lazy(() => import('../pages/admin/SubjectsPage'))
@@ -62,6 +63,7 @@ export default function AppRoutes() {
               <Route path="mapel" element={<SubjectsPage />} />
               <Route path="pengampu" element={<AssignmentsPage />} />
               <Route path="laporan" element={<ReportPage />} />
+              <Route path="identitas" element={<BrandingPage />} />
             </Route>
 
             <Route path="guru" element={<ProtectedRoute roles={[ROLES.TEACHER]} />}>

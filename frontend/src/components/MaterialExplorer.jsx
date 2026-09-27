@@ -12,7 +12,7 @@ import {
   PlayCircle,
   Sprout,
 } from 'lucide-react'
-import { SCHOOL } from '../utils/constants'
+import useBranding from '../hooks/useBranding'
 import { filterChips } from '../utils/listFilters'
 import { FilterChips, OptionPanel, SubjectPanel } from './ExplorePanels'
 import PageHero from './PageHero'
@@ -66,6 +66,7 @@ export default function MaterialExplorer({
   assignmentSublabel,
   onSearchSubmit,
 }) {
+  const { branding } = useBranding()
   const set = (changes) => onChange({ ...filters, ...changes })
   return (
     <div className="space-y-6">
@@ -85,7 +86,7 @@ export default function MaterialExplorer({
             icon: GraduationCap,
             content: note ?? (
               <>
-                Materi dari guru <strong className="text-white">{SCHOOL.name}</strong>
+                Materi dari guru <strong className="text-white">{branding.school_name}</strong>
               </>
             ),
           },

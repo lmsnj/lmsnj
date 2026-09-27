@@ -6,11 +6,13 @@ import Button from '../../components/Button'
 import { FullPageSpinner } from '../../components/Spinner'
 import TextField from '../../components/TextField'
 import useAuth from '../../hooks/useAuth'
-import { ROLE_HOME, SCHOOL } from '../../utils/constants'
+import useBranding from '../../hooks/useBranding'
+import { ROLE_HOME } from '../../utils/constants'
 import { getErrorMessage } from '../../utils/errors'
 
 export default function LoginPage() {
   const { user, initializing, login } = useAuth()
+  const { branding } = useBranding()
   const navigate = useNavigate()
   const location = useLocation()
   const [form, setForm] = useState({ username: '', password: '' })
@@ -47,8 +49,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div className="mb-6 flex flex-col items-center text-center">
           <SchoolLogo className="mb-3 size-16" />
-          <h1 className="text-2xl font-extrabold text-slate-900">{SCHOOL.name}</h1>
-          <p className="mt-1 text-sm text-slate-500">{SCHOOL.slogan}</p>
+          <h1 className="text-2xl font-extrabold text-slate-900">{branding.school_name}</h1>
+          <p className="mt-1 text-sm text-slate-500">{branding.slogan}</p>
           <p className="mt-4 text-sm font-medium text-brand-700">
             Masuk ke Learning Management System
           </p>

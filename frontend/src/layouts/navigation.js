@@ -9,6 +9,7 @@ import {
   Library,
   Megaphone,
   MessagesSquare,
+  Palette,
   School,
   Trophy,
   UserRound,
@@ -42,6 +43,7 @@ export const NAVIGATION = {
     more: [
       { label: 'Laporan Nilai', icon: ChartColumn, to: '/admin/laporan' },
       { ...ANNOUNCEMENTS, label: 'Pengumuman Sekolah' },
+      { label: 'Identitas Sekolah', icon: Palette, to: '/admin/identitas' },
       PROFILE,
     ],
   },

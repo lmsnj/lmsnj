@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import AuthProvider from './context/AuthProvider'
+import BrandingProvider from './context/BrandingProvider'
 import AppRoutes from './routes/AppRoutes'
 
 // "Data router" dipakai agar fitur seperti useBlocker (mencegah meninggalkan halaman ujian)
@@ -9,9 +10,11 @@ const router = createBrowserRouter([
   {
     path: '*',
     element: (
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <BrandingProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </BrandingProvider>
     ),
   },
 ])

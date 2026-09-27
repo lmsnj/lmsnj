@@ -1,4 +1,5 @@
-// Identitas sekolah yang tampil di header dan halaman login.
+// Identitas sekolah BAWAAN (dipakai sebelum data dari server termuat atau jika gagal dimuat).
+// Nilai sebenarnya diatur admin di menu "Identitas Sekolah" (lihat context/BrandingProvider.jsx).
 export const SCHOOL = {
   name: 'SMKS Nurul Jadid',
   slogan: 'Cerdas, Terampil, Berakhlak Mulia',

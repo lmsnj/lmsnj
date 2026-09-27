@@ -1,9 +1,22 @@
-// Logo PLACEHOLDER buatan sendiri (perisai + buku + inisial "NJ").
-// Ganti dengan logo resmi sekolah: simpan file di public/logo.svg lalu ubah komponen ini
-// menjadi <img src="/logo.svg" alt="Logo SMKS Nurul Jadid" className={className} />.
-export default function SchoolLogo({ className = 'size-10' }) {
+import { apiUrl } from '../../api/client'
+import useBranding from '../../hooks/useBranding'
+
+// Logo sekolah. Jika admin sudah mengunggah logo (menu "Identitas Sekolah"), logo itu yang tampil.
+// Jika belum, tampil logo PLACEHOLDER buatan sendiri (perisai + buku + inisial "NJ").
+// `src` (opsional) = pratinjau logo yang belum disimpan; `null` = pratinjau logo bawaan.
+export default function SchoolLogo({ className = 'size-10', src }) {
+  const { branding } = useBranding()
+  const logo = src !== undefined ? src : branding.logo_url ? apiUrl(branding.logo_url) : null
+  const label = `Logo ${branding.school_name}`
+  if (logo) {
+    return <img src={logo} alt={label} className={`object-contain ${className}`} />
+  }
+  return <DefaultLogo className={className} label={label} />
+}
+
+export function DefaultLogo({ className = 'size-10', label = 'Logo sekolah' }) {
   return (
-    <svg viewBox="0 0 48 48" className={className} role="img" aria-label="Logo SMKS Nurul Jadid">
+    <svg viewBox="0 0 48 48" className={className} role="img" aria-label={label}>
       <path d="M24 3 42 9v13c0 11.5-7.6 19.6-18 23C13.6 41.6 6 33.5 6 22V9l18-6Z" fill="#1f8a4c" />
       <path
         d="M24 6.2 39 11.2V22c0 9.8-6.3 16.8-15 19.9C15.3 38.8 9 31.8 9 22V11.2l15-5Z"

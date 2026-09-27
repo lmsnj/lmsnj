@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/", include("apps.schedule.urls")),
     path("api/", include("apps.chat.urls")),
     path("api/", include("apps.assessments.urls")),
+    path("api/", include("apps.branding.urls")),
 ]
 
 # Sengaja TIDAK menyajikan MEDIA_ROOT secara publik: file materi & tugas hanya boleh

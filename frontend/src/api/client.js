@@ -21,6 +21,9 @@ export const tokenStore = {
   },
 }
 
+// Alamat lengkap untuk path dari API (mis. "/api/branding/logo/?v=1"), untuk <img src>.
+export const apiUrl = (path) => new URL(path, BASE_URL).href
+
 export function setSessionExpiredHandler(handler) {
   onSessionExpired = handler
 }
