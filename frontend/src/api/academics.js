@@ -43,3 +43,10 @@ export const adminImportApi = {
     return post(`/${kind}/import/`, form)
   },
 }
+
+// Tahun ajaran baru / kenaikan kelas (khusus admin).
+export const promotionApi = {
+  // Pratinjau: { from_year, to_year, recreate_first_grade } -> rencana (belum mengubah data).
+  preview: (params) => api.get('/academic-years/promotion/', { params }).then((res) => res.data),
+  run: (data) => api.post('/academic-years/promotion/', data).then((res) => res.data),
+}

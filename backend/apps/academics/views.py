@@ -1,15 +1,16 @@
 from django.db.models import Count
-from rest_framework import viewsets
+from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.accounts.models import Role, User
 from apps.accounts.permissions import IsAdmin, IsAdminOrReadOnly
 from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.mixins import ProtectedDeleteMixin
 
-from . import imports
+from . import imports, promotion
 from .models import Classroom, Subject, TeachingAssignment
 from .selectors import classrooms_for, teaching_assignments_for
 from .serializers import (
@@ -143,3 +144,50 @@ class TeachingAssignmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         """Impor pengampu dari Excel. dry_run=true (bawaan) hanya memeriksa."""
         rows, save = imports.check_assignments(request.FILES.get("file"))
         return import_response(rows, is_dry_run(request), save)
+
+
+class PromotionOptionsSerializer(serializers.Serializer):
+    from_year = serializers.CharField()
+    to_year = serializers.CharField()
+    hold_back = serializers.ListField(child=serializers.IntegerField(), required=False, default=list)
+    graduate = serializers.ChoiceField(
+        choices=[promotion.GRADUATE_DEACTIVATE, promotion.GRADUATE_KEEP],
+        default=promotion.GRADUATE_DEACTIVATE,
+    )
+    copy_homeroom = serializers.BooleanField(default=True)
+    copy_assignments = serializers.BooleanField(default=True)
+    recreate_first_grade = serializers.BooleanField(default=True)
+
+
+class PromotionView(APIView):
+    """Tahun ajaran baru (khusus admin).
+    GET ?from_year=&to_year=&recreate_first_grade= : pratinjau rencana kenaikan kelas.
+    POST (PromotionOptionsSerializer) : jalankan kenaikan kelas."""
+
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        latest = promotion.latest_academic_year()
+        if latest is None:
+            return Response({"from_year": None, "years": [], "classes": []})
+        from_year = request.query_params.get("from_year") or latest
+        to_year = request.query_params.get("to_year") or promotion.suggest_next_year(latest)
+        recreate = request.query_params.get("recreate_first_grade", "true").lower() != "false"
+        plan = promotion.build_plan(from_year, to_year, recreate_first_grade=recreate)
+        years = Classroom.objects.order_by("-academic_year").values_list("academic_year", flat=True)
+        return Response({**plan, "latest_year": latest, "years": list(dict.fromkeys(years))})
+
+    def post(self, request):
+        serializer = PromotionOptionsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        result = promotion.run_promotion(
+            data["from_year"],
+            data["to_year"],
+            hold_back=data["hold_back"],
+            graduate=data["graduate"],
+            copy_homeroom=data["copy_homeroom"],
+            copy_assignments=data["copy_assignments"],
+            recreate_first_grade=data["recreate_first_grade"],
+        )
+        return Response(result)

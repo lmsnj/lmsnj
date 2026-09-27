@@ -286,6 +286,12 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   awal label); kolom Grup & Label Kategori. Semua contoh di template harus lolos impor (ada test).
 - **Data demo:** `seed_demo` juga membuat ujian contoh "Simulasi TKA" (isi di
   `apps/common/management/commands/_demo_exam.py`) berisi semua bentuk soal.
+- **Tahun ajaran baru / kenaikan kelas** (`apps/academics/promotion.py`, halaman `/admin/tahun-ajaran`):
+  tahun ajaran aktif = tahun ajaran TERBARU yang punya kelas (tidak ada pengaturan terpisah). Proses
+  membuat kelas di tahun baru (nama diganti tingkatnya: "X RPL 1" -> "XI RPL 1"), memindahkan siswa,
+  XII lulus (dinonaktifkan/dibiarkan aktif tanpa kelas), siswa `hold_back` tinggal kelas (kelas
+  bernama sama), kelas X dibuat ulang kosong, pengampu disalin dari kelas bernama sama tahun lalu,
+  wali kelas ikut siswanya. Data lama TIDAK dihapus; kelas yang sudah ada dipakai ulang (aman diulang).
 - **Impor data admin** (`apps/academics/imports.py`): mapel, kelas, pengampu — helper bersama di
   `apps/common/excel.py` (`Column`, `build_template`, `read_rows`, `import_response`).
 - Editor rumus visual MathLive dimuat lazy (`MathFieldDialog`); font-nya dari `mathlive/fonts.css`
@@ -375,6 +381,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET    | `/api/assessments/question-template/` | Guru/admin: template Excel soal |
 | POST   | `/api/assessments/{id}/import-questions/` (`mode` excel/text, `file`/`text`, `images` ZIP, `dry_run`) | Guru pengampu |
 | GET/POST | `/api/{subjects,classrooms,teaching-assignments}/import-template/` dan `.../import/` | Admin |
+| GET/POST | `/api/academic-years/promotion/` (GET: pratinjau `from_year`, `to_year`; POST: jalankan, + `hold_back`, `graduate`, `copy_homeroom`, `copy_assignments`, `recreate_first_grade`) | Admin |
 | GET/PATCH | `/api/branding/` (multipart `school_name`, `slogan`, `app_name`, `logo`, `remove_logo`) | GET publik (halaman login), PATCH admin |
 | GET    | `/api/branding/logo/` | Publik; alamat diberi `?v=` (cache lama aman) |
 | GET/PATCH | `/api/assessment-attempts/{id}/`, `.../grade/` | Guru pengampu (grade), admin (lihat) |

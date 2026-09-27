@@ -1,6 +1,7 @@
 import {
   BookOpen,
   CalendarClock,
+  CalendarSync,
   ChartColumn,
   ClipboardCheck,
   ClipboardPen,
@@ -43,6 +44,7 @@ export const NAVIGATION = {
     more: [
       { label: 'Laporan Nilai', icon: ChartColumn, to: '/admin/laporan' },
       { ...ANNOUNCEMENTS, label: 'Pengumuman Sekolah' },
+      { label: 'Tahun Ajaran Baru', icon: CalendarSync, to: '/admin/tahun-ajaran' },
       { label: 'Identitas Sekolah', icon: Palette, to: '/admin/identitas' },
       PROFILE,
     ],

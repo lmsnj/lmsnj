@@ -12,6 +12,7 @@ import ProtectedRoute from './ProtectedRoute'
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'))
 const AssignmentsPage = lazy(() => import('../pages/admin/AssignmentsPage'))
 const BrandingPage = lazy(() => import('../pages/admin/BrandingPage'))
+const PromotionPage = lazy(() => import('../pages/admin/PromotionPage'))
 const ClassroomDetailPage = lazy(() => import('../pages/admin/ClassroomDetailPage'))
 const ClassroomsPage = lazy(() => import('../pages/admin/ClassroomsPage'))
 const SubjectsPage = lazy(() => import('../pages/admin/SubjectsPage'))
@@ -64,6 +65,7 @@ export default function AppRoutes() {
               <Route path="pengampu" element={<AssignmentsPage />} />
               <Route path="laporan" element={<ReportPage />} />
               <Route path="identitas" element={<BrandingPage />} />
+              <Route path="tahun-ajaran" element={<PromotionPage />} />
             </Route>
 
             <Route path="guru" element={<ProtectedRoute roles={[ROLES.TEACHER]} />}>
