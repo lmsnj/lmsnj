@@ -14,8 +14,17 @@ import MaterialFormModal from './MaterialFormModal'
  * Daftar + kelola materi guru. Dipakai di tab "Materi" halaman kelas-mapel (assignmentId tetap)
  * dan di halaman "Materi Pembelajaran" (assignmentId kosong = semua kelas, showContext = tampilkan
  * mapel & kelas di setiap materi). `openForm` = langsung buka form tambah (dari tombol Beranda).
+ * Opsional untuk halaman "Materi Pembelajaran": `filter(materi)` menyaring daftar di browser,
+ * `header(semuaMateri)` tampil paling atas, `summary(jumlahTampil)` menggantikan teks di kiri tombol.
  */
-export default function MaterialsManager({ assignmentId, showContext, openForm = false }) {
+export default function MaterialsManager({
+  assignmentId,
+  showContext,
+  openForm = false,
+  filter,
+  header,
+  summary,
+}) {
   const [notice, setNotice] = useState({ type: 'success', text: '' })
   // { type: 'form' | 'view' | 'delete', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
@@ -25,6 +34,8 @@ export default function MaterialsManager({ assignmentId, showContext, openForm =
   })
 
   const closeDialog = () => setDialog(null)
+  const all = materials.data?.results
+  const shown = filter && all ? filter(all) : all
 
   const togglePublish = async (material) => {
     try {
@@ -43,10 +54,15 @@ export default function MaterialsManager({ assignmentId, showContext, openForm =
 
   return (
     <>
+      {header?.(all ?? [])}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-600">
-          Materi berstatus <strong>Draf</strong> tidak terlihat oleh siswa.
-        </p>
+        {summary ? (
+          summary(shown?.length ?? 0)
+        ) : (
+          <p className="text-sm text-slate-600">
+            Materi berstatus <strong>Draf</strong> tidak terlihat oleh siswa.
+          </p>
+        )}
         <Button onClick={() => setDialog({ type: 'form', material: null })}>+ Tambah Materi</Button>
       </div>
 
@@ -56,11 +72,16 @@ export default function MaterialsManager({ assignmentId, showContext, openForm =
       </div>
 
       <MaterialList
-        materials={materials.data?.results}
+        materials={shown}
         loading={materials.loading}
         showStatus
         showContext={showContext}
-        emptyTitle="Belum ada materi. Klik “Tambah Materi” untuk mulai."
+        emptyTitle={
+          all?.length
+            ? 'Tidak ada materi yang cocok.'
+            : 'Belum ada materi. Klik “Tambah Materi” untuk mulai.'
+        }
+        emptyMessage={all?.length ? 'Coba kata kunci lain atau hapus penyaring.' : undefined}
         onOpen={(material) => setDialog({ type: 'view', material })}
         actions={(material) => (
           <>

@@ -181,6 +181,14 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
 - Tombol Beranda boleh membuka aksi di halaman tujuan lewat parameter sekali-pakai
   (`?baru=1`, `?impor=1`, `?filter=...`, `?status=...`) yang dibaca dengan `hooks/useQueryFlag.js`.
 
+### Materi Pembelajaran (`/guru/materi`, `/siswa/materi`)
+- `components/MaterialExplorer.jsx`: banner hijau dengan kotak pencarian + tombol Cari (hiasan =
+  ikon lucide dalam kotak berwarna, bukan ilustrasi dari produk lain), panel kuning "Pilihan Mata
+  Pelajaran" (kartu mapel 2 kolom, ikon besar mengintip dari tepi kanan, maks. 4 + "Lihat Semua"),
+  dan panel biru muda "Eksplorasi Tipe Materi" (PDF/Video/Link). Kartu = tombol penyaring.
+- Materi dimuat sekali (`ALL`) lalu disaring di browser dengan `utils/materialFilters.js`
+  (`filterMaterials`, `countBy`, `subjectIconKey` — ikon mapel ditebak dari nama mapel).
+
 ### Responsif & aksesibilitas
 - Grid kartu: 1 kolom di HP, 2 kolom mulai `md`. Tabel lebar dibungkus `overflow-x-auto`.
 - Input memakai `text-base` di HP (mencegah zoom otomatis iPhone), `sm:text-sm` di layar besar.

@@ -1,33 +1,58 @@
-import { useState } from 'react'
-import AssignmentSelect from '../../components/AssignmentSelect'
-import PageHeader from '../../components/PageHeader'
+import { useMemo, useState } from 'react'
+import { assignmentsApi } from '../../api/academics'
+import MaterialExplorer, { FilterSummary } from '../../components/MaterialExplorer'
+import useFetch from '../../hooks/useFetch'
 import useQueryFlag from '../../hooks/useQueryFlag'
+import { ALL } from '../../utils/academic'
+import { countBy, filterMaterials } from '../../utils/materialFilters'
 import MaterialsManager from './MaterialsManager'
 
-// "Materi Pembelajaran": semua materi guru dari semua kelas yang ia ampu.
+const EMPTY_FILTERS = { search: '', assignment: '', type: '' }
+const assignmentLabel = (a) => `${a.subject_name} · ${a.classroom_name}`
+
+const scrollToResults = () =>
+  document.getElementById('daftar-materi')?.scrollIntoView({ behavior: 'smooth' })
+
+// "Materi Pembelajaran" guru: semua materi dari semua kelas yang ia ampu, disaring di browser.
 export default function TeacherMaterialsPage() {
   const openForm = useQueryFlag('baru') === '1'
-  const [assignment, setAssignment] = useState('')
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const assignments = useFetch(assignmentsApi.list, ALL)
+  const filter = useMemo(() => (materials) => filterMaterials(materials, filters), [filters])
 
   return (
-    <>
-      <PageHeader
-        title="Materi Pembelajaran"
-        description="Semua materi di kelas yang Anda ampu. Materi berstatus Draf tidak terlihat oleh siswa."
-      />
-      <AssignmentSelect
-        value={assignment}
-        onChange={setAssignment}
-        className="mb-4 sm:max-w-sm"
-        aria-label="Filter kelas & mapel"
-      />
-      {/* key: daftar dimuat ulang saat filter berubah. */}
-      <MaterialsManager
-        key={assignment}
-        assignmentId={assignment}
-        showContext={!assignment}
-        openForm={openForm && !assignment}
-      />
-    </>
+    <MaterialsManager
+      assignmentId=""
+      showContext
+      openForm={openForm}
+      filter={filter}
+      header={(all) => (
+        <div className="mb-8">
+          <MaterialExplorer
+            description="Kelola materi untuk semua kelas yang Anda ampu. Materi berstatus Draf tidak terlihat oleh siswa."
+            total={all.length}
+            assignments={assignments.data?.results}
+            subjectCounts={countBy(all, 'teaching_assignment')}
+            typeCounts={countBy(all, 'material_type')}
+            filters={filters}
+            onChange={setFilters}
+            assignmentSublabel={(a) => a.classroom_name}
+            onSearchSubmit={scrollToResults}
+          />
+        </div>
+      )}
+      summary={(count) => (
+        <div id="daftar-materi" className="scroll-mt-4">
+          <FilterSummary
+            filters={filters}
+            onChange={setFilters}
+            assignments={assignments.data?.results}
+            count={count}
+            assignmentLabel={assignmentLabel}
+            className=""
+          />
+        </div>
+      )}
+    />
   )
 }
