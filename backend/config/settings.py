@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django_filters",
     # Aplikasi LMS
     "apps.accounts",
+    "apps.academics",
 ]
 
 MIDDLEWARE = [
@@ -130,8 +131,7 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20,
+    "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardPagination",
     "DEFAULT_THROTTLE_RATES": {
         "login": "10/min",
     },

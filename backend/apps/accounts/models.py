@@ -25,6 +25,15 @@ class User(AbstractUser):
     # null=True agar banyak user tanpa NIS/NIP tidak bentrok dengan aturan unique.
     nis = models.CharField("NIS", max_length=20, unique=True, null=True, blank=True)
     nip = models.CharField("NIP", max_length=30, unique=True, null=True, blank=True)
+    # Khusus siswa. Jika kelas dihapus, siswa hanya menjadi "belum punya kelas".
+    classroom = models.ForeignKey(
+        "academics.Classroom",
+        verbose_name="kelas",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="students",
+    )
 
     REQUIRED_FIELDS = ["email", "full_name"]
 

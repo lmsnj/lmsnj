@@ -38,8 +38,9 @@ lms-smknj/
 │   ├── .env.example
 │   ├── config/              # settings.py, urls.py, wsgi.py, asgi.py
 │   ├── apps/
+│   │   ├── common/          # Kode bersama: pagination, ProtectedDeleteMixin
 │   │   ├── accounts/        # User custom (role), login JWT, manajemen user
-│   │   ├── academics/       # Kelas, Mapel, Pengampu (guru–mapel–kelas)
+│   │   ├── academics/       # Kelas, Mapel, Pengampu (guru–mapel–kelas); selectors.py = filter data per peran
 │   │   ├── materials/       # Materi (PDF/video/link)
 │   │   ├── assignments/     # Tugas, Pengumpulan, Penilaian
 │   │   └── dashboard/       # Endpoint ringkasan per peran
@@ -55,24 +56,28 @@ lms-smknj/
         ├── context/         # AuthContext (user, token, role)
         ├── routes/          # Definisi route + ProtectedRoute/RoleRoute
         ├── layouts/         # Layout per peran (sidebar, navbar)
-        ├── components/      # Komponen UI reusable (Button, Table, Modal, dll.)
+        ├── components/      # Komponen UI reusable (Button, DataTable, FormModal, DeleteDialog, dll.)
         ├── pages/
         │   ├── auth/
         │   ├── admin/
         │   ├── guru/
         │   └── siswa/
-        ├── hooks/
+        ├── hooks/           # useAuth, useFetch (memuat data API), useFormSubmit, useDebounce
         └── utils/
 ```
 
 Setiap app Django mengikuti pola: `models.py`, `serializers.py`, `views.py`, `urls.py`, `permissions.py` (bila perlu), `admin.py`, `tests.py` (atau folder `tests/`).
 
-## Model Data (rancangan awal)
+Pola yang wajib dipakai ulang:
+- **Backend:** batasi data per peran lewat `apps/academics/selectors.py` (`classrooms_for`, `teaching_assignments_for`). Modul materi/tugas harus memakai fungsi ini, jangan menulis ulang aturan aksesnya. Relasi yang datanya tidak boleh hilang memakai `on_delete=PROTECT` + `ProtectedDeleteMixin` di view.
+- **Frontend:** muat data dengan `useFetch`, kirim form dengan `useFormSubmit` + `FormModal`, tabel dengan `DataTable`, hapus dengan `DeleteDialog`. Isi dropdown memakai `ALL` (`page_size=500`) dan `toOptions` dari `utils/academic.js`.
 
-- **User** (custom, `AUTH_USER_MODEL = "accounts.User"`): username, `full_name`, email, `role` (nilai: `admin`/`teacher`/`student`, label: Admin/Guru/Siswa), `nis` (siswa) / `nip` (guru). Field `kelas` (FK, khusus siswa) ditambahkan di Fase 2.
-- **Kelas**: nama (mis. "XI RPL 1"), tingkat (X/XI/XII), jurusan, wali kelas (FK guru), tahun ajaran.
-- **Mapel**: kode, nama.
-- **Pengampu**: guru + mapel + kelas → unit utama tempat materi & tugas ditempelkan.
+## Model Data
+
+- **User** (custom, `AUTH_USER_MODEL = "accounts.User"`): username, `full_name`, email, `role` (nilai: `admin`/`teacher`/`student`, label: Admin/Guru/Siswa), `nis` (siswa) / `nip` (guru), `classroom` (FK ke Classroom, khusus siswa, SET_NULL).
+- **Classroom** (kelas): `name` (mis. "XI RPL 1"), `grade` (X/XI/XII), `major` (huruf besar), `academic_year` ("2026/2027"), `homeroom_teacher` (wali kelas). Unik per (nama, tahun ajaran).
+- **Subject** (mapel): `code` (unik, huruf besar), `name`.
+- **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan.
 - **Materi**: pengampu, judul, deskripsi, tipe (`pdf`/`video`/`link`), file, url, status terbit.
 - **Tugas**: pengampu, judul, instruksi, lampiran, tenggat, nilai maksimal.
 - **Pengumpulan**: tugas, siswa, file, teks jawaban, waktu kumpul, status terlambat, nilai, umpan balik, dinilai oleh, waktu dinilai.
@@ -146,14 +151,20 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/auth/logout/`               | Login            |
 | GET    | `/api/auth/me/`                   | Login            |
 | POST   | `/api/auth/change-password/`      | Login            |
-| CRUD   | `/api/users/` (filter `role`, `is_active`, `search`) | Admin |
+| CRUD   | `/api/users/` (filter `role`, `is_active`, `classroom`, `classroom__isnull`, `search`) | Admin |
 | POST   | `/api/users/{id}/reset-password/` | Admin            |
+| CRUD   | `/api/classrooms/` (filter `grade`, `major`, `academic_year`, `homeroom_teacher`) | Tulis: admin. Baca: admin semua, guru kelas yang diajar/diwalikan, siswa kelasnya |
+| GET    | `/api/classrooms/academic-years/` | Login            |
+| GET/POST | `/api/classrooms/{id}/students/` | GET: admin & guru kelas itu. POST (`student_ids`): admin |
+| POST   | `/api/classrooms/{id}/remove-students/` | Admin      |
+| CRUD   | `/api/subjects/`                  | Tulis: admin. Baca: semua login |
+| CRUD   | `/api/teaching-assignments/` (filter `teacher`, `subject`, `classroom`) | Tulis: admin. Baca: admin semua, guru miliknya, siswa di kelasnya |
 
 ## Progres
 
 - [x] Fase 0: Fondasi proyek
 - [x] Fase 1: Autentikasi & manajemen pengguna
-- [ ] Fase 2: Kelas, mapel & pengampu
+- [x] Fase 2: Kelas, mapel & pengampu
 - [ ] Fase 3: Materi
 - [ ] Fase 4: Tugas & pengumpulan
 - [ ] Fase 5: Penilaian

@@ -3,11 +3,18 @@ import { FullPageSpinner } from '../components/Spinner'
 import useAuth from '../hooks/useAuth'
 import DashboardLayout from '../layouts/DashboardLayout'
 import AdminDashboard from '../pages/admin/AdminDashboard'
+import AssignmentsPage from '../pages/admin/AssignmentsPage'
+import ClassroomDetailPage from '../pages/admin/ClassroomDetailPage'
+import ClassroomsPage from '../pages/admin/ClassroomsPage'
+import SubjectsPage from '../pages/admin/SubjectsPage'
 import UsersPage from '../pages/admin/UsersPage'
 import LoginPage from '../pages/auth/LoginPage'
+import MyClassesPage from '../pages/guru/MyClassesPage'
+import TeacherClassPage from '../pages/guru/TeacherClassPage'
 import TeacherDashboard from '../pages/guru/TeacherDashboard'
 import NotFoundPage from '../pages/NotFoundPage'
 import ProfilePage from '../pages/ProfilePage'
+import MySubjectsPage from '../pages/siswa/MySubjectsPage'
 import StudentDashboard from '../pages/siswa/StudentDashboard'
 import { ROLE_HOME, ROLES } from '../utils/constants'
 import ProtectedRoute from './ProtectedRoute'
@@ -29,14 +36,21 @@ export default function AppRoutes() {
           <Route path="admin" element={<ProtectedRoute roles={[ROLES.ADMIN]} />}>
             <Route index element={<AdminDashboard />} />
             <Route path="pengguna" element={<UsersPage />} />
+            <Route path="kelas" element={<ClassroomsPage />} />
+            <Route path="kelas/:id" element={<ClassroomDetailPage />} />
+            <Route path="mapel" element={<SubjectsPage />} />
+            <Route path="pengampu" element={<AssignmentsPage />} />
           </Route>
 
           <Route path="guru" element={<ProtectedRoute roles={[ROLES.TEACHER]} />}>
             <Route index element={<TeacherDashboard />} />
+            <Route path="kelas" element={<MyClassesPage />} />
+            <Route path="kelas/:id" element={<TeacherClassPage />} />
           </Route>
 
           <Route path="siswa" element={<ProtectedRoute roles={[ROLES.STUDENT]} />}>
             <Route index element={<StudentDashboard />} />
+            <Route path="mapel" element={<MySubjectsPage />} />
           </Route>
 
           <Route path="profil" element={<ProfilePage />} />

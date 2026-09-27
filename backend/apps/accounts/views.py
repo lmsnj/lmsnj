@@ -9,6 +9,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.common.mixins import ProtectedDeleteMixin
+
 from .models import User
 from .permissions import IsAdmin
 from .serializers import (
@@ -58,14 +60,19 @@ class ChangePasswordView(APIView):
         return Response({"detail": "Password berhasil diubah."})
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     """Manajemen pengguna, khusus admin."""
 
-    queryset = User.objects.all()
+    queryset = User.objects.select_related("classroom")
     permission_classes = [IsAdmin]
-    filterset_fields = ["role", "is_active"]
+    # classroom__isnull=true dipakai untuk mencari siswa yang belum punya kelas.
+    filterset_fields = {"role": ["exact"], "is_active": ["exact"], "classroom": ["exact", "isnull"]}
     search_fields = ["username", "full_name", "email", "nis", "nip"]
     ordering_fields = ["full_name", "username", "date_joined", "last_login"]
+    protected_message = (
+        "Guru ini masih mengampu mapel. Hapus data pengampunya terlebih dahulu, "
+        "atau nonaktifkan akunnya saja."
+    )
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -85,7 +92,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if instance == self.request.user:
             raise ValidationError({"detail": "Anda tidak dapat menghapus akun sendiri."})
-        instance.delete()
+        super().perform_destroy(instance)
 
     @action(detail=True, methods=["post"], url_path="reset-password")
     def reset_password(self, request, pk=None):

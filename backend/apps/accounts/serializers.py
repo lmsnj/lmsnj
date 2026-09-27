@@ -8,6 +8,7 @@ from .models import Role, User
 
 class UserSerializer(serializers.ModelSerializer):
     role_display = serializers.CharField(source="get_role_display", read_only=True)
+    classroom_name = serializers.CharField(source="classroom.name", read_only=True, default=None)
 
     class Meta:
         model = User
@@ -20,6 +21,8 @@ class UserSerializer(serializers.ModelSerializer):
             "role_display",
             "nis",
             "nip",
+            "classroom",
+            "classroom_name",
             "is_active",
             "date_joined",
             "last_login",
@@ -34,7 +37,18 @@ class UserWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "full_name", "email", "role", "nis", "nip", "is_active", "password"]
+        fields = [
+            "id",
+            "username",
+            "full_name",
+            "email",
+            "role",
+            "nis",
+            "nip",
+            "classroom",
+            "is_active",
+            "password",
+        ]
 
     def validate(self, attrs):
         # String kosong disimpan sebagai NULL agar tidak melanggar aturan unique.
@@ -45,6 +59,7 @@ class UserWriteSerializer(serializers.ModelSerializer):
         role = attrs.get("role", getattr(self.instance, "role", None))
         if role != Role.STUDENT:
             attrs["nis"] = None
+            attrs["classroom"] = None
         if role != Role.TEACHER:
             attrs["nip"] = None
 

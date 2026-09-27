@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 from .models import Role
 
@@ -28,3 +28,18 @@ class IsStudent(HasRole):
 
 class IsAdminOrTeacher(HasRole):
     allowed_roles = (Role.ADMIN, Role.TEACHER)
+
+
+class IsAdminOrReadOnly(BasePermission):
+    """Semua user login boleh membaca; hanya admin yang boleh mengubah.
+
+    Data yang boleh dibaca tetap dibatasi lewat `get_queryset` di masing-masing view.
+    """
+
+    message = "Hanya admin yang dapat mengubah data ini."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not (user and user.is_authenticated):
+            return False
+        return request.method in SAFE_METHODS or user.role == Role.ADMIN
