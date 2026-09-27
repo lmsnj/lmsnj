@@ -5,6 +5,7 @@ import Button from '../components/Button'
 import PageHeader from '../components/PageHeader'
 import TextField from '../components/TextField'
 import useAuth from '../hooks/useAuth'
+import useScrollToHash from '../hooks/useScrollToHash'
 import { ROLE_LABELS, ROLES } from '../utils/constants'
 import { getErrorMessage, getFieldErrors } from '../utils/errors'
 
@@ -12,6 +13,8 @@ const EMPTY_FORM = { old_password: '', new_password: '', confirm_password: '' }
 
 export default function ProfilePage() {
   const { user } = useAuth()
+  // Menu "Ganti Password" di header membuka /profil#ganti-password.
+  useScrollToHash()
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState({ type: '', text: '' })
@@ -68,7 +71,10 @@ export default function ProfilePage() {
           </p>
         </section>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section
+          id="ganti-password"
+          className="scroll-mt-24 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+        >
           <h2 className="mb-4 font-semibold text-slate-900">Ganti Password</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <Alert type={message.type || 'info'}>{message.text}</Alert>

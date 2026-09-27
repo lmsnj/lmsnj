@@ -74,6 +74,7 @@ class TaskSerializer(serializers.ModelSerializer):
     classroom_name = serializers.CharField(source="teaching_assignment.classroom.name", read_only=True)
     is_past_due = serializers.BooleanField(read_only=True)
     submission_count = serializers.SerializerMethodField()
+    ungraded_count = serializers.SerializerMethodField()
     student_count = serializers.SerializerMethodField()
     my_submission = serializers.SerializerMethodField()
 
@@ -96,6 +97,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "is_published",
             "is_past_due",
             "submission_count",
+            "ungraded_count",
             "student_count",
             "my_submission",
             "created_at",
@@ -112,6 +114,11 @@ class TaskSerializer(serializers.ModelSerializer):
             )
 
     # Diisi lewat annotate di view; hitung manual jika objek baru dibuat/diubah.
+    def get_ungraded_count(self, obj):
+        """Jumlah pengumpulan yang belum dinilai (untuk guru)."""
+        count = getattr(obj, "ungraded_count", None)
+        return obj.submissions.filter(score__isnull=True).count() if count is None else count
+
     def get_submission_count(self, obj):
         count = getattr(obj, "submission_count", None)
         return obj.submissions.count() if count is None else count

@@ -3,23 +3,29 @@ import { dashboardApi } from '../../api/dashboard'
 import Badge from '../../components/Badge'
 import {
   DashboardState,
-  Greeting,
   Panel,
   PanelItem,
   StatCard,
   StatGrid,
+  SummaryHeading,
 } from '../../components/Dashboard'
+import HomeTop from '../../components/home/HomeTop'
+import useScrollToHash from '../../hooks/useScrollToHash'
+import { HOME_CARDS } from '../home/cards'
 import EmptyState from '../../components/EmptyState'
 import useFetch from '../../hooks/useFetch'
 import { MATERIAL_TYPES } from '../../utils/constants'
+import { ROLES } from '../../utils/constants'
 import { formatDate } from '../../utils/media'
 import { dueLabel, formatScore } from '../../utils/tasks'
 
 export default function StudentDashboard() {
   const { data, error } = useFetch(dashboardApi.get)
+  useScrollToHash(Boolean(data))
   return (
     <>
-      <Greeting subtitle={data?.classroom_name ? `Siswa · ${data.classroom_name}` : 'Siswa'} />
+      <HomeTop cards={HOME_CARDS[ROLES.STUDENT]} />
+      <SummaryHeading subtitle={data?.classroom_name && `Kelas ${data.classroom_name}`} />
       <DashboardState loading={!data} error={error}>
         {data && <StudentContent data={data} />}
       </DashboardState>

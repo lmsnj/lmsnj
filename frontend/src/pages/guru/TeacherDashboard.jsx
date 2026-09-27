@@ -4,21 +4,27 @@ import Alert from '../../components/Alert'
 import Badge from '../../components/Badge'
 import {
   DashboardState,
-  Greeting,
   Panel,
   PanelItem,
   StatCard,
   StatGrid,
+  SummaryHeading,
 } from '../../components/Dashboard'
+import HomeTop from '../../components/home/HomeTop'
+import useScrollToHash from '../../hooks/useScrollToHash'
+import { HOME_CARDS } from '../home/cards'
 import useFetch from '../../hooks/useFetch'
+import { ROLES } from '../../utils/constants'
 import { formatDate } from '../../utils/media'
 import { dueLabel } from '../../utils/tasks'
 
 export default function TeacherDashboard() {
   const { data, error } = useFetch(dashboardApi.get)
+  useScrollToHash(Boolean(data))
   return (
     <>
-      <Greeting subtitle="Guru" />
+      <HomeTop cards={HOME_CARDS[ROLES.TEACHER]} />
+      <SummaryHeading />
       <DashboardState loading={!data} error={error}>
         {data && <TeacherContent data={data} />}
       </DashboardState>

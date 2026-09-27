@@ -3,13 +3,17 @@ import { dashboardApi } from '../../api/dashboard'
 import Badge from '../../components/Badge'
 import {
   DashboardState,
-  Greeting,
   Panel,
   PanelItem,
   StatCard,
   StatGrid,
+  SummaryHeading,
 } from '../../components/Dashboard'
+import HomeTop from '../../components/home/HomeTop'
+import useScrollToHash from '../../hooks/useScrollToHash'
+import { HOME_CARDS } from '../home/cards'
 import useFetch from '../../hooks/useFetch'
+import { ROLES } from '../../utils/constants'
 import { formatDate } from '../../utils/media'
 
 // Hal yang perlu ditindaklanjuti admin; hanya yang jumlahnya > 0 yang ditampilkan.
@@ -30,14 +34,12 @@ const ATTENTION = [
 
 export default function AdminDashboard() {
   const { data, error } = useFetch(dashboardApi.get)
+  useScrollToHash(Boolean(data))
 
   return (
     <>
-      <Greeting
-        subtitle={
-          data?.academic_year ? `Admin · Tahun ajaran ${data.academic_year}` : 'Admin sekolah'
-        }
-      />
+      <HomeTop cards={HOME_CARDS[ROLES.ADMIN]} />
+      <SummaryHeading subtitle={data?.academic_year && `Tahun ajaran ${data.academic_year}`} />
       <DashboardState loading={!data} error={error}>
         {data && <AdminContent data={data} />}
       </DashboardState>

@@ -1,4 +1,4 @@
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
@@ -24,7 +24,12 @@ class TaskViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [ContentPermission]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    filterset_fields = ["teaching_assignment", "is_published"]
+    # due_at__gte / due_at__lte dipakai tab "Tugas Hari Ini" dan "Tugas Mendatang" di Beranda.
+    filterset_fields = {
+        "teaching_assignment": ["exact"],
+        "is_published": ["exact"],
+        "due_at": ["gte", "lte"],
+    }
     search_fields = ["title", "instructions"]
     ordering_fields = ["due_at", "created_at", "title"]
     protected_message = (
@@ -39,6 +44,7 @@ class TaskViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             .select_related("teaching_assignment__subject", "teaching_assignment__classroom")
             .annotate(
                 submission_count=Count("submissions", distinct=True),
+                ungraded_count=Count("submissions", filter=Q(submissions__score__isnull=True), distinct=True),
                 student_count=Count("teaching_assignment__classroom__students", distinct=True),
             )
             # Meta.ordering tidak berlaku pada query dengan annotate(Count), jadi ditulis ulang.

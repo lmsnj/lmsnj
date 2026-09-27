@@ -7,6 +7,7 @@ import Spinner from './Spinner'
 /**
  * Daftar materi. `actions(material)` opsional untuk tombol khusus guru.
  * `showStatus` menampilkan label Draf/Terbit (hanya berguna untuk guru).
+ * `showContext` menampilkan mapel & kelas (untuk daftar gabungan semua kelas).
  */
 export default function MaterialList({
   materials,
@@ -14,6 +15,7 @@ export default function MaterialList({
   onOpen,
   actions,
   showStatus,
+  showContext,
   emptyTitle,
 }) {
   if (loading && !materials?.length) {
@@ -53,7 +55,10 @@ export default function MaterialList({
               {material.description && (
                 <p className="mt-0.5 line-clamp-2 text-sm text-slate-600">{material.description}</p>
               )}
-              <p className="mt-1 text-xs text-slate-500">{formatDate(material.created_at)}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {showContext && `${material.subject_name} · ${material.classroom_name} · `}
+                {formatDate(material.created_at)}
+              </p>
             </button>
             {actions && (
               <div className="flex flex-wrap gap-1 sm:justify-end">{actions(material)}</div>

@@ -132,3 +132,24 @@ class GradebookTests(TaskTestBase):
         rows = {r["student"]["full_name"]: r for r in self.client.get(self.url).data["rows"]}
         self.assertTrue(rows["Siswa1"]["grades"][str(late_task.id)]["is_late"])
         self.assertLess(late_task.due_at, timezone.now())
+
+
+class TaskListExtrasTests(TaskTestBase):
+    def test_ungraded_count_and_due_filter(self):
+        soon = self.make_task(title="Hari ini", due_in=timedelta(hours=2))
+        later = self.make_task(title="Minggu depan", due_in=timedelta(days=7))
+        self.submit(soon, text_answer="a")
+        self.submit(soon, self.student2, text_answer="b")
+        self.client.force_authenticate(self.teacher)
+        first = Submission.objects.filter(task=soon).first()
+        self.client.patch(reverse("submission-grade", args=[first.id]), {"score": 80}, format="json")
+
+        now = timezone.now()
+        res = self.client.get(
+            reverse("task-list"),
+            {"due_at__gte": now.isoformat(), "due_at__lte": (now + timedelta(days=1)).isoformat()},
+        )
+        self.assertEqual([t["title"] for t in res.data["results"]], ["Hari ini"])
+        item = res.data["results"][0]
+        self.assertEqual((item["submission_count"], item["ungraded_count"]), (2, 1))
+        self.assertEqual(later.submissions.count(), 0)

@@ -1,28 +1,15 @@
 import { Link } from 'react-router-dom'
-import useAuth from '../hooks/useAuth'
-import { ROLE_LABELS } from '../utils/constants'
 import Alert from './Alert'
 import Spinner from './Spinner'
 
 // Komponen bersama untuk dashboard ketiga peran.
 
-export function Greeting({ subtitle }) {
-  const { user } = useAuth()
-  const hour = new Date().getHours()
-  const greeting =
-    hour < 11
-      ? 'Selamat pagi'
-      : hour < 15
-        ? 'Selamat siang'
-        : hour < 18
-          ? 'Selamat sore'
-          : 'Selamat malam'
+// Judul bagian "Ringkasan" di bawah kartu Beranda (id dipakai tautan /admin#ringkasan).
+export function SummaryHeading({ subtitle }) {
   return (
-    <div className="mb-6">
-      <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl">
-        {greeting}, {user.full_name}
-      </h1>
-      <p className="mt-1 text-sm text-slate-500">{subtitle ?? ROLE_LABELS[user.role]}</p>
+    <div id="ringkasan" className="mt-8 mb-4 scroll-mt-24">
+      <h2 className="text-lg font-bold text-slate-900">Ringkasan</h2>
+      {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
     </div>
   )
 }

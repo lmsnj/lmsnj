@@ -57,14 +57,16 @@ lms-smknj/
         ├── api/             # Instance Axios + fungsi pemanggil API per modul
         ├── context/         # AuthContext (user, token, role)
         ├── routes/          # Definisi route + ProtectedRoute/RoleRoute
-        ├── layouts/         # Layout per peran (sidebar, navbar)
+        ├── layouts/         # DashboardLayout (header + bar menu), navigation.js (menu per peran)
         ├── components/      # Komponen UI reusable (Button, DataTable, FormModal, DeleteDialog, dll.)
+        │   ├── brand/       # SchoolLogo (placeholder)
+        │   └── home/        # ActionCard, HomePanel, HomeTop (Beranda)
         ├── pages/
         │   ├── auth/
         │   ├── admin/
         │   ├── guru/
         │   └── siswa/
-        ├── hooks/           # useAuth, useFetch (memuat data API), useFormSubmit, useDebounce, useTabs
+        ├── hooks/           # useAuth, useFetch, useFormSubmit, useDebounce, useTabs, useQueryFlag, useScrollToHash
         └── utils/
 ```
 
@@ -127,6 +129,54 @@ Pola yang wajib dipakai ulang:
 - Setiap halaman menangani state *loading*, *error*, dan *data kosong*.
 - Format kode dengan Prettier (`npm run format`), lint dengan oxlint (`npm run lint`).
 
+## Aturan Tampilan (UI)
+
+Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
+
+### Identitas & gaya
+- Identitas sekolah sendiri: `SCHOOL` di `frontend/src/utils/constants.js` (nama, slogan) dan logo
+  placeholder `components/brand/SchoolLogo.jsx` (ganti dengan logo resmi, lihat komentar di file).
+  **Jangan** menyalin merek, logo, atau ilustrasi dari produk lain.
+- Warna utama hijau `brand-600` = `#1F8A4C` (palet `brand-50`–`brand-900` di `src/index.css`).
+  Latar halaman `bg-surface` (abu-abu sangat muda). Jangan menulis kode warna hex langsung di
+  komponen (kecuali di file logo SVG); pakai token `brand-*` atau warna Tailwind.
+- Kartu/panel: `rounded-xl bg-white shadow-sm ring-1 ring-slate-200`. Tombol & input: `rounded-lg`.
+- Font: Plus Jakarta Sans (dibundel lewat `@fontsource-variable`, tidak bergantung internet).
+- Ikon hanya dari `lucide-react`, selalu dengan `aria-hidden="true"` jika ada teks di sebelahnya.
+  Ilustrasi = ikon lucide berukuran besar di dalam kotak berwarna muda (lihat `ActionCard`).
+
+### Tata letak (`layouts/DashboardLayout.jsx`)
+- Header putih: logo + nama sekolah (tebal) + slogan; kanan: lonceng pemberitahuan, pilihan
+  bahasa, menu avatar (Profil, Ganti Password, Keluar).
+- Bar menu hijau (`rounded-xl bg-brand-600`) di bawah header. Item aktif: `bg-white text-brand-700`.
+  Di layar < `lg` bar disembunyikan dan diganti menu hamburger.
+- Menu per peran **hanya** diatur di `layouts/navigation.js`. Halaman baru = tambahkan item di sana.
+- Lonceng pemberitahuan memakai data asli dari `/api/dashboard/` (bukan angka buatan).
+
+### Fitur yang belum ada
+- Jangan membuat tombol/tautan ke halaman yang belum ada. Beri `soon: true` (menu, kartu Beranda)
+  atau pakai `SoonBadge` / `DropdownItem soon` → tampil nonaktif dengan label "Segera" dan tooltip
+  "Segera hadir".
+- Saat fitur selesai: hapus `soon`, isi `to`, dan pastikan route-nya ada di `routes/AppRoutes.jsx`.
+
+### Beranda (`/admin`, `/guru`, `/siswa`)
+- Sapaan "Halo, [nama]! Apa langkah pertama Anda?", grid 2×2 kartu (`components/home/ActionCard.jsx`),
+  lalu panel tab `HomePanel` (Papan Pengumuman, Tugas Hari Ini, Tugas Mendatang — data dari API),
+  lalu bagian "Ringkasan" (statistik dashboard).
+- Isi kartu per peran di `pages/home/cards.js`: setiap kartu tepat 2 tombol; setiap tombol punya
+  ikon, teks, dan `info` (tooltip penjelasan). Warna tombol: `orange`, `green`, `slate`, `blue`.
+- Tombol Beranda boleh membuka aksi di halaman tujuan lewat parameter sekali-pakai
+  (`?baru=1`, `?impor=1`, `?filter=...`, `?status=...`) yang dibaca dengan `hooks/useQueryFlag.js`.
+
+### Responsif & aksesibilitas
+- Grid kartu: 1 kolom di HP, 2 kolom mulai `md`. Tabel lebar dibungkus `overflow-x-auto`.
+- Input memakai `text-base` di HP (mencegah zoom otomatis iPhone), `sm:text-sm` di layar besar.
+- Tooltip (`components/Tooltip.jsx`) muncul saat hover **dan** fokus, agar bisa dipakai dengan
+  keyboard dan ketuk di HP. Menu dropdown (`components/Dropdown.jsx`) tertutup dengan klik di luar
+  atau tombol Escape.
+- Pakai ulang komponen yang ada sebelum membuat yang baru: `PageHeader`, `DataTable`, `FormModal`,
+  `DeleteDialog`, `MaterialList`, `TaskList`, `AssignmentSelect`, `StatCard`, `Panel`, `EmptyState`.
+
 ## Perintah Pengembangan
 
 Backend (dari folder `backend/`, Windows):
@@ -174,7 +224,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | CRUD   | `/api/teaching-assignments/` (filter `teacher`, `subject`, `classroom`) | Tulis: admin. Baca: admin semua, guru miliknya, siswa di kelasnya |
 | CRUD   | `/api/materials/` (multipart; filter `teaching_assignment`, `material_type`, `is_published`) | Tambah/ubah: guru pengampu. Hapus: guru pengampu/admin. Baca: admin semua, guru miliknya, siswa hanya yang terbit di kelasnya |
 | GET    | `/api/materials/{id}/download/`   | Sama dengan hak baca materi |
-| CRUD   | `/api/tasks/` (multipart; filter `teaching_assignment`, `is_published`) | Sama dengan materi. Untuk siswa ada `my_submission` |
+| CRUD   | `/api/tasks/` (multipart; filter `teaching_assignment`, `is_published`, `due_at__gte`, `due_at__lte`) | Sama dengan materi. Untuk siswa ada `my_submission`; untuk guru `ungraded_count` |
 | GET    | `/api/tasks/{id}/attachment/`     | Sama dengan hak baca tugas |
 | GET/PUT/DELETE | `/api/tasks/{id}/my-submission/` | Siswa: lihat, kumpulkan/ganti (multipart `text_answer`, `file`), batalkan |
 | GET    | `/api/tasks/{id}/submissions/`    | Guru pengampu/admin: rekap semua siswa + pengumpulannya |

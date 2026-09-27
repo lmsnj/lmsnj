@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { tasksApi } from '../../api/tasks'
+import AssignmentSelect from '../../components/AssignmentSelect'
 import FileInput, { UploadProgress } from '../../components/FileInput'
 import FormModal from '../../components/FormModal'
 import TextAreaField from '../../components/TextAreaField'
@@ -21,12 +22,14 @@ export default function TaskFormModal({ task, assignmentId, onClose, onSaved }) 
   const [attachment, setAttachment] = useState(null)
   const [removeAttachment, setRemoveAttachment] = useState(false)
   const [progress, setProgress] = useState(null)
+  // Dari halaman kelas-mapel `assignmentId` sudah pasti; dari halaman gabungan guru memilih sendiri.
+  const [chosenAssignment, setChosenAssignment] = useState('')
 
   const { submit, submitting, errors, generalError } = useFormSubmit(async () => {
     const data = { ...form, due_at: fromDatetimeLocal(form.due_at) }
     if (attachment) data.attachment = attachment
     else if (removeAttachment) data.remove_attachment = true
-    if (!isEdit) data.teaching_assignment = assignmentId
+    if (!isEdit) data.teaching_assignment = assignmentId || chosenAssignment
     setProgress(attachment ? 0 : null)
     try {
       const saved = isEdit
@@ -51,6 +54,16 @@ export default function TaskFormModal({ task, assignmentId, onClose, onSaved }) 
       submitting={submitting}
       error={generalError}
     >
+      {!isEdit && !assignmentId && (
+        <AssignmentSelect
+          label="Kelas & mapel"
+          value={chosenAssignment}
+          onChange={setChosenAssignment}
+          placeholder="- Pilih kelas & mapel -"
+          error={errors.teaching_assignment}
+          required
+        />
+      )}
       <TextField
         label="Judul tugas"
         name="title"

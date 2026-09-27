@@ -1,9 +1,28 @@
 @import 'tailwindcss';
 
+/* Tema LMS SMKS Nurul Jadid. Aturan tampilan lengkap ada di CLAUDE.md (bagian "Aturan Tampilan"). */
 @theme {
-  --color-brand-50: #ecfdf5;
-  --color-brand-100: #d1fae5;
-  --color-brand-600: #059669;
-  --color-brand-700: #047857;
-  --color-brand-800: #065f46;
+  /* Hijau utama sekolah: brand-600 = #1F8A4C */
+  --color-brand-50: #eef8f2;
+  --color-brand-100: #d5efdf;
+  --color-brand-200: #aedfc2;
+  --color-brand-300: #7dc99e;
+  --color-brand-400: #4bae77;
+  --color-brand-500: #2a9a5b;
+  --color-brand-600: #1f8a4c;
+  --color-brand-700: #19703e;
+  --color-brand-800: #155934;
+  --color-brand-900: #11472a;
+
+  /* Latar halaman abu-abu sangat muda */
+  --color-surface: #f4f6f5;
+
+  /* Font dibundel bersama aplikasi (tetap tampil walau jaringan sekolah tanpa internet). */
+  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-slate-800 antialiased;
+  }
 }

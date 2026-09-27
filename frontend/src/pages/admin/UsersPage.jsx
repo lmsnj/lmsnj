@@ -13,6 +13,7 @@ import TextField from '../../components/TextField'
 import useAuth from '../../hooks/useAuth'
 import useDebounce from '../../hooks/useDebounce'
 import useFetch from '../../hooks/useFetch'
+import useQueryFlag from '../../hooks/useQueryFlag'
 import { ALL, toOptions } from '../../utils/academic'
 import { ROLE_LABELS, ROLES } from '../../utils/constants'
 import ImportUsersModal from './ImportUsersModal'
@@ -41,7 +42,12 @@ export default function UsersPage() {
   const [page, setPage] = useState(1)
   const [notice, setNotice] = useState('')
   // Modal yang sedang terbuka: { type: 'form' | 'reset' | 'delete' | 'import', user }
-  const [dialog, setDialog] = useState(null)
+  // Tombol Beranda membuka halaman ini dengan ?baru=1 (tambah) atau ?impor=1 (impor Excel).
+  const openNew = useQueryFlag('baru') === '1'
+  const openImport = useQueryFlag('impor') === '1'
+  const [dialog, setDialog] = useState(() =>
+    openImport ? { type: 'import' } : openNew ? { type: 'form', user: null } : null,
+  )
 
   const search = useDebounce(filters.search)
   const params = { page, role: filters.role, is_active: filters.is_active, search }

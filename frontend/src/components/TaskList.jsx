@@ -7,10 +7,11 @@ import Spinner from './Spinner'
 
 /**
  * Daftar tugas. `linkTo(task)` menentukan halaman detail.
- * forTeacher: tampilkan status Draf/Terbit dan jumlah pengumpulan.
+ * forTeacher: tampilkan status Draf/Terbit, jumlah pengumpulan, dan yang perlu dinilai.
+ * showContext: tampilkan mapel & kelas (untuk daftar gabungan semua kelas).
  * Selain itu: tampilkan status pengumpulan milik siswa.
  */
-export default function TaskList({ tasks, loading, linkTo, forTeacher, emptyTitle }) {
+export default function TaskList({ tasks, loading, linkTo, forTeacher, showContext, emptyTitle }) {
   if (loading && !tasks?.length) {
     return (
       <div className="py-10 text-center text-brand-600">
@@ -46,9 +47,17 @@ export default function TaskList({ tasks, loading, linkTo, forTeacher, emptyTitl
                 Tenggat: {formatDate(task.due_at)}{' '}
                 <span className="text-slate-500">({dueLabel(task.due_at)})</span>
               </p>
+              {showContext && (
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  {task.subject_name} · {task.classroom_name}
+                </p>
+              )}
               {forTeacher && (
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   {task.submission_count} dari {task.student_count} siswa sudah mengumpulkan
+                  {task.ungraded_count > 0 && (
+                    <Badge color="amber">{task.ungraded_count} perlu dinilai</Badge>
+                  )}
                 </p>
               )}
             </Link>

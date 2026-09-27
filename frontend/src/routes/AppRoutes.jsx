@@ -12,13 +12,18 @@ import LoginPage from '../pages/auth/LoginPage'
 import MyClassesPage from '../pages/guru/MyClassesPage'
 import TeacherClassPage from '../pages/guru/TeacherClassPage'
 import TeacherDashboard from '../pages/guru/TeacherDashboard'
+import TeacherMaterialsPage from '../pages/guru/TeacherMaterialsPage'
+import TeacherTasksPage from '../pages/guru/TeacherTasksPage'
 import TeacherTaskPage from '../pages/guru/TeacherTaskPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import ProfilePage from '../pages/ProfilePage'
 import MySubjectsPage from '../pages/siswa/MySubjectsPage'
 import StudentDashboard from '../pages/siswa/StudentDashboard'
+import StudentGradesPage from '../pages/siswa/StudentGradesPage'
+import StudentMaterialsPage from '../pages/siswa/StudentMaterialsPage'
 import StudentSubjectPage from '../pages/siswa/StudentSubjectPage'
 import StudentTaskPage from '../pages/siswa/StudentTaskPage'
+import StudentTasksPage from '../pages/siswa/StudentTasksPage'
 import { ROLE_HOME, ROLES } from '../utils/constants'
 import ProtectedRoute from './ProtectedRoute'
 
@@ -49,6 +54,8 @@ export default function AppRoutes() {
             <Route index element={<TeacherDashboard />} />
             <Route path="kelas" element={<MyClassesPage />} />
             <Route path="kelas/:id" element={<TeacherClassPage />} />
+            <Route path="materi" element={<TeacherMaterialsPage />} />
+            <Route path="tugas" element={<TeacherTasksPage />} />
             <Route path="tugas/:id" element={<TeacherTaskPage />} />
           </Route>
 
@@ -56,7 +63,10 @@ export default function AppRoutes() {
             <Route index element={<StudentDashboard />} />
             <Route path="mapel" element={<MySubjectsPage />} />
             <Route path="mapel/:id" element={<StudentSubjectPage />} />
+            <Route path="materi" element={<StudentMaterialsPage />} />
+            <Route path="tugas" element={<StudentTasksPage />} />
             <Route path="tugas/:id" element={<StudentTaskPage />} />
+            <Route path="nilai" element={<StudentGradesPage />} />
           </Route>
 
           <Route path="profil" element={<ProfilePage />} />

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { materialsApi } from '../../api/materials'
+import AssignmentSelect from '../../components/AssignmentSelect'
 import FileInput, { UploadProgress } from '../../components/FileInput'
 import FormModal from '../../components/FormModal'
 import TextAreaField from '../../components/TextAreaField'
@@ -23,11 +24,13 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
   })
   const [file, setFile] = useState(null)
   const [progress, setProgress] = useState(null)
+  // Dari halaman kelas-mapel `assignmentId` sudah pasti; dari halaman gabungan guru memilih sendiri.
+  const [chosenAssignment, setChosenAssignment] = useState('')
 
   const { submit, submitting, errors, generalError } = useFormSubmit(async () => {
     const data = { ...form }
     if (file) data.file = file
-    if (!isEdit) data.teaching_assignment = assignmentId
+    if (!isEdit) data.teaching_assignment = assignmentId || chosenAssignment
     setProgress(file ? 0 : null)
     try {
       const saved = isEdit
@@ -54,6 +57,16 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
       submitting={submitting}
       error={generalError}
     >
+      {!isEdit && !assignmentId && (
+        <AssignmentSelect
+          label="Kelas & mapel"
+          value={chosenAssignment}
+          onChange={setChosenAssignment}
+          placeholder="- Pilih kelas & mapel -"
+          error={errors.teaching_assignment}
+          required
+        />
+      )}
       <fieldset>
         <legend className="mb-1 text-sm font-medium text-slate-700">Jenis materi</legend>
         <div className="grid grid-cols-3 gap-2">

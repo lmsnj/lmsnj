@@ -1,3 +1,10 @@
+// Identitas sekolah yang tampil di header dan halaman login.
+export const SCHOOL = {
+  name: 'SMKS Nurul Jadid',
+  slogan: 'Cerdas, Terampil, Berakhlak Mulia',
+  app: 'LMS SMKS Nurul Jadid',
+}
+
 export const ROLES = {
   ADMIN: 'admin',
   TEACHER: 'teacher',
@@ -15,24 +22,6 @@ export const ROLE_HOME = {
   [ROLES.ADMIN]: '/admin',
   [ROLES.TEACHER]: '/guru',
   [ROLES.STUDENT]: '/siswa',
-}
-
-export const NAV_ITEMS = {
-  [ROLES.ADMIN]: [
-    { to: '/admin', label: 'Dashboard', end: true },
-    { to: '/admin/pengguna', label: 'Pengguna' },
-    { to: '/admin/kelas', label: 'Kelas' },
-    { to: '/admin/mapel', label: 'Mata Pelajaran' },
-    { to: '/admin/pengampu', label: 'Pengampu' },
-  ],
-  [ROLES.TEACHER]: [
-    { to: '/guru', label: 'Dashboard', end: true },
-    { to: '/guru/kelas', label: 'Kelas Saya' },
-  ],
-  [ROLES.STUDENT]: [
-    { to: '/siswa', label: 'Dashboard', end: true },
-    { to: '/siswa/mapel', label: 'Mapel Saya' },
-  ],
 }
 
 export const PAGE_SIZE = 20
