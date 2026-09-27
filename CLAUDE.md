@@ -13,7 +13,11 @@ Learning Management System untuk SMKS Nurul Jadid. Dikembangkan oleh guru RPL, s
 - Penilaian pengumpulan tugas (nilai + umpan balik) oleh guru.
 - Dashboard berbeda untuk tiap peran.
 
-Di luar MVP (jangan dikerjakan kecuali diminta): kuis/ujian online, forum diskusi, absensi, notifikasi real-time, aplikasi mobile, integrasi Dapodik.
+Fitur tambahan setelah MVP (sudah dibuat): pengumuman, laporan nilai per kelas, jadwal sesi mengajar,
+ruang obrolan (pesan langsung), dan lembar asesmen (kuis online).
+
+Belum dikerjakan (jangan dikerjakan kecuali diminta): absensi, forum diskusi, notifikasi real-time
+(push/WebSocket), terjemahan bahasa lain, aplikasi mobile, integrasi Dapodik.
 
 ## Stack
 
@@ -45,7 +49,11 @@ lms-smknj/
 │   │   ├── academics/       # Kelas, Mapel, Pengampu (guru–mapel–kelas); selectors.py = filter data per peran
 │   │   ├── materials/       # Materi (PDF/video/link); selectors.py = materi yang boleh dilihat
 │   │   ├── tasks/           # Tugas, Pengumpulan, Penilaian; services.py = aturan, gradebook.py = rekap nilai & CSV
-│   │   └── dashboard/       # Ringkasan per peran (tanpa model); services.py memakai selector modul lain
+│   │   ├── dashboard/       # Ringkasan per peran (tanpa model); services.py memakai selector modul lain
+│   │   ├── announcements/   # Pengumuman sekolah (admin) & kelas-mapel (guru)
+│   │   ├── schedule/        # Jadwal sesi mengajar (TeachingSession); bukan "sessions" (bentrok app Django)
+│   │   ├── chat/            # Ruang obrolan; rules.py = siapa boleh mengobrol dengan siapa
+│   │   └── assessments/     # Lembar asesmen (kuis); services.py = aturan mengerjakan & menilai
 │   └── media/               # File upload (tidak di-commit, TIDAK disajikan publik)
 └── frontend/
     ├── index.html
@@ -151,10 +159,12 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
 - Bar menu hijau (`rounded-xl bg-brand-600`) di bawah header. Item aktif: `bg-white text-brand-700`.
   Di layar < `lg` bar disembunyikan dan diganti menu hamburger.
 - Menu per peran **hanya** diatur di `layouts/navigation.js`. Halaman baru = tambahkan item di sana.
+- Setiap halaman di `routes/AppRoutes.jsx` dimuat dengan `lazy()` (code splitting) kecuali halaman login.
 - Lonceng pemberitahuan memakai data asli dari `/api/dashboard/` (bukan angka buatan).
 
 ### Fitur yang belum ada
-- Jangan membuat tombol/tautan ke halaman yang belum ada. Beri `soon: true` (menu, kartu Beranda)
+- Saat ini semua menu & tombol Beranda sudah aktif. Untuk fitur baru yang belum selesai, jangan
+  membuat tombol/tautan ke halaman yang belum ada. Beri `soon: true` (menu, kartu Beranda)
   atau pakai `SoonBadge` / `DropdownItem soon` → tampil nonaktif dengan label "Segera" dan tooltip
   "Segera hadir".
 - Saat fitur selesai: hapus `soon`, isi `to`, dan pastikan route-nya ada di `routes/AppRoutes.jsx`.
@@ -203,6 +213,32 @@ npm run format
 
 Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`.
 
+### Fitur tambahan — aturan penting
+- **Pengumuman:** `teaching_assignment` kosong = seluruh sekolah (hanya admin); guru wajib memilih
+  kelas-mapel miliknya. Ubah/hapus: penulis atau admin.
+- **Laporan nilai kelas** (`apps/tasks/reports.py`): dibangun dari `build_gradebook`, jadi rata-ratanya
+  sama dengan rekap guru. Akses: admin dan wali kelas (hanya kelasnya).
+- **Sesi mengajar:** mode `offline` (ruang) atau `online` (wajib link). Guru pengampu yang mengatur.
+- **Ruang obrolan:** aturan di `apps/chat/rules.py` (`can_chat` & `contacts_for` harus selalu
+  sejalan — ada test yang memeriksa semua pasangan). Siswa–siswa tidak boleh. Pesan baru dicek
+  berkala (polling 4 detik saat percakapan terbuka, 30 detik untuk badge), bukan WebSocket.
+  Kirim pesan dibatasi 30/menit.
+- **Lembar asesmen:** soal terkunci setelah ada `Attempt`; kunci jawaban (`correct_choice`) hanya
+  lewat `QuestionSerializer` (guru) — siswa memakai `StudentQuestionSerializer` dan `answer_sheet`
+  membuka kunci hanya setelah tenggat jika `show_answers`. Batas waktu = mulai + durasi (maks.
+  tenggat); lewat batas tetap disimpan tapi `is_late`. Pilihan ganda dinilai otomatis, esai kosong
+  = 0, esai berisi dinilai guru; `Attempt.score` terisi setelah semua jawaban dinilai.
+- **Pengawasan ujian (asesmen):** website tidak bisa melarang pindah tab/aplikasi; yang dilakukan:
+  mode ujian menutupi aplikasi, `useBlocker` menahan navigasi (butuh *data router* — itulah
+  sebabnya `App.jsx` memakai `createBrowserRouter`), `beforeunload` meminta konfirmasi, dan
+  `utils/examMonitor.js` mendeteksi pindah tab (`hidden`), jendela lain > 2 detik (`blur`), dan keluar
+  layar penuh. Kejadian dalam 3 detik digabung. Setiap kejadian dikirim ke
+  `/api/assessments/{id}/violation/` dan dicatat (`AttemptEvent`); jika `max_violations` tercapai,
+  server mengumpulkan otomatis memakai `draft_answers` (disimpan tiap 1,5 detik lewat `.../draft/`,
+  dan selalu disimpan dulu sebelum melapor pelanggaran).
+- Hitungan per objek yang melibatkan lebih dari satu relasi memakai subquery (lihat
+  `apps/assessments/views.py::_subquery`) agar angka tidak berlipat karena join ganda.
+
 ## Endpoint API yang Sudah Ada
 
 | Method | Endpoint                          | Akses            |
@@ -231,6 +267,17 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET    | `/api/submissions/`, `/api/submissions/{id}/download/` | Admin semua, guru untuk tugasnya, siswa miliknya |
 | PATCH  | `/api/submissions/{id}/grade/` (`score`, `feedback`) | Guru pengampu tugas |
 | GET    | `/api/gradebook/{teaching_assignment_id}/` dan `.../export/` (CSV) | Guru pengampu/admin |
+| CRUD   | `/api/announcements/` (`?teaching_assignment=<id>` atau `school`) | Baca: semua (sekolah + kelas-mapelnya). Buat: admin & guru. Ubah/hapus: penulis/admin |
+| GET    | `/api/reports/classrooms/{id}/` dan `.../export/` (CSV) | Admin & wali kelas |
+| CRUD   | `/api/sessions/` (filter `teaching_assignment`, `starts_at__gte/lte`) | Seperti materi |
+| GET/POST | `/api/chat/conversations/` (`{user}` untuk memulai) | Login; hanya percakapan milik sendiri |
+| GET/POST | `/api/chat/conversations/{id}/messages/` (`?after=<id>`) | Anggota percakapan; kirim dibatasi 30/menit |
+| GET    | `/api/chat/conversations/contacts/`, `.../unread-count/` | Login |
+| CRUD   | `/api/assessments/` | Seperti tugas; untuk siswa ada `my_attempt` |
+| GET    | `/api/assessments/{id}/questions/`, `.../results/` | Guru pengampu/admin |
+| POST/GET | `/api/assessments/{id}/start/`, `.../submit/`, `.../my-attempt/`, `.../draft/`, `.../violation/` | Siswa |
+| CRUD   | `/api/assessment-questions/` | Guru pengampu (terkunci setelah ada pengerjaan) |
+| GET/PATCH | `/api/assessment-attempts/{id}/`, `.../grade/` | Guru pengampu (grade), admin (lihat) |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
 
 ## Progres
@@ -243,3 +290,5 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - [x] Fase 5: Penilaian
 - [x] Fase 6: Dashboard per peran
 - [x] Fase 7: Pemantapan
+- [x] Tambahan: impor pengguna dari Excel, tampilan baru, pengumuman, laporan nilai, sesi mengajar,
+      ruang obrolan, lembar asesmen

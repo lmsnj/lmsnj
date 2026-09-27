@@ -24,7 +24,8 @@ import { ROLES } from '../../utils/constants'
 
 /**
  * Kartu aksi Beranda per peran (grid 2x2). Setiap kartu punya tepat 2 tombol.
- * Tombol tanpa `to` atau dengan `soon: true` tampil nonaktif ("Segera hadir").
+ * Tombol tanpa `to` atau dengan `soon: true` tampil nonaktif ("Segera hadir"); pakai untuk
+ * fitur baru yang belum selesai dibuat.
  * Warna: orange | green | slate | blue (lihat components/home/ActionCard.jsx).
  */
 export const HOME_CARDS = {
@@ -37,7 +38,7 @@ export const HOME_CARDS = {
         {
           label: 'Buat Lembar Asesmen',
           icon: ClipboardPen,
-          soon: true,
+          to: '/guru/asesmen?baru=1',
           info: 'Membuat soal atau kuis yang dikerjakan siswa secara online.',
         },
         {
@@ -75,7 +76,7 @@ export const HOME_CARDS = {
         {
           label: 'Buat Sesi',
           icon: CalendarPlus,
-          soon: true,
+          to: '/guru/sesi?baru=1',
           info: 'Menjadwalkan sesi atau pertemuan mengajar.',
         },
         {
@@ -94,13 +95,13 @@ export const HOME_CARDS = {
         {
           label: 'Chat dengan Siswa',
           icon: MessageCircle,
-          soon: true,
+          to: '/obrolan?baru=1',
           info: 'Berkirim pesan langsung dengan siswa.',
         },
         {
           label: 'Buat Pengumuman',
           icon: Megaphone,
-          soon: true,
+          to: '/pengumuman?baru=1',
           info: 'Menyampaikan pengumuman ke kelas yang Anda ampu.',
         },
       ],
@@ -173,13 +174,13 @@ export const HOME_CARDS = {
         {
           label: 'Lihat Pengumuman',
           icon: Megaphone,
-          soon: true,
+          to: '/pengumuman',
           info: 'Pengumuman dari guru dan sekolah.',
         },
         {
           label: 'Chat dengan Guru',
           icon: MessageCircle,
-          soon: true,
+          to: '/obrolan?baru=1',
           info: 'Berkirim pesan langsung dengan guru.',
         },
       ],
@@ -237,10 +238,10 @@ export const HOME_CARDS = {
           info: 'Jumlah pengguna, kelas, materi, tugas, dan hal yang perlu ditindaklanjuti.',
         },
         {
-          label: 'Rekap Nilai Sekolah',
+          label: 'Laporan Nilai Kelas',
           icon: TrendingUp,
-          soon: true,
-          info: 'Rekap nilai seluruh kelas dalam satu laporan.',
+          to: '/admin/laporan',
+          info: 'Rekap rata-rata nilai setiap siswa per mata pelajaran, per kelas.',
         },
       ],
     },
@@ -252,13 +253,13 @@ export const HOME_CARDS = {
         {
           label: 'Buat Pengumuman',
           icon: Megaphone,
-          soon: true,
+          to: '/pengumuman?baru=1',
           info: 'Menyampaikan pengumuman ke seluruh sekolah.',
         },
         {
           label: 'Ruang Obrolan',
           icon: MessagesSquare,
-          soon: true,
+          to: '/obrolan',
           info: 'Berkirim pesan dengan guru dan siswa.',
         },
       ],

@@ -15,6 +15,10 @@ urlpatterns = [
     path("api/", include("apps.materials.urls")),
     path("api/", include("apps.tasks.urls")),
     path("api/", include("apps.dashboard.urls")),
+    path("api/", include("apps.announcements.urls")),
+    path("api/", include("apps.schedule.urls")),
+    path("api/", include("apps.chat.urls")),
+    path("api/", include("apps.assessments.urls")),
 ]
 
 # Sengaja TIDAK menyajikan MEDIA_ROOT secara publik: file materi & tugas hanya boleh

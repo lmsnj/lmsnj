@@ -91,7 +91,7 @@ class TeachingAssignmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     """Admin: kelola pengampu. Guru: mapel yang ia ampu. Siswa: mapel di kelasnya."""
 
     protected_message = (
-        "Pengampu ini sudah memiliki materi atau tugas. Jika gurunya berganti, "
+        "Pengampu ini sudah memiliki materi, tugas, atau asesmen. Jika gurunya berganti, "
         "cukup ubah guru pada data pengampu ini."
     )
 

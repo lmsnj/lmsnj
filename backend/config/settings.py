@@ -57,6 +57,10 @@ INSTALLED_APPS = [
     "apps.materials",
     "apps.tasks",
     "apps.dashboard",
+    "apps.announcements",
+    "apps.schedule",
+    "apps.chat",
+    "apps.assessments",
 ]
 
 MIDDLEWARE = [
@@ -190,6 +194,8 @@ REST_FRAMEWORK = {
     "COERCE_DECIMAL_TO_STRING": False,
     "DEFAULT_THROTTLE_RATES": {
         "login": "10/min",
+        # Mencegah spam pesan di Ruang Obrolan.
+        "chat": "30/min",
     },
 }
 

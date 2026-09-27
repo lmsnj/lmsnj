@@ -8,9 +8,10 @@ dapat dipakai sebagai contoh proyek pembelajaran bagi siswa.
 
 | Peran | Yang bisa dilakukan |
 |-------|---------------------|
-| **Admin** | Mengelola akun guru & siswa (termasuk **impor massal dari Excel** dengan template), kelas, mata pelajaran, dan pengampu (guru–mapel–kelas). Dashboard statistik dan daftar hal yang perlu ditindaklanjuti. |
-| **Guru** | Membagikan materi (PDF, video YouTube, link), membuat tugas dengan tenggat, melihat siapa yang sudah/belum mengumpulkan, menilai dengan umpan balik, rekap nilai + ekspor CSV untuk Excel. |
-| **Siswa** | Membaca materi, mengumpulkan tugas (teks dan/atau file), melihat nilai dan umpan balik, dashboard tugas yang harus dikerjakan. |
+| **Admin** | Mengelola akun guru & siswa (termasuk **impor massal dari Excel**), kelas, mata pelajaran, dan pengampu. Pengumuman sekolah, laporan nilai per kelas (+ CSV), dan dashboard statistik. |
+| **Guru** | Membagikan materi (PDF, video YouTube, link), tugas dengan tenggat, **lembar asesmen/kuis** (pilihan ganda otomatis + esai), menilai dengan umpan balik, rekap nilai + CSV, jadwal **sesi mengajar** (tatap muka/online), pengumuman kelas, dan laporan kelas wali. |
+| **Siswa** | Membaca materi, mengumpulkan tugas, mengerjakan lembar asesmen dengan timer, melihat nilai & progres, jadwal sesi, dan pengumuman. |
+| **Semua** | **Ruang obrolan** (pesan langsung; siswa hanya dengan guru di kelasnya, wali kelas, dan admin). |
 
 Tampilan responsif (bisa dipakai di HP) dan seluruh teks berbahasa Indonesia.
 

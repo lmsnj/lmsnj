@@ -14,4 +14,12 @@ urlpatterns = router.urls + [
         views.GradebookView.as_view(export=True),
         name="gradebook-export",
     ),
+    path(
+        "reports/classrooms/<int:classroom_id>/", views.ClassroomReportView.as_view(), name="classroom-report"
+    ),
+    path(
+        "reports/classrooms/<int:classroom_id>/export/",
+        views.ClassroomReportView.as_view(export=True),
+        name="classroom-report-export",
+    ),
 ]

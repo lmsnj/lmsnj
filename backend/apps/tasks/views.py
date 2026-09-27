@@ -7,6 +7,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.academics.models import Classroom
 from apps.academics.selectors import teaching_assignments_for
 from apps.accounts.models import Role
 from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStudent, IsTeacher
@@ -15,6 +16,7 @@ from apps.common.mixins import ProtectedDeleteMixin
 
 from .gradebook import build_gradebook, gradebook_csv, roster_students
 from .models import Submission, Task
+from .reports import build_classroom_report, classroom_report_csv
 from .selectors import submissions_for, tasks_for
 from .serializers import GradeSerializer, SubmissionSerializer, SubmitSerializer, TaskSerializer
 from .services import cancel_submission, grade_submission, submit_task
@@ -145,4 +147,25 @@ class GradebookView(APIView):
         filename = f"Nilai {assignment.subject.code} {assignment.classroom.name} {year}.csv"
         response = HttpResponse(gradebook_csv(gradebook), content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+class ClassroomReportView(APIView):
+    """Rekap nilai satu kelas (siswa x mapel) untuk admin dan wali kelas. `export=True` -> CSV."""
+
+    permission_classes = [IsAdminOrTeacher]
+    export = False
+
+    def get(self, request, classroom_id):
+        classrooms = Classroom.objects.select_related("homeroom_teacher")
+        if request.user.role == Role.TEACHER:
+            # Guru hanya bisa melihat laporan kelas yang ia walikan.
+            classrooms = classrooms.filter(homeroom_teacher=request.user)
+        classroom = get_object_or_404(classrooms, pk=classroom_id)
+        report = build_classroom_report(classroom)
+        if not self.export:
+            return Response(report)
+        year = classroom.academic_year.replace("/", "-")
+        response = HttpResponse(classroom_report_csv(report), content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="Laporan Nilai {classroom.name} {year}.csv"'
         return response

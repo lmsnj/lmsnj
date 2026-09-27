@@ -153,3 +153,36 @@ class TaskListExtrasTests(TaskTestBase):
         item = res.data["results"][0]
         self.assertEqual((item["submission_count"], item["ungraded_count"]), (2, 1))
         self.assertEqual(later.submissions.count(), 0)
+
+
+class ClassroomReportTests(TaskTestBase):
+    def setUp(self):
+        super().setUp()
+        task = self.make_task(max_score=50)
+        self.submit(task, text_answer="a")
+        self.client.force_authenticate(self.teacher)
+        submission = Submission.objects.get(task=task, student=self.student)
+        self.client.patch(reverse("submission-grade", args=[submission.id]), {"score": 40}, format="json")
+        self.url = reverse("classroom-report", args=[self.rpl.id])
+
+    def test_report_for_admin(self):
+        self.client.force_authenticate(self.admin)
+        data = self.client.get(self.url).data
+        self.assertEqual([s["subject_code"] for s in data["subjects"]], ["PWEB"])
+        rows = {r["student"]["full_name"]: r for r in data["rows"]}
+        self.assertEqual(rows["Siswa1"]["overall"], 80)  # 40/50 -> 80
+        self.assertIsNone(rows["Siswa2"]["overall"])
+        self.assertEqual(data["class_average"], 80)
+        res = self.client.get(reverse("classroom-report-export", args=[self.rpl.id]))
+        lines = res.content.decode("utf-8").lstrip("\ufeff").splitlines()
+        self.assertEqual(lines[0], "No;NIS;Nama;Pemrograman Web;Rata-rata")
+        self.assertEqual(lines[1], "1;;Siswa1;80;80")
+
+    def test_only_admin_and_homeroom_teacher(self):
+        self.client.force_authenticate(self.teacher)
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_404_NOT_FOUND)
+        self.rpl.homeroom_teacher = self.teacher
+        self.rpl.save()
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_200_OK)
+        self.client.force_authenticate(self.student)
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)

@@ -1,10 +1,12 @@
 import { ChevronDown, Ellipsis, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import SchoolLogo from '../components/brand/SchoolLogo'
 import Dropdown, { DropdownItem, SoonBadge } from '../components/Dropdown'
 import ErrorBoundary from '../components/ErrorBoundary'
+import Spinner from '../components/Spinner'
 import useAuth from '../hooks/useAuth'
+import useUnreadMessages from '../hooks/useUnreadMessages'
 import { ROLE_HOME, SCHOOL } from '../utils/constants'
 import { LanguageMenu, NotificationBell, UserMenu } from './HeaderMenus'
 import { NAVIGATION } from './navigation'
@@ -16,6 +18,19 @@ function navItemClass(isActive) {
       ? 'bg-white text-brand-700 shadow-sm'
       : 'text-white/90 hover:bg-white/10 hover:text-white'
   }`
+}
+
+// Jumlah pesan belum dibaca di menu Ruang Obrolan.
+function CountBadge({ count }) {
+  if (!count) return null
+  return (
+    <span
+      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white"
+      aria-label={`${count} pesan belum dibaca`}
+    >
+      {count > 99 ? '99+' : count}
+    </span>
+  )
 }
 
 function SoonNavItem({ item }) {
@@ -33,7 +48,7 @@ function SoonNavItem({ item }) {
   )
 }
 
-function NavBar({ nav }) {
+function NavBar({ nav, badges }) {
   const location = useLocation()
   const moreActive = nav.more.some((item) => item.to && location.pathname.startsWith(item.to))
 
@@ -52,6 +67,7 @@ function NavBar({ nav }) {
               >
                 <item.icon className="size-4" aria-hidden="true" />
                 {item.label}
+                <CountBadge count={badges[item.badge]} />
               </NavLink>
             )}
           </li>
@@ -93,7 +109,7 @@ function NavBar({ nav }) {
 }
 
 // Menu versi HP: panel dari kiri berisi semua item (termasuk "Lainnya").
-function MobileMenu({ nav, onClose }) {
+function MobileMenu({ nav, badges, onClose }) {
   const items = [...nav.main, ...nav.more]
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
@@ -140,7 +156,8 @@ function MobileMenu({ nav, onClose }) {
                   }
                 >
                   <item.icon className="size-5" aria-hidden="true" />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  <CountBadge count={badges[item.badge]} />
                 </NavLink>
               )}
             </li>
@@ -156,6 +173,7 @@ export default function DashboardLayout() {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const nav = NAVIGATION[user.role]
+  const badges = { chat: useUnreadMessages() }
 
   return (
     <div className="min-h-screen bg-surface">
@@ -163,11 +181,15 @@ export default function DashboardLayout() {
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
           <button
             type="button"
-            className="-ml-2 rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+            className="relative -ml-2 rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
             onClick={() => setMenuOpen(true)}
             aria-label="Buka menu"
           >
             <Menu className="size-6" aria-hidden="true" />
+            {/* Titik merah: ada pesan belum dibaca (bar menu tersembunyi di HP). */}
+            {badges.chat > 0 && (
+              <span className="absolute top-1.5 right-1.5 size-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+            )}
           </button>
           <Link to={ROLE_HOME[user.role]} className="flex min-w-0 items-center gap-3">
             <SchoolLogo className="size-10 shrink-0" />
@@ -190,17 +212,26 @@ export default function DashboardLayout() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="pt-4">
-          <NavBar nav={nav} />
+          <NavBar nav={nav} badges={badges} />
         </div>
         <main className="py-6">
           {/* key: error di satu halaman tidak terbawa saat pindah halaman. */}
           <ErrorBoundary key={location.pathname}>
-            <Outlet />
+            {/* Header & menu tetap tampil selama kode halaman berikutnya diunduh. */}
+            <Suspense
+              fallback={
+                <div className="py-16 text-center text-brand-600">
+                  <Spinner className="size-8" />
+                </div>
+              }
+            >
+              <Outlet />
+            </Suspense>
           </ErrorBoundary>
         </main>
       </div>
 
-      {menuOpen && <MobileMenu nav={nav} onClose={() => setMenuOpen(false)} />}
+      {menuOpen && <MobileMenu nav={nav} badges={badges} onClose={() => setMenuOpen(false)} />}
     </div>
   )
 }

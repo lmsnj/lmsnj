@@ -1,6 +1,7 @@
 import { CalendarClock, CalendarDays, Megaphone } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { announcementsApi } from '../../api/announcements'
 import { tasksApi } from '../../api/tasks'
 import useAuth from '../../hooks/useAuth'
 import useFetch from '../../hooks/useFetch'
@@ -9,7 +10,7 @@ import { formatDate } from '../../utils/media'
 import { dueLabel, studentTaskStatus } from '../../utils/tasks'
 import Alert from '../Alert'
 import Badge from '../Badge'
-import { SoonBadge } from '../Dropdown'
+import AnnouncementCard from '../AnnouncementCard'
 import Spinner from '../Spinner'
 
 const UPCOMING_DAYS = 14
@@ -109,9 +110,42 @@ function TaskRows({ tab }) {
   )
 }
 
+const ANNOUNCEMENT_LIMIT = 5
+
+function AnnouncementRows() {
+  const announcements = useFetch(announcementsApi.list, { page_size: ANNOUNCEMENT_LIMIT })
+  if (announcements.error) return <Alert type="error">{announcements.error}</Alert>
+  if (!announcements.data) {
+    return (
+      <div className="py-8 text-center text-brand-600">
+        <Spinner />
+      </div>
+    )
+  }
+  const items = announcements.data.results
+  return (
+    <div className="space-y-3 py-3">
+      {items.length === 0 ? (
+        <div className="py-5 text-center">
+          <Megaphone className="mx-auto size-10 text-slate-300" aria-hidden="true" />
+          <p className="mt-2 text-sm text-slate-500">Belum ada pengumuman.</p>
+        </div>
+      ) : (
+        items.map((a) => <AnnouncementCard key={a.id} announcement={a} compact />)
+      )}
+      <Link
+        to="/pengumuman"
+        className="block text-right text-sm font-medium text-brand-700 hover:underline"
+      >
+        Lihat semua pengumuman →
+      </Link>
+    </div>
+  )
+}
+
 // Panel putih bertab di bawah kartu Beranda. Data tugas diambil langsung dari API.
 export default function HomePanel() {
-  const [tab, setTab] = useState('today')
+  const [tab, setTab] = useState('announcements')
 
   return (
     <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -131,22 +165,11 @@ export default function HomePanel() {
           >
             <item.icon className="size-4" aria-hidden="true" />
             {item.label}
-            {item.id === 'announcements' && <SoonBadge />}
           </button>
         ))}
       </div>
       <div className="px-5 py-2">
-        {tab === 'announcements' ? (
-          <div className="py-8 text-center">
-            <Megaphone className="mx-auto size-10 text-slate-300" aria-hidden="true" />
-            <p className="mt-2 font-medium text-slate-700">Fitur pengumuman segera hadir</p>
-            <p className="text-sm text-slate-500">
-              Nantinya guru dan admin bisa menyampaikan pengumuman di sini.
-            </p>
-          </div>
-        ) : (
-          <TaskRows key={tab} tab={tab} />
-        )}
+        {tab === 'announcements' ? <AnnouncementRows /> : <TaskRows key={tab} tab={tab} />}
       </div>
     </section>
   )

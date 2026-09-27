@@ -127,7 +127,6 @@ export function LanguageMenu() {
               Bahasa Indonesia <Check className="size-4 text-brand-600" aria-hidden="true" />
             </span>
           </DropdownItem>
-          <DropdownItem soon>English</DropdownItem>
         </>
       )}
     </Dropdown>

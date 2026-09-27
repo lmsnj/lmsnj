@@ -17,7 +17,11 @@ from django.utils import timezone
 
 from apps.academics.models import Classroom, Subject, TeachingAssignment
 from apps.accounts.models import Role, User
+from apps.announcements.models import Announcement
+from apps.assessments.models import Assessment, Question
+from apps.chat.models import Conversation, Message
 from apps.materials.models import Material, MaterialType
+from apps.schedule.models import TeachingSession
 from apps.tasks.models import Submission, Task
 
 PASSWORDS = {
@@ -228,6 +232,8 @@ class Command(BaseCommand):
             self.count("pengampu", created)
             self.seed_content(assignment, CONTENT[code])
 
+        self.seed_extras(teachers)
+
     def seed_content(self, assignment, content):
         teacher = assignment.teacher
         if "pdf" in content:
@@ -271,6 +277,95 @@ class Command(BaseCommand):
             self.count("tugas", created)
             if created:
                 self.seed_submissions(task, past_due=due_days < 0)
+
+    def seed_extras(self, teachers):
+        """Contoh pengumuman, sesi mengajar, lembar asesmen, dan obrolan di kelas XI RPL 1."""
+        admin = User.objects.filter(role=Role.ADMIN).order_by("id").first()
+        _, created = Announcement.objects.get_or_create(
+            title="Selamat datang di LMS SMKS Nurul Jadid",
+            teaching_assignment=None,
+            defaults={
+                "body": "Semua materi, tugas, dan pengumuman kini ada di satu tempat. Ganti password Anda "
+                "setelah login pertama melalui menu Profil.",
+                "is_pinned": True,
+                "author": admin,
+            },
+        )
+        self.count("pengumuman", created)
+
+        web = TeachingAssignment.objects.filter(
+            subject__code="PWEB", classroom__name="XI RPL 1", teacher=teachers["guru.rpl"]
+        ).first()
+        if web is None:
+            return
+        _, created = Announcement.objects.get_or_create(
+            title="Praktik HTML pekan ini di Lab RPL",
+            teaching_assignment=web,
+            defaults={"body": "Bawa flashdisk berisi tugas profil diri.", "author": web.teacher},
+        )
+        self.count("pengumuman", created)
+
+        tomorrow = (self.now + timedelta(days=1)).replace(hour=0, minute=30, second=0, microsecond=0)
+        for title, start, extra in [
+            ("Praktik: Struktur Dokumen HTML", tomorrow, {"mode": "offline", "location": "Lab RPL 1"}),
+            (
+                "Kelas online: Tanya jawab tugas",
+                tomorrow + timedelta(days=6, hours=6),
+                {"mode": "online", "meeting_url": "https://meet.google.com/", "description": "Contoh link."},
+            ),
+        ]:
+            _, created = TeachingSession.objects.get_or_create(
+                teaching_assignment=web,
+                title=title,
+                defaults={"starts_at": start, "duration_minutes": 90, "created_by": web.teacher, **extra},
+            )
+            self.count("sesi", created)
+
+        assessment, created = Assessment.objects.get_or_create(
+            teaching_assignment=web,
+            title="Kuis 1: Dasar HTML",
+            defaults={
+                "instructions": "Kerjakan dengan jujur. Waktu 20 menit sejak tombol Mulai ditekan.",
+                "due_at": self.now + timedelta(days=7),
+                "duration_minutes": 20,
+                "max_violations": 3,
+                "is_published": True,
+                "created_by": web.teacher,
+            },
+        )
+        self.count("asesmen", created)
+        if created:
+            questions = [
+                ("Tag untuk judul paling besar adalah...", ["<p>", "<h1>", "<title>", "<head>"], 1),
+                ("Atribut untuk alamat tujuan link adalah...", ["src", "alt", "href", "class"], 2),
+                ("Kepanjangan HTML adalah...", ["HyperText Markup Language", "High Text Machine Language", "Home Tool Markup Language"], 0),
+            ]  # fmt: skip
+            for order, (text, choices, correct) in enumerate(questions):
+                Question.objects.create(
+                    assessment=assessment, order=order, kind="choice", text=text, points=2,
+                    choices=choices, correct_choice=correct,
+                )  # fmt: skip
+            Question.objects.create(
+                assessment=assessment, order=len(questions), kind="essay", points=4,
+                text="Jelaskan perbedaan tag <div> dan <span>.",
+            )  # fmt: skip
+
+        student = User.objects.filter(username="rizki").first()
+        if student:
+            first, second = sorted([web.teacher, student], key=lambda u: u.id)
+            conversation, created = Conversation.objects.get_or_create(user_a=first, user_b=second)
+            if created:
+                Message.objects.create(
+                    conversation=conversation,
+                    sender=web.teacher,
+                    body="Rizki, tugasmu sudah Bapak terima. Bagus!",
+                )
+                reply = Message.objects.create(
+                    conversation=conversation, sender=student, body="Terima kasih, Pak."
+                )
+                conversation.last_message_at = reply.created_at
+                conversation.save(update_fields=["last_message_at"])
+            self.count("obrolan", created)
 
     def seed_submissions(self, task, past_due):
         """Tugas yang sudah lewat: sebagian besar siswa kumpul (beberapa terlambat) dan sudah dinilai.
