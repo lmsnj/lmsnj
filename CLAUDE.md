@@ -177,9 +177,13 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
 - Saat fitur selesai: hapus `soon`, isi `to`, dan pastikan route-nya ada di `routes/AppRoutes.jsx`.
 
 ### Beranda (`/admin`, `/guru`, `/siswa`)
-- Sapaan "Halo, [nama]! Apa langkah pertama Anda?", grid 2×2 kartu (`components/home/ActionCard.jsx`),
-  lalu panel tab `HomePanel` (Papan Pengumuman, Tugas Hari Ini, Tugas Mendatang — data dari API),
-  lalu bagian "Ringkasan" (statistik dashboard).
+- Banner sapaan (`PageHero` di `components/home/HomeTop.jsx`): "Halo, [nama depan]! 👋", sapaan
+  sesuai jam (`utils/greeting.js`) + "Apa langkah pertama Anda hari ini?", tanggal, nama sekolah, dan
+  info per peran (`stats`). Lalu grid 2×2 kartu (`components/home/ActionCard.jsx`: kotak judul
+  berwarna lembut + ikon besar di pojok), panel tab `HomePanel` (Papan Pengumuman, Tugas Hari Ini,
+  Tugas Mendatang — data dari API), lalu bagian "Ringkasan" (`StatCard` berikon, `Panel`).
+- Halaman login: dua kolom di layar lebar (panel hijau identitas sekolah + keunggulan aplikasi,
+  lalu kartu formulir dengan ikon & tombol tampilkan password); di HP hanya pita logo + formulir.
 - Isi kartu per peran di `pages/home/cards.js`: setiap kartu tepat 2 tombol; setiap tombol punya
   ikon, teks, dan `info` (tooltip penjelasan). Warna tombol: `orange`, `green`, `slate`, `blue`.
 - Tombol Beranda boleh membuka aksi di halaman tujuan lewat parameter sekali-pakai

@@ -148,8 +148,11 @@ export default function HomePanel() {
   const [tab, setTab] = useState('announcements')
 
   return (
-    <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-200 px-3" role="tablist">
+    <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div
+        className="flex gap-1 overflow-x-auto border-b border-slate-200 px-3 sm:gap-3"
+        role="tablist"
+      >
         {TABS.map((item) => (
           <button
             key={item.id}
@@ -157,13 +160,19 @@ export default function HomePanel() {
             role="tab"
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
-            className={`-mb-px flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold ${
+            className={`relative flex shrink-0 items-center gap-2 px-3 py-3.5 text-sm font-semibold transition sm:text-base ${
               tab === item.id
-                ? 'border-brand-600 text-brand-700'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'text-slate-900 after:absolute after:inset-x-1 after:bottom-0 after:h-[3px] after:rounded-full after:bg-brand-600'
+                : 'text-slate-400 hover:text-slate-700'
             }`}
           >
-            <item.icon className="size-4" aria-hidden="true" />
+            <span
+              className={`flex size-7 items-center justify-center rounded-lg ${
+                tab === item.id ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-400'
+              }`}
+            >
+              <item.icon className="size-4" aria-hidden="true" />
+            </span>
             {item.label}
           </button>
         ))}

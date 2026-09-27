@@ -1,3 +1,15 @@
+import {
+  Activity,
+  BookOpen,
+  CalendarDays,
+  ClipboardList,
+  GraduationCap,
+  Library,
+  School,
+  Send,
+  TriangleAlert,
+  UserCog,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { dashboardApi } from '../../api/dashboard'
 import Badge from '../../components/Badge'
@@ -38,7 +50,14 @@ export default function AdminDashboard() {
 
   return (
     <>
-      <HomeTop cards={HOME_CARDS[ROLES.ADMIN]} />
+      <HomeTop
+        cards={HOME_CARDS[ROLES.ADMIN]}
+        stats={
+          data?.academic_year
+            ? [{ icon: CalendarDays, content: `Tahun ajaran ${data.academic_year}` }]
+            : []
+        }
+      />
       <SummaryHeading subtitle={data?.academic_year && `Tahun ajaran ${data.academic_year}`} />
       <DashboardState loading={!data} error={error}>
         {data && <AdminContent data={data} />}
@@ -54,23 +73,58 @@ function AdminContent({ data }) {
   return (
     <>
       <StatGrid>
-        <StatCard label="Siswa aktif" value={stats.students} to="/admin/pengguna" />
-        <StatCard label="Guru aktif" value={stats.teachers} to="/admin/pengguna" />
+        <StatCard
+          label="Siswa aktif"
+          icon={GraduationCap}
+          tone="brand"
+          value={stats.students}
+          to="/admin/pengguna"
+        />
+        <StatCard
+          label="Guru aktif"
+          icon={UserCog}
+          tone="blue"
+          value={stats.teachers}
+          to="/admin/pengguna"
+        />
         <StatCard
           label="Kelas"
+          icon={School}
+          tone="amber"
           value={stats.classrooms}
           hint="tahun ajaran ini"
           to="/admin/kelas"
         />
-        <StatCard label="Mata pelajaran" value={stats.subjects} to="/admin/mapel" />
-        <StatCard label="Pengampu" value={stats.teaching_assignments} to="/admin/pengampu" />
-        <StatCard label="Materi" value={stats.materials} />
-        <StatCard label="Tugas" value={stats.tasks} />
-        <StatCard label="Pengumpulan" value={stats.submissions_this_week} hint="7 hari terakhir" />
+        <StatCard
+          label="Mata pelajaran"
+          icon={Library}
+          tone="violet"
+          value={stats.subjects}
+          to="/admin/mapel"
+        />
+        <StatCard
+          label="Pengampu"
+          icon={GraduationCap}
+          value={stats.teaching_assignments}
+          to="/admin/pengampu"
+        />
+        <StatCard label="Materi" icon={BookOpen} value={stats.materials} />
+        <StatCard label="Tugas" icon={ClipboardList} value={stats.tasks} />
+        <StatCard
+          label="Pengumpulan"
+          icon={Send}
+          value={stats.submissions_this_week}
+          hint="7 hari terakhir"
+        />
       </StatGrid>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="Perlu ditindaklanjuti" items={issues} empty="Semua data sudah lengkap. 👍">
+        <Panel
+          title="Perlu ditindaklanjuti"
+          icon={TriangleAlert}
+          items={issues}
+          empty="Semua data sudah lengkap. 👍"
+        >
           {issues.map((item) => (
             <PanelItem
               key={item.key}
@@ -88,6 +142,7 @@ function AdminContent({ data }) {
 
         <Panel
           title="Aktivitas terbaru"
+          icon={Activity}
           items={data.recent_activity}
           empty="Belum ada materi atau tugas yang dibuat guru."
         >

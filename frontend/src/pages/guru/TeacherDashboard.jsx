@@ -1,3 +1,4 @@
+import { CalendarClock, ClipboardList, FilePenLine, School, Star, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { dashboardApi } from '../../api/dashboard'
 import Alert from '../../components/Alert'
@@ -23,7 +24,24 @@ export default function TeacherDashboard() {
   useScrollToHash(Boolean(data))
   return (
     <>
-      <HomeTop cards={HOME_CARDS[ROLES.TEACHER]} />
+      <HomeTop
+        cards={HOME_CARDS[ROLES.TEACHER]}
+        stats={
+          data
+            ? [
+                {
+                  icon: Star,
+                  content: (
+                    <>
+                      <strong className="text-white">{data.stats.to_grade} jawaban</strong> menunggu
+                      dinilai
+                    </>
+                  ),
+                },
+              ]
+            : []
+        }
+      />
       <SummaryHeading />
       <DashboardState loading={!data} error={error}>
         {data && <TeacherContent data={data} />}
@@ -45,20 +63,41 @@ function TeacherContent({ data }) {
       )}
 
       <StatGrid>
-        <StatCard label="Kelas diampu" value={stats.teaching_assignments} to="/guru/kelas" />
+        <StatCard
+          label="Kelas diampu"
+          icon={School}
+          tone="brand"
+          value={stats.teaching_assignments}
+          to="/guru/kelas"
+        />
         <StatCard
           label="Perlu dinilai"
+          icon={Star}
+          to="/guru/tugas?filter=perlu-dinilai"
           value={stats.to_grade}
           tone={stats.to_grade ? 'amber' : 'default'}
           hint="jawaban siswa"
         />
-        <StatCard label="Tugas aktif" value={stats.active_tasks} hint="belum lewat tenggat" />
-        <StatCard label="Draf" value={stats.drafts} hint="materi & tugas belum terbit" />
+        <StatCard
+          label="Tugas aktif"
+          icon={ClipboardList}
+          tone="blue"
+          value={stats.active_tasks}
+          hint="belum lewat tenggat"
+          to="/guru/tugas"
+        />
+        <StatCard
+          label="Draf"
+          icon={FilePenLine}
+          value={stats.drafts}
+          hint="materi & tugas belum terbit"
+        />
       </StatGrid>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel
           title="Perlu dinilai"
+          icon={Star}
           items={data.to_grade}
           empty="Tidak ada jawaban yang menunggu dinilai. 🎉"
           action={
@@ -77,7 +116,8 @@ function TeacherContent({ data }) {
         </Panel>
 
         <Panel
-          title={`Tenggat 7 hari ke depan`}
+          title="Tenggat 7 hari ke depan"
+          icon={CalendarClock}
           items={data.upcoming_tasks}
           empty="Tidak ada tugas yang tenggatnya dekat."
         >
@@ -100,6 +140,7 @@ function TeacherContent({ data }) {
 
         <Panel
           title="Kelas saya"
+          icon={Users}
           items={data.teaching_assignments}
           empty="Anda belum terdaftar sebagai pengampu. Hubungi admin."
           action={

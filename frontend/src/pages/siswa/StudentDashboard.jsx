@@ -1,3 +1,4 @@
+import { BookOpen, CalendarX, ClipboardList, School, Send, Star, TrendingUp } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { dashboardApi } from '../../api/dashboard'
 import Badge from '../../components/Badge'
@@ -24,7 +25,12 @@ export default function StudentDashboard() {
   useScrollToHash(Boolean(data))
   return (
     <>
-      <HomeTop cards={HOME_CARDS[ROLES.STUDENT]} />
+      <HomeTop
+        cards={HOME_CARDS[ROLES.STUDENT]}
+        stats={
+          data?.classroom_name ? [{ icon: School, content: `Kelas ${data.classroom_name}` }] : []
+        }
+      />
       <SummaryHeading subtitle={data?.classroom_name && `Kelas ${data.classroom_name}`} />
       <DashboardState loading={!data} error={error}>
         {data && <StudentContent data={data} />}
@@ -48,18 +54,30 @@ function StudentContent({ data }) {
       <StatGrid>
         <StatCard
           label="Tugas belum dikumpulkan"
+          icon={ClipboardList}
+          to="/siswa/tugas?status=belum"
           value={stats.pending}
           tone={stats.pending ? 'brand' : 'default'}
         />
         <StatCard
           label="Terlambat"
+          icon={CalendarX}
           value={stats.overdue}
           tone={stats.overdue ? 'red' : 'default'}
           hint="lewat tenggat, masih bisa dikumpulkan"
         />
-        <StatCard label="Sudah dikumpulkan" value={stats.submitted} />
+        <StatCard
+          label="Sudah dikumpulkan"
+          icon={Send}
+          tone="blue"
+          value={stats.submitted}
+          to="/siswa/tugas?status=sudah"
+        />
         <StatCard
           label="Rata-rata nilai"
+          icon={TrendingUp}
+          tone="violet"
+          to="/siswa/nilai"
           value={formatScore(stats.average)}
           hint={stats.graded ? `dari ${stats.graded} tugas dinilai (skala 100)` : 'belum ada nilai'}
         />
@@ -68,6 +86,7 @@ function StudentContent({ data }) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel
           title="Tugas yang harus dikerjakan"
+          icon={ClipboardList}
           items={data.pending_tasks}
           empty="Semua tugas sudah dikumpulkan. Hebat! 🎉"
         >
@@ -88,6 +107,7 @@ function StudentContent({ data }) {
 
         <Panel
           title="Nilai terbaru"
+          icon={Star}
           items={data.recent_grades}
           empty="Belum ada tugas yang dinilai."
         >
@@ -109,6 +129,7 @@ function StudentContent({ data }) {
 
         <Panel
           title="Materi terbaru"
+          icon={BookOpen}
           items={data.recent_materials}
           empty="Belum ada materi dari guru."
           action={
