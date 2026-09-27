@@ -1,13 +1,17 @@
+import { Award, BookOpenCheck, Medal, Star, Target, TrendingUp, Trophy } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { tasksApi } from '../../api/tasks'
 import Alert from '../../components/Alert'
 import { StatCard, StatGrid } from '../../components/Dashboard'
 import DataTable from '../../components/DataTable'
-import PageHeader from '../../components/PageHeader'
+import PageHero from '../../components/PageHero'
+import SubjectIcon from '../../components/SubjectIcon'
 import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
 import { formatDate } from '../../utils/media'
 import { formatScore } from '../../utils/tasks'
+
+const HERO_ICONS = [Trophy, Star, Medal, Target, TrendingUp, Award, BookOpenCheck]
 
 // Rata-rata skala 100 (nilai / nilai maksimal x 100), sama dengan rekap nilai guru.
 function average(tasks) {
@@ -68,9 +72,35 @@ export default function StudentGradesPage() {
 
   return (
     <>
-      <PageHeader title="Nilai & Progres" description="Nilai dan umpan balik dari guru." />
-      <Alert type="error">{tasks.error}</Alert>
+      <PageHero
+        title="Nilai & Progres"
+        description="Pantau nilai dan umpan balik guru dari setiap tugas. Terus tingkatkan!"
+        icons={HERO_ICONS}
+        centerIcon={Trophy}
+        stats={[
+          {
+            icon: TrendingUp,
+            content: (
+              <>
+                Rata-rata <strong className="text-white">{formatScore(average(graded))}</strong>
+              </>
+            ),
+          },
+          {
+            icon: Star,
+            content: (
+              <>
+                <strong className="text-white">{graded.length} tugas</strong> sudah dinilai
+              </>
+            ),
+          },
+        ]}
+      />
+      <Alert type="error" className="mt-4">
+        {tasks.error}
+      </Alert>
 
+      <div className="mt-6" />
       <StatGrid>
         <StatCard
           label="Rata-rata nilai"
@@ -94,8 +124,11 @@ export default function StudentGradesPage() {
                   key={group.id}
                   className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
                 >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="truncate font-medium text-slate-900">{group.subject}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="flex min-w-0 items-center gap-2 font-medium text-slate-900">
+                      <SubjectIcon name={group.subject} size="md" />
+                      <span className="truncate">{group.subject}</span>
+                    </p>
                     <p className="text-xl font-bold text-brand-700">{formatScore(value)}</p>
                   </div>
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">

@@ -193,6 +193,17 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
   halaman materi). Tab (`hooks/useTabs.jsx`) bergaris bawah tebal hijau; `useTabs` mengembalikan
   `[tab, bar, selectTab]`.
 
+### Halaman daftar bergaya "Materi" (materi, tugas, asesmen, nilai, obrolan)
+- Banner hijau `components/PageHero.jsx` (judul, deskripsi, pencarian opsional, `stats` dari data
+  asli, `actions` dengan `HeroButton`; hiasan = ikon lucide per halaman). Panel penyaring di
+  `components/ExplorePanels.jsx` (`SubjectPanel` kuning, `OptionPanel` biru muda, `FilterChips`).
+- Tugas & asesmen memakai `components/ListExplorer.jsx`: data dimuat sekali (`ALL`) lalu disaring di
+  browser dengan `utils/listFilters.js` (`filterList`, `countStatuses`, `countByAssignment`,
+  `filterChips`, `EMPTY_FILTERS`). Status tiap halaman = daftar `{ id, title, description, icon,
+  tile, match }`; id status harus sama dengan penanda dari Beranda (`?filter=`, `?status=`).
+- Kartu: `TaskList` & `AssessmentCard` (kotak ikon berwarna sesuai keadaan, `ProgressBar`
+  pengumpulan untuk guru, tombol Kerjakan/Lanjutkan/Lihat Hasil untuk siswa).
+
 ### Materi Pembelajaran (`/guru/materi`, `/siswa/materi`)
 - `components/MaterialExplorer.jsx`: banner hijau dengan kotak pencarian + tombol Cari (hiasan =
   ikon lucide dalam kotak berwarna, bukan ilustrasi dari produk lain), panel kuning "Pilihan Mata

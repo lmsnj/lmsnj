@@ -1,78 +1,142 @@
+import {
+  Brain,
+  CalendarX,
+  CircleCheckBig,
+  ClipboardPen,
+  Hourglass,
+  Lightbulb,
+  ListChecks,
+  PlayCircle,
+  Sigma,
+  Star,
+  Timer,
+} from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { assignmentsApi } from '../../api/academics'
 import { assessmentsApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
-import AssignmentSelect from '../../components/AssignmentSelect'
-import Badge from '../../components/Badge'
+import AssessmentCard from '../../components/AssessmentCard'
 import EmptyState from '../../components/EmptyState'
-import PageHeader from '../../components/PageHeader'
+import ListExplorer from '../../components/ListExplorer'
 import Spinner from '../../components/Spinner'
 import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
-import { studentAssessmentStatus } from '../../utils/assessments'
-import { formatDate } from '../../utils/media'
-import { dueLabel } from '../../utils/tasks'
+import { EMPTY_FILTERS } from '../../utils/listFilters'
+
+const STATUSES = [
+  {
+    id: 'belum',
+    title: 'Belum Dikerjakan',
+    description: 'Kerjakan sebelum tenggat, hanya satu kali',
+    icon: PlayCircle,
+    tile: 'bg-blue-100 text-blue-600',
+    match: (a) => !a.my_attempt && !a.is_past_due,
+  },
+  {
+    id: 'dikerjakan',
+    title: 'Sedang Dikerjakan',
+    description: 'Lanjutkan sebelum waktu habis',
+    icon: Hourglass,
+    tile: 'bg-amber-100 text-amber-700',
+    match: (a) => a.my_attempt?.status === 'in_progress',
+  },
+  {
+    id: 'selesai',
+    title: 'Sudah Dikumpulkan',
+    description: 'Lihat nilai dan pembahasan',
+    icon: CircleCheckBig,
+    tile: 'bg-brand-100 text-brand-700',
+    match: (a) => Boolean(a.my_attempt) && a.my_attempt.status !== 'in_progress',
+  },
+  {
+    id: 'terlewat',
+    title: 'Terlewat',
+    description: 'Tenggat lewat dan tidak dikerjakan',
+    icon: CalendarX,
+    tile: 'bg-red-100 text-red-600',
+    match: (a) => !a.my_attempt && a.is_past_due,
+  },
+]
+
+const HERO_ICONS = [ListChecks, Sigma, ClipboardPen, Timer, Brain, Star, Lightbulb]
 
 // "Lembar Asesmen" siswa: semua kuis yang sudah diterbitkan guru untuk kelasnya.
 export default function StudentAssessmentsPage() {
-  const [assignment, setAssignment] = useState('')
-  const assessments = useFetch(assessmentsApi.list, {
-    ...ALL,
-    teaching_assignment: assignment || undefined,
-    ordering: 'due_at',
-  })
-  const items = assessments.data?.results
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const assessments = useFetch(assessmentsApi.list, { ...ALL, ordering: 'due_at' })
+  const assignments = useFetch(assignmentsApi.list, ALL)
+  const all = assessments.data?.results ?? []
+  const waiting = all.filter(STATUSES[0].match).length + all.filter(STATUSES[1].match).length
 
   return (
-    <>
-      <PageHeader
-        title="Lembar Asesmen"
-        description="Kuis online dari guru. Setiap asesmen hanya bisa dikerjakan satu kali."
-      />
-      <AssignmentSelect
-        value={assignment}
-        onChange={setAssignment}
-        placeholder="Semua mata pelajaran"
-        optionLabel={(a) => a.subject_name}
-        className="mb-4 sm:max-w-sm"
-        aria-label="Filter mata pelajaran"
-      />
-      <Alert type="error">{assessments.error}</Alert>
-      {assessments.loading && !items ? (
-        <div className="py-10 text-center text-brand-600">
-          <Spinner />
-        </div>
-      ) : !items?.length ? (
-        <EmptyState title="Belum ada lembar asesmen" />
-      ) : (
-        <ul className="space-y-3">
-          {items.map((a) => {
-            const status = studentAssessmentStatus(a)
-            return (
-              <li key={a.id}>
-                <Link
-                  to={`/siswa/asesmen/${a.id}`}
-                  className="block rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md hover:ring-brand-600"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="font-semibold text-slate-900">{a.title}</p>
-                    <Badge color={status.color}>{status.label}</Badge>
-                  </div>
-                  <p className="mt-1 text-xs font-medium text-slate-500">{a.subject_name}</p>
-                  <p className="mt-1 text-sm text-slate-700">
-                    Tenggat {formatDate(a.due_at)}{' '}
-                    <span className="text-slate-500">({dueLabel(a.due_at)})</span>
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {a.question_count} soal · {a.max_score} poin
-                    {a.duration_minutes ? ` · waktu ${a.duration_minutes} menit` : ''}
-                  </p>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+    <ListExplorer
+      hero={{
+        title: 'Lembar Asesmen',
+        description: 'Kuis online dari guru. Setiap asesmen hanya bisa dikerjakan satu kali.',
+        icons: HERO_ICONS,
+        centerIcon: ClipboardPen,
+        stats: [
+          {
+            icon: PlayCircle,
+            content: (
+              <>
+                <strong className="text-white">{waiting} asesmen</strong> menunggu dikerjakan
+              </>
+            ),
+          },
+          {
+            icon: CircleCheckBig,
+            content: (
+              <>
+                <strong className="text-white">{all.filter(STATUSES[2].match).length}</strong> sudah
+                dikumpulkan
+              </>
+            ),
+          },
+        ],
+      }}
+      searchPlaceholder="Cari judul asesmen..."
+      items={all}
+      textOf={(a) => `${a.title} ${a.subject_name}`}
+      assignments={assignments.data?.results}
+      unit="asesmen"
+      statuses={STATUSES}
+      statusTitle="Status Pengerjaan"
+      filters={filters}
+      onChange={setFilters}
+    >
+      {(shown) => (
+        <>
+          <Alert type="error" className="mb-3">
+            {assessments.error || assignments.error}
+          </Alert>
+          {assessments.loading && !assessments.data ? (
+            <div className="py-10 text-center text-brand-600">
+              <Spinner />
+            </div>
+          ) : shown.length === 0 ? (
+            <EmptyState
+              title={all.length ? 'Tidak ada asesmen yang cocok.' : 'Belum ada lembar asesmen'}
+            >
+              {all.length
+                ? 'Coba kata kunci lain atau hapus penyaring.'
+                : 'Asesmen dari guru akan muncul di sini.'}
+            </EmptyState>
+          ) : (
+            <ul className="space-y-3">
+              {shown.map((a) => (
+                <li key={a.id}>
+                  <AssessmentCard
+                    assessment={a}
+                    to={`/siswa/asesmen/${a.id}`}
+                    showContext={!filters.assignment}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
-    </>
+    </ListExplorer>
   )
 }
