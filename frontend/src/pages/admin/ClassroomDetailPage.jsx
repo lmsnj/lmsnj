@@ -5,7 +5,7 @@ import Alert from '../../components/Alert'
 import Button from '../../components/Button'
 import DataTable from '../../components/DataTable'
 import DeleteDialog from '../../components/DeleteDialog'
-import PageHeader from '../../components/PageHeader'
+import ClassHero, { Avatar } from '../../components/ClassHero'
 import { FullPageSpinner } from '../../components/Spinner'
 import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
@@ -97,14 +97,27 @@ export default function ClassroomDetailPage() {
 
   return (
     <>
-      <Link to="/admin/kelas" className="mb-2 inline-block text-sm text-brand-700 hover:underline">
-        ← Daftar kelas
-      </Link>
-      <PageHeader
+      <ClassHero
+        back={{ to: '/admin/kelas', label: 'Kelas' }}
         title={room.name}
-        description={`Tahun ajaran ${room.academic_year} · Jurusan ${room.major} · Wali kelas: ${
-          room.homeroom_teacher_name ?? 'belum ditentukan'
-        }`}
+        info={[
+          <>
+            Tahun Ajaran <strong className="text-slate-800">{room.academic_year}</strong>
+          </>,
+          `Jurusan ${room.major}`,
+          `${students.data?.length ?? room.student_count ?? 0} siswa`,
+          <>
+            Wali kelas{' '}
+            {room.homeroom_teacher_name ? (
+              <>
+                <Avatar name={room.homeroom_teacher_name} />
+                <strong className="text-slate-800">{room.homeroom_teacher_name}</strong>
+              </>
+            ) : (
+              'belum ditentukan'
+            )}
+          </>,
+        ]}
         actions={
           <Button variant="secondary" onClick={() => setDialog({ type: 'edit-classroom' })}>
             Ubah Kelas

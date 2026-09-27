@@ -4,9 +4,10 @@ import { assignmentsApi } from '../../api/academics'
 import { materialsApi } from '../../api/materials'
 import { tasksApi } from '../../api/tasks'
 import Alert from '../../components/Alert'
+import ClassHero, { Avatar } from '../../components/ClassHero'
+import ClassOverview from '../../components/ClassOverview'
 import MaterialList from '../../components/MaterialList'
 import MaterialViewer from '../../components/MaterialViewer'
-import PageHeader from '../../components/PageHeader'
 import Spinner from '../../components/Spinner'
 import TaskList from '../../components/TaskList'
 import useFetch from '../../hooks/useFetch'
@@ -14,6 +15,7 @@ import { useTabs } from '../../hooks/useTabs'
 import { ALL } from '../../utils/academic'
 
 const TABS = [
+  { id: 'ringkasan', label: 'Ringkasan' },
   { id: 'materi', label: 'Materi' },
   { id: 'tugas', label: 'Tugas' },
 ]
@@ -51,11 +53,25 @@ function TasksTab({ assignmentId }) {
   )
 }
 
-// Halaman satu mapel untuk siswa: materi dan tugas.
+function Overview({ assignment, onSelectTab }) {
+  const materials = useFetch(materialsApi.list, { ...ALL, teaching_assignment: assignment.id })
+  const tasks = useFetch(tasksApi.list, { ...ALL, teaching_assignment: assignment.id })
+  return (
+    <ClassOverview
+      materials={materials}
+      tasks={tasks}
+      people={[{ name: assignment.teacher_name, role: `Guru ${assignment.subject_name}` }]}
+      onSelectTab={onSelectTab}
+      taskLink={(task) => `/siswa/tugas/${task.id}`}
+    />
+  )
+}
+
+// Halaman satu mapel untuk siswa: ringkasan, materi, dan tugas.
 export default function StudentSubjectPage() {
   const { id } = useParams()
   const assignment = useFetch(assignmentsApi.get, id)
-  const [tab, tabsBar] = useTabs(TABS)
+  const [tab, tabsBar, selectTab] = useTabs(TABS)
 
   if (assignment.error) {
     return (
@@ -78,11 +94,23 @@ export default function StudentSubjectPage() {
   const a = assignment.data
   return (
     <>
-      <Link to="/siswa/mapel" className="mb-2 inline-block text-sm text-brand-700 hover:underline">
-        ← Mapel saya
-      </Link>
-      <PageHeader title={a.subject_name} description={`Guru: ${a.teacher_name}`} />
+      <ClassHero
+        back={{ to: '/siswa/mapel', label: 'Mapel Saya' }}
+        title={a.subject_name}
+        subject={a.subject_name}
+        subjectLabel={a.classroom_name}
+        info={[
+          <>
+            Tahun Ajaran <strong className="text-slate-800">{a.academic_year}</strong>
+          </>,
+          <>
+            Guru <Avatar name={a.teacher_name} />
+            <strong className="text-slate-800">{a.teacher_name}</strong>
+          </>,
+        ]}
+      />
       {tabsBar}
+      {tab === 'ringkasan' && <Overview assignment={a} onSelectTab={selectTab} />}
       {tab === 'materi' && <MaterialsTab assignmentId={a.id} />}
       {tab === 'tugas' && <TasksTab assignmentId={a.id} />}
     </>

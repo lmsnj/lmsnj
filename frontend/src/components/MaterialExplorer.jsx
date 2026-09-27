@@ -1,56 +1,24 @@
 import {
   ArrowRight,
-  Atom,
-  BookHeart,
-  BookMarked,
-  BookOpen,
-  Briefcase,
   Calculator,
   Code2,
-  Database,
-  Dna,
-  Dumbbell,
   FileText,
   FlaskConical,
   Globe,
   GraduationCap,
   Grip,
-  Landmark,
   Languages,
   Layers,
   Lightbulb,
   Link2,
-  Network,
-  Palette,
   PlayCircle,
-  ScrollText,
   Search,
   Sprout,
   X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { SCHOOL } from '../utils/constants'
-import { subjectIconKey } from '../utils/materialFilters'
-
-// Ikon + warna kartu mapel (kunci dari subjectIconKey).
-const SUBJECT_STYLES = {
-  math: { icon: Calculator, tile: 'bg-orange-500' },
-  english: { icon: Languages, tile: 'bg-blue-600' },
-  arabic: { icon: ScrollText, tile: 'bg-emerald-600' },
-  religion: { icon: BookHeart, tile: 'bg-teal-600' },
-  language: { icon: BookOpen, tile: 'bg-red-500' },
-  database: { icon: Database, tile: 'bg-violet-600' },
-  network: { icon: Network, tile: 'bg-sky-600' },
-  code: { icon: Code2, tile: 'bg-slate-800' },
-  biology: { icon: Dna, tile: 'bg-indigo-500' },
-  chemistry: { icon: FlaskConical, tile: 'bg-fuchsia-600' },
-  physics: { icon: Atom, tile: 'bg-cyan-600' },
-  history: { icon: Landmark, tile: 'bg-amber-700' },
-  art: { icon: Palette, tile: 'bg-pink-500' },
-  sport: { icon: Dumbbell, tile: 'bg-lime-600' },
-  business: { icon: Briefcase, tile: 'bg-yellow-600' },
-  default: { icon: BookMarked, tile: 'bg-brand-600' },
-}
+import { subjectStyle } from '../utils/subjectStyles'
 
 const MATERIAL_TYPE_CARDS = [
   {
@@ -187,7 +155,7 @@ function PanelButton({ onClick, children, pressed }) {
 }
 
 function SubjectTile({ assignment, label, sublabel, count, selected, onClick }) {
-  const style = SUBJECT_STYLES[subjectIconKey(assignment.subject_name)]
+  const style = subjectStyle(assignment.subject_name)
   const Icon = style.icon
   return (
     <button

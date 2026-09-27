@@ -38,3 +38,7 @@ export const MATERIAL_TYPES = {
 // Tipe file untuk lampiran tugas & jawaban siswa; harus sama dengan ALLOWED_TASK_EXTENSIONS di backend.
 export const TASK_FILE_ACCEPT =
   '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z,.jpg,.jpeg,.png'
+
+// Garis lengkung hiasan di latar kartu/header kelas (warna putih transparan, bukan gambar).
+export const STRIPES =
+  'bg-[repeating-linear-gradient(115deg,transparent_0_28px,rgb(255_255_255/0.55)_28px_40px)]'

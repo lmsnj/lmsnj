@@ -9,9 +9,9 @@ import { ALL } from '../../utils/academic'
 import TaskFormModal from './TaskFormModal'
 
 // Tab "Tugas" di halaman kelas-mapel guru.
-export default function TasksTab({ assignmentId }) {
+export default function TasksTab({ assignmentId, openForm = false }) {
   const navigate = useNavigate()
-  const [creating, setCreating] = useState(false)
+  const [creating, setCreating] = useState(openForm)
   const tasks = useFetch(tasksApi.list, { ...ALL, teaching_assignment: assignmentId })
 
   return (

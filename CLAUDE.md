@@ -181,6 +181,18 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
 - Tombol Beranda boleh membuka aksi di halaman tujuan lewat parameter sekali-pakai
   (`?baru=1`, `?impor=1`, `?filter=...`, `?status=...`) yang dibaca dengan `hooks/useQueryFlag.js`.
 
+### Halaman kelas (Kelas Saya guru, Mapel Saya siswa, detail kelas admin)
+- Daftar kelas memakai `components/ClassCard.jsx` (kotak judul berwarna lembut sesuai mapel +
+  garis hiasan `STRIPES`, ikon mapel, info "N Siswa • Tahun Ajaran"). Guru: tab per tahun ajaran
+  (terbaru = "Kelas Aktif").
+- Halaman isi kelas diawali `components/ClassHero.jsx` (tombol kembali + remah roti, judul besar,
+  baris info mapel • tahun ajaran • guru dengan `Avatar` inisial). Tab pertama "Ringkasan"
+  (`components/ClassOverview.jsx`): kartu aksi cepat (`QuickAction`), panel Pembelajaran (langkah
+  "Rencanakan Pembelajaran" jika kosong), Daftar Tugas, Daftar Siswa / Guru Pengampu.
+- Ikon & warna mapel: `utils/subjectStyles.js` + `components/SubjectIcon.jsx` (dipakai juga di
+  halaman materi). Tab (`hooks/useTabs.jsx`) bergaris bawah tebal hijau; `useTabs` mengembalikan
+  `[tab, bar, selectTab]`.
+
 ### Materi Pembelajaran (`/guru/materi`, `/siswa/materi`)
 - `components/MaterialExplorer.jsx`: banner hijau dengan kotak pencarian + tombol Cari (hiasan =
   ikon lucide dalam kotak berwarna, bukan ilustrasi dari produk lain), panel kuning "Pilihan Mata
