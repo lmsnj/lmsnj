@@ -1,17 +1,41 @@
+import {
+  BookOpen,
+  Calculator,
+  Code2,
+  FileSpreadsheet,
+  FlaskConical,
+  Hash,
+  Languages,
+  Library,
+  Palette,
+  Pencil,
+  Plus,
+  School,
+  Trash2,
+  UserRound,
+} from 'lucide-react'
 import { useState } from 'react'
-import { subjectsApi } from '../../api/academics'
+import { assignmentsApi, subjectsApi } from '../../api/academics'
+import AdminCard, { CardGrid } from '../../components/AdminCard'
 import Alert from '../../components/Alert'
+import Badge from '../../components/Badge'
 import Button from '../../components/Button'
-import DataTable from '../../components/DataTable'
 import DeleteDialog from '../../components/DeleteDialog'
+import EmptyState from '../../components/EmptyState'
+import { FilterChips } from '../../components/ExplorePanels'
 import FormModal from '../../components/FormModal'
 import ImportExcelModal from '../../components/ImportExcelModal'
-import PageHeader from '../../components/PageHeader'
-import Pagination from '../../components/Pagination'
+import PageHero, { HeroButton } from '../../components/PageHero'
+import Spinner from '../../components/Spinner'
+import SubjectIcon from '../../components/SubjectIcon'
 import TextField from '../../components/TextField'
-import useDebounce from '../../hooks/useDebounce'
 import useFetch from '../../hooks/useFetch'
 import useFormSubmit from '../../hooks/useFormSubmit'
+import { ALL } from '../../utils/academic'
+import { countWith, filterSubjects } from '../../utils/adminFilters'
+import { subjectStyle } from '../../utils/subjectStyles'
+
+const HERO_ICONS = [Library, BookOpen, Calculator, Code2, Languages, FlaskConical, Palette]
 
 function SubjectFormModal({ subject, onClose, onSaved }) {
   const [form, setForm] = useState({ code: subject?.code ?? '', name: subject?.name ?? '' })
@@ -46,6 +70,7 @@ function SubjectFormModal({ subject, onClose, onSaved }) {
         value={form.name}
         onChange={handleChange}
         error={errors.name}
+        hint="Ikon kartu dipilih otomatis dari nama mapel (mis. Matematika, Bahasa Inggris)."
         required
       />
     </FormModal>
@@ -54,91 +79,154 @@ function SubjectFormModal({ subject, onClose, onSaved }) {
 
 export default function SubjectsPage() {
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
   const [notice, setNotice] = useState('')
   const [dialog, setDialog] = useState(null)
+  const subjects = useFetch(subjectsApi.list, ALL)
+  const assignments = useFetch(assignmentsApi.list, ALL)
 
-  const debouncedSearch = useDebounce(search)
-  const subjects = useFetch(subjectsApi.list, { page, search: debouncedSearch })
-
-  const closeDialog = () => setDialog(null)
-
-  const columns = [
-    { header: 'Kode', cell: (s) => <span className="font-mono font-medium">{s.code}</span> },
-    { header: 'Nama Mapel', cell: (s) => s.name },
-    {
-      header: 'Aksi',
-      className: 'text-right whitespace-nowrap',
-      cell: (subject) => (
-        <>
-          <Button variant="ghost" size="sm" onClick={() => setDialog({ type: 'form', subject })}>
-            Ubah
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-red-600 hover:bg-red-50"
-            onClick={() => setDialog({ type: 'delete', subject })}
-          >
-            Hapus
-          </Button>
-        </>
-      ),
-    },
+  const all = subjects.data?.results ?? []
+  const shown = filterSubjects(all, search)
+  const assignmentList = assignments.data?.results ?? []
+  const classCount = countWith(assignmentList, (a) => a.subject)
+  // Guru yang mengajar tiap mapel (tanpa duplikat), untuk ditampilkan di kartu.
+  const teachersOf = (subjectId) => [
+    ...new Set(assignmentList.filter((a) => a.subject === subjectId).map((a) => a.teacher_name)),
   ]
+  const closeDialog = () => setDialog(null)
+  const done = (message) => {
+    closeDialog()
+    setNotice(message)
+    subjects.reload()
+  }
 
   return (
     <>
-      <PageHeader
+      <PageHero
         title="Mata Pelajaran"
-        description="Daftar mapel yang diajarkan di sekolah."
+        description="Daftar mapel yang diajarkan di sekolah. Tetapkan guru pengampunya di menu Pengampu."
+        icons={HERO_ICONS}
+        centerIcon={Library}
+        search={{
+          value: search,
+          onChange: setSearch,
+          onSubmit: () =>
+            document.getElementById('daftar-hasil')?.scrollIntoView({ behavior: 'smooth' }),
+          placeholder: 'Cari kode atau nama mapel...',
+        }}
         actions={
           <>
-            <Button variant="secondary" onClick={() => setDialog({ type: 'import' })}>
+            <HeroButton icon={Plus} onClick={() => setDialog({ type: 'form', subject: null })}>
+              Tambah Mapel
+            </HeroButton>
+            <HeroButton icon={FileSpreadsheet} onClick={() => setDialog({ type: 'import' })}>
               Impor Excel
-            </Button>
-            <Button onClick={() => setDialog({ type: 'form', subject: null })}>
-              + Tambah Mapel
-            </Button>
+            </HeroButton>
           </>
         }
+        stats={[
+          {
+            icon: Library,
+            content: (
+              <>
+                <strong className="text-white">{all.length} mata pelajaran</strong>
+              </>
+            ),
+          },
+          {
+            icon: School,
+            content: (
+              <>
+                diajarkan di <strong className="text-white">{assignmentList.length}</strong>{' '}
+                kelas-mapel
+              </>
+            ),
+          },
+        ]}
       />
 
-      <TextField
-        className="mb-4 sm:max-w-sm"
-        placeholder="Cari kode atau nama mapel..."
-        value={search}
-        onChange={(event) => {
-          setSearch(event.target.value)
-          setPage(1)
-        }}
-        aria-label="Cari mapel"
-      />
+      <section id="daftar-hasil" className="mt-8 scroll-mt-4">
+        <FilterChips
+          count={shown.length}
+          chips={search.trim() ? [{ key: 'search', label: `“${search.trim()}”` }] : []}
+          onRemove={() => setSearch('')}
+          onClear={() => setSearch('')}
+        />
+        <div className="mb-3 space-y-3">
+          <Alert type="success">{notice}</Alert>
+          <Alert type="error">{subjects.error}</Alert>
+        </div>
 
-      <div className="mb-3 space-y-3">
-        <Alert type="success">{notice}</Alert>
-        <Alert type="error">{subjects.error}</Alert>
-      </div>
-
-      <DataTable
-        columns={columns}
-        rows={subjects.data?.results}
-        loading={subjects.loading}
-        emptyMessage="Belum ada mapel."
-      />
-      <div className="mt-4">
-        <Pagination page={page} count={subjects.data?.count ?? 0} onChange={setPage} />
-      </div>
+        {subjects.loading && !subjects.data ? (
+          <div className="py-10 text-center text-brand-600">
+            <Spinner />
+          </div>
+        ) : shown.length === 0 ? (
+          <EmptyState title={all.length ? 'Tidak ada mapel yang cocok.' : 'Belum ada mapel.'}>
+            {all.length ? 'Coba kata kunci lain.' : 'Klik “Tambah Mapel” atau impor dari Excel.'}
+          </EmptyState>
+        ) : (
+          <CardGrid>
+            {shown.map((subject) => {
+              const teachers = teachersOf(subject.id)
+              return (
+                <AdminCard
+                  key={subject.id}
+                  tone={subjectStyle(subject.name).soft}
+                  icon={<SubjectIcon name={subject.name} size="md" />}
+                  title={subject.name}
+                  badges={
+                    <Badge color="gray">
+                      <Hash className="mr-0.5 size-3" aria-hidden="true" />
+                      {subject.code}
+                    </Badge>
+                  }
+                  meta={[
+                    {
+                      icon: School,
+                      content: classCount[subject.id] ? (
+                        `Diajarkan di ${classCount[subject.id]} kelas`
+                      ) : (
+                        <span className="text-amber-700">Belum ada pengampu</span>
+                      ),
+                    },
+                    teachers.length > 0 && {
+                      icon: UserRound,
+                      content: `Guru: ${teachers.join(', ')}`,
+                    },
+                  ]}
+                  actions={
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDialog({ type: 'form', subject })}
+                      >
+                        <Pencil className="size-4" aria-hidden="true" /> Ubah
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:bg-red-50"
+                        onClick={() => setDialog({ type: 'delete', subject })}
+                      >
+                        <Trash2 className="size-4" aria-hidden="true" /> Hapus
+                      </Button>
+                    </>
+                  }
+                />
+              )
+            })}
+          </CardGrid>
+        )}
+      </section>
 
       {dialog?.type === 'form' && (
         <SubjectFormModal
           subject={dialog.subject}
           onClose={closeDialog}
-          onSaved={(saved, isEdit) => {
-            closeDialog()
-            setNotice(`Mapel ${saved.name} ${isEdit ? 'diperbarui' : 'ditambahkan'}.`)
-            subjects.reload()
-          }}
+          onSaved={(saved, isEdit) =>
+            done(`Mapel ${saved.name} ${isEdit ? 'diperbarui' : 'ditambahkan'}.`)
+          }
         />
       )}
       {dialog?.type === 'import' && (
@@ -152,11 +240,7 @@ export default function SubjectsPage() {
             { key: 'name', header: 'Nama Mapel' },
           ]}
           onClose={closeDialog}
-          onImported={(count) => {
-            closeDialog()
-            setNotice(`${count} mata pelajaran berhasil diimpor.`)
-            subjects.reload()
-          }}
+          onImported={(count) => done(`${count} mata pelajaran berhasil diimpor.`)}
         />
       )}
       <DeleteDialog
@@ -164,11 +248,7 @@ export default function SubjectsPage() {
         title="Hapus Mapel"
         message={(s) => `Hapus mapel ${s.code} - ${s.name}?`}
         onDelete={(s) => subjectsApi.remove(s.id)}
-        onDeleted={(s) => {
-          closeDialog()
-          setNotice(`Mapel ${s.name} dihapus.`)
-          subjects.reload()
-        }}
+        onDeleted={(s) => done(`Mapel ${s.name} dihapus.`)}
         onClose={closeDialog}
       />
     </>

@@ -207,6 +207,11 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
   tile, match }`; id status harus sama dengan penanda dari Beranda (`?filter=`, `?status=`).
 - Kartu: `TaskList` & `AssessmentCard` (kotak ikon berwarna sesuai keadaan, `ProgressBar`
   pengumpulan untuk guru, tombol Kerjakan/Lanjutkan/Lihat Hasil untuk siswa).
+- Halaman admin (Pengguna, Ruang Kelas, Mata Pelajaran, Pengampu) memakai pola yang sama:
+  `PageHero` (tombol Tambah + Impor Excel), panel penyaring, lalu kartu `components/AdminCard.jsx`
+  dalam `CardGrid` (bukan tabel). Kelas, mapel, pengampu dimuat `ALL` dan disaring di browser
+  (`utils/adminFilters.js`); Pengguna tetap dicari & dipaginasi di server karena jumlahnya bisa
+  ribuan (angka per peran diambil dengan `page_size: 1`).
 
 ### Materi Pembelajaran (`/guru/materi`, `/siswa/materi`)
 - `components/MaterialExplorer.jsx`: banner hijau dengan kotak pencarian + tombol Cari (hiasan =

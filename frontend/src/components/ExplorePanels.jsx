@@ -70,9 +70,13 @@ const VISIBLE_SUBJECTS = 4
 
 /**
  * Panel "Pilihan Mata Pelajaran": kartu setiap pengampu (mapel di kelas) + jumlah item.
+ * Bisa juga untuk daftar lain (mis. kelas) asal tiap item punya `id` dan `subject_name`
+ * (dipakai untuk menebak ikon).
  * `selected` = id pengampu terpilih ('' = semua), `onSelect(id | '')`.
  */
 export function SubjectPanel({
+  title = 'Pilihan Mata Pelajaran',
+  emptyText = 'Belum ada mata pelajaran.',
   assignments,
   counts,
   unit,
@@ -86,7 +90,7 @@ export function SubjectPanel({
   const visible = showAll ? list : list.slice(0, VISIBLE_SUBJECTS)
   return (
     <ExplorePanel
-      title="Pilihan Mata Pelajaran"
+      title={title}
       tone="bg-amber-100"
       action={
         list.length > VISIBLE_SUBJECTS && (
@@ -97,9 +101,7 @@ export function SubjectPanel({
       }
     >
       {list.length === 0 ? (
-        <p className="rounded-xl bg-white p-6 text-center text-sm text-slate-500">
-          Belum ada mata pelajaran.
-        </p>
+        <p className="rounded-xl bg-white p-6 text-center text-sm text-slate-500">{emptyText}</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {visible.map((a) => {
