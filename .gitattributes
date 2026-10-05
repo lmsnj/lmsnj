@@ -1,0 +1,2 @@
+# File batch Windows wajib CRLF agar dibaca benar oleh cmd.exe
+*.bat text eol=crlf
