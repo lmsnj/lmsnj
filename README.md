@@ -28,6 +28,10 @@ Tampilan responsif (bisa dipakai di HP) dan seluruh teks berbahasa Indonesia.
 Kebutuhan: **Python 3.12+** dan **Node.js 22+**. Perintah di bawah untuk Windows
 (PowerShell / Command Prompt).
 
+**Cara cepat:** klik dua kali `start-app.bat` di folder utama. Script ini menyiapkan venv, paket,
+file `.env`, dan database (saat pertama kali), lalu menjalankan backend dan frontend di dua jendela
+terpisah dan membuka browser. Langkah manual di bawah tetap berlaku jika ingin mengatur sendiri.
+
 ### 1. Backend (http://localhost:8000)
 
 ```bash
