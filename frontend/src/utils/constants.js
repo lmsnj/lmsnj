@@ -1,29 +1,49 @@
-// Identitas sekolah BAWAAN (dipakai sebelum data dari server termuat atau jika gagal dimuat).
-// Nilai sebenarnya diatur admin di menu "Identitas Sekolah" (lihat context/BrandingProvider.jsx).
+// Identitas BAWAAN (dipakai sebelum data dari server termuat atau jika gagal dimuat).
+// Nilai sebenarnya: identitas yayasan/aplikasi (menu "Identitas Yayasan") dan identitas tiap
+// sekolah (menu "Identitas Sekolah") — lihat context/BrandingProvider.jsx.
 export const SCHOOL = {
-  name: 'SMKS Nurul Jadid',
-  slogan: 'Cerdas, Terampil, Berakhlak Mulia',
-  app: 'LMS SMKS Nurul Jadid',
+  name: 'Biro Pendidikan Pondok Pesantren Nurul Jadid',
+  slogan: '',
+  app: 'LMS Nurul Jadid',
 }
 
 export const ROLES = {
+  FOUNDATION: 'foundation',
   ADMIN: 'admin',
   TEACHER: 'teacher',
   STUDENT: 'student',
 }
 
 export const ROLE_LABELS = {
+  [ROLES.FOUNDATION]: 'Admin Yayasan',
   [ROLES.ADMIN]: 'Admin',
   [ROLES.TEACHER]: 'Guru',
   [ROLES.STUDENT]: 'Siswa',
 }
 
-// Halaman awal tiap peran setelah login.
+// Halaman awal tiap peran setelah login. Admin yayasan memakai halaman admin (di sekolah yang
+// sedang dibuka) ditambah menu Daftar Sekolah.
 export const ROLE_HOME = {
+  [ROLES.FOUNDATION]: '/admin',
   [ROLES.ADMIN]: '/admin',
   [ROLES.TEACHER]: '/guru',
   [ROLES.STUDENT]: '/siswa',
 }
+
+// Peran yang boleh membuka halaman admin.
+export const ADMIN_ROLES = [ROLES.ADMIN, ROLES.FOUNDATION]
+export const isAdminRole = (role) => ADMIN_ROLES.includes(role)
+
+// Jenjang sekolah; harus sama dengan Level di backend (apps/schools/models.py).
+export const SCHOOL_LEVELS = [
+  { value: 'sd', label: 'SD' },
+  { value: 'mi', label: 'MI' },
+  { value: 'smp', label: 'SMP' },
+  { value: 'mts', label: 'MTs' },
+  { value: 'sma', label: 'SMA' },
+  { value: 'ma', label: 'MA' },
+  { value: 'smk', label: 'SMK' },
+]
 
 export const PAGE_SIZE = 20
 

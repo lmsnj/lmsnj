@@ -26,16 +26,17 @@ import SubjectIcon from '../../components/SubjectIcon'
 import TextField from '../../components/TextField'
 import useDebounce from '../../hooks/useDebounce'
 import useFetch from '../../hooks/useFetch'
+import useGrades from '../../hooks/useGrades'
 import { getErrorMessage, getFieldErrors } from '../../utils/errors'
 
 const HERO_ICONS = [CalendarSync, TrendingUp, GraduationCap, School, Users, Sprout, PartyPopper]
 
-const OPTIONS = [
+// `first` = tingkat pertama sekolah yang dibuka (X, VII, atau I).
+const toggleOptions = (first) => [
   {
     key: 'recreate_first_grade',
-    title: 'Buat ulang kelas X (kosong)',
-    description:
-      'Kelas X di tahun ajaran baru dibuat dengan nama yang sama, siap diisi siswa baru.',
+    title: `Buat ulang kelas ${first} (kosong)`,
+    description: `Kelas ${first} di tahun ajaran baru dibuat dengan nama yang sama, siap diisi siswa baru.`,
   },
   {
     key: 'copy_assignments',
@@ -152,6 +153,7 @@ function ClassPlan({ item, holdBack, onToggle }) {
 
 // "Tahun Ajaran Baru" (admin): kenaikan kelas seluruh siswa ke tingkat berikutnya.
 export default function PromotionPage() {
+  const { grades, first, last } = useGrades()
   const [fromYear, setFromYear] = useState('')
   const [toYear, setToYear] = useState('')
   const [options, setOptions] = useState({
@@ -220,7 +222,7 @@ export default function PromotionPage() {
     <>
       <PageHero
         title="Tahun Ajaran Baru"
-        description="Naikkan seluruh siswa ke tingkat berikutnya: X ke XI, XI ke XII, dan XII lulus. Kelas X baru bisa dimulai dari awal."
+        description={`Naikkan seluruh siswa ke tingkat berikutnya (${grades.join(' → ')}); siswa kelas ${last} lulus. Kelas ${first} baru bisa dimulai dari awal.`}
         icons={HERO_ICONS}
         centerIcon={CalendarSync}
         stats={[
@@ -264,7 +266,7 @@ export default function PromotionPage() {
               <Link to="/admin/kelas" className="font-medium text-brand-700 underline">
                 Ruang Kelas
               </Link>
-              , lalu masukkan siswa baru kelas X lewat{' '}
+              , lalu masukkan siswa baru kelas {first} lewat{' '}
               <Link to="/admin/pengguna?impor=1" className="font-medium text-brand-700 underline">
                 Impor Excel pengguna
               </Link>
@@ -301,7 +303,7 @@ export default function PromotionPage() {
 
         <Step number={2} title="Pengaturan">
           <div className="grid gap-3 lg:grid-cols-3">
-            {OPTIONS.map((option) => (
+            {toggleOptions(first).map((option) => (
               <Toggle
                 key={option.key}
                 title={option.title}
@@ -313,7 +315,7 @@ export default function PromotionPage() {
           </div>
           <fieldset className="mt-4">
             <legend className="text-sm font-medium text-slate-700">
-              Siswa kelas XII yang lulus
+              Siswa kelas {last} yang lulus
             </legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {[
@@ -355,14 +357,14 @@ export default function PromotionPage() {
             </EmptyState>
           ) : (
             <div className="space-y-6">
-              {['X', 'XI', 'XII'].map((grade) => {
+              {grades.map((grade, index) => {
                 const list = classes.filter((c) => c.grade === grade)
                 if (!list.length) return null
                 return (
                   <div key={grade}>
                     <h3 className="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">
                       Kelas {grade}
-                      {grade === 'XII' ? ' → lulus' : ` → kelas ${grade === 'X' ? 'XI' : 'XII'}`}
+                      {grade === last ? ' → lulus' : ` → kelas ${grades[index + 1]}`}
                     </h3>
                     <div className="grid gap-4 lg:grid-cols-2">
                       {list.map((item) => (
@@ -381,7 +383,7 @@ export default function PromotionPage() {
                 <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
                   <h3 className="flex items-center gap-2 font-semibold text-amber-900">
                     <Sprout className="size-5" aria-hidden="true" />
-                    Kelas X baru di {data.to_year} (kosong, untuk siswa baru)
+                    Kelas {first} baru di {data.to_year} (kosong, untuk siswa baru)
                   </h3>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {data.new_first_grade.map((c) => (

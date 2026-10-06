@@ -6,15 +6,15 @@ import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
 import useFetch from '../../hooks/useFetch'
 import useFormSubmit from '../../hooks/useFormSubmit'
-import { ALL, currentAcademicYear, GRADES, toOptions } from '../../utils/academic'
+import useGrades from '../../hooks/useGrades'
+import { ALL, currentAcademicYear, toOptions } from '../../utils/academic'
 import { ROLES } from '../../utils/constants'
 
-const GRADE_OPTIONS = GRADES.map((grade) => ({ value: grade, label: `Kelas ${grade}` }))
-
 export default function ClassroomFormModal({ classroom, onClose, onSaved }) {
+  const { grades, first } = useGrades()
   const [form, setForm] = useState({
     name: classroom?.name ?? '',
-    grade: classroom?.grade ?? 'X',
+    grade: classroom?.grade ?? first,
     major: classroom?.major ?? '',
     academic_year: classroom?.academic_year ?? currentAcademicYear(),
     homeroom_teacher: classroom?.homeroom_teacher ? String(classroom.homeroom_teacher) : '',
@@ -54,7 +54,7 @@ export default function ClassroomFormModal({ classroom, onClose, onSaved }) {
           name="grade"
           value={form.grade}
           onChange={handleChange}
-          options={GRADE_OPTIONS}
+          options={grades.map((grade) => ({ value: grade, label: `Kelas ${grade}` }))}
           error={errors.grade}
         />
         <TextField

@@ -18,8 +18,10 @@ import PageHero from '../PageHero'
 import ActionCard from './ActionCard'
 import HomePanel from './HomePanel'
 
+const ADMIN_ICONS = [Users, School, BookOpen, CalendarDays, GraduationCap, Star, ClipboardCheck]
 const HERO_ICONS = {
-  [ROLES.ADMIN]: [Users, School, BookOpen, CalendarDays, GraduationCap, Star, ClipboardCheck],
+  [ROLES.FOUNDATION]: ADMIN_ICONS,
+  [ROLES.ADMIN]: ADMIN_ICONS,
   [ROLES.TEACHER]: [BookOpen, ClipboardCheck, Lightbulb, Users, MessagesSquare, Star, Trophy],
   [ROLES.STUDENT]: [
     BookOpen,

@@ -11,7 +11,7 @@ import Spinner from '../components/Spinner'
 import useAuth from '../hooks/useAuth'
 import useFetch from '../hooks/useFetch'
 import { ALL, toOptions } from '../utils/academic'
-import { ROLES } from '../utils/constants'
+import { isAdminRole } from '../utils/constants'
 import { formatScore } from '../utils/tasks'
 
 // Warna nilai: merah < 70 (di bawah KKM umum), hijau >= 85.
@@ -119,7 +119,7 @@ function ReportTable({ classroomId }) {
 // Laporan nilai per kelas. Admin: semua kelas. Guru: hanya kelas yang ia walikan.
 export default function ReportPage() {
   const { user } = useAuth()
-  const isAdmin = user.role === ROLES.ADMIN
+  const isAdmin = isAdminRole(user.role)
   const classrooms = useFetch(
     classroomsApi.list,
     isAdmin ? ALL : { ...ALL, homeroom_teacher: user.id },

@@ -4,7 +4,7 @@ import { FullPageSpinner } from '../components/Spinner'
 import useAuth from '../hooks/useAuth'
 import DashboardLayout from '../layouts/DashboardLayout'
 import LoginPage from '../pages/auth/LoginPage'
-import { ROLE_HOME, ROLES } from '../utils/constants'
+import { ADMIN_ROLES, ROLE_HOME, ROLES } from '../utils/constants'
 import ProtectedRoute from './ProtectedRoute'
 
 // Setiap halaman dimuat saat pertama kali dibuka (code splitting), agar unduhan awal kecil
@@ -13,6 +13,7 @@ const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'))
 const AssignmentsPage = lazy(() => import('../pages/admin/AssignmentsPage'))
 const BrandingPage = lazy(() => import('../pages/admin/BrandingPage'))
 const PromotionPage = lazy(() => import('../pages/admin/PromotionPage'))
+const SchoolsPage = lazy(() => import('../pages/admin/SchoolsPage'))
 const ClassroomDetailPage = lazy(() => import('../pages/admin/ClassroomDetailPage'))
 const ClassroomsPage = lazy(() => import('../pages/admin/ClassroomsPage'))
 const SubjectsPage = lazy(() => import('../pages/admin/SubjectsPage'))
@@ -56,7 +57,7 @@ export default function AppRoutes() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
-            <Route path="admin" element={<ProtectedRoute roles={[ROLES.ADMIN]} />}>
+            <Route path="admin" element={<ProtectedRoute roles={ADMIN_ROLES} />}>
               <Route index element={<AdminDashboard />} />
               <Route path="pengguna" element={<UsersPage />} />
               <Route path="kelas" element={<ClassroomsPage />} />
@@ -66,6 +67,9 @@ export default function AppRoutes() {
               <Route path="laporan" element={<ReportPage />} />
               <Route path="identitas" element={<BrandingPage />} />
               <Route path="tahun-ajaran" element={<PromotionPage />} />
+              <Route element={<ProtectedRoute roles={[ROLES.FOUNDATION]} />}>
+                <Route path="sekolah" element={<SchoolsPage />} />
+              </Route>
             </Route>
 
             <Route path="guru" element={<ProtectedRoute roles={[ROLES.TEACHER]} />}>

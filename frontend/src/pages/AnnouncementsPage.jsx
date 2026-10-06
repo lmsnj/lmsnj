@@ -19,13 +19,13 @@ import useFetch from '../hooks/useFetch'
 import useFormSubmit from '../hooks/useFormSubmit'
 import useQueryFlag from '../hooks/useQueryFlag'
 import { ALL, toOptions } from '../utils/academic'
-import { ROLES } from '../utils/constants'
+import { isAdminRole, ROLES } from '../utils/constants'
 
 const SCHOOL = 'school'
 
 function AnnouncementFormModal({ announcement, targets, onClose, onSaved }) {
   const { user } = useAuth()
-  const isAdmin = user.role === ROLES.ADMIN
+  const isAdmin = isAdminRole(user.role)
   const [form, setForm] = useState({
     title: announcement?.title ?? '',
     body: announcement?.body ?? '',

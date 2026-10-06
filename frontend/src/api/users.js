@@ -5,6 +5,8 @@ export const usersApi = {
   create: (data) => api.post('/users/', data).then((res) => res.data),
   update: (id, data) => api.patch(`/users/${id}/`, data).then((res) => res.data),
   remove: (id) => api.delete(`/users/${id}/`),
+  // Daftarkan akun guru/admin yang sudah ada (dari sekolah lain) ke sekolah yang sedang dibuka.
+  join: (username) => api.post('/users/join/', { username }).then((res) => res.data),
   resetPassword: (id, newPassword) =>
     api.post(`/users/${id}/reset-password/`, { new_password: newPassword }).then((res) => res.data),
 

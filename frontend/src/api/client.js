@@ -2,6 +2,7 @@ import axios from 'axios'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
 const REFRESH_KEY = 'lms_refresh_token'
+const SCHOOL_KEY = 'lms_school'
 
 // Access token hanya disimpan di memori (hilang saat tab ditutup) agar lebih aman.
 // Refresh token disimpan di localStorage supaya pengguna tetap login setelah reload.
@@ -21,6 +22,14 @@ export const tokenStore = {
   },
 }
 
+// Sekolah yang sedang dibuka (id). Dikirim lewat header X-School pada setiap request; backend
+// mengecek bahwa user memang boleh membuka sekolah itu. Diingat agar tetap sama setelah reload.
+export const schoolStore = {
+  get: () => localStorage.getItem(SCHOOL_KEY),
+  set: (id) => localStorage.setItem(SCHOOL_KEY, String(id)),
+  clear: () => localStorage.removeItem(SCHOOL_KEY),
+}
+
 // Alamat lengkap untuk path dari API (mis. "/api/branding/logo/?v=1"), untuk <img src>.
 export const apiUrl = (path) => new URL(path, BASE_URL).href
 
@@ -32,6 +41,8 @@ const api = axios.create({ baseURL: BASE_URL })
 
 api.interceptors.request.use((config) => {
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`
+  const school = schoolStore.get()
+  if (school) config.headers['X-School'] = school
   return config
 })
 

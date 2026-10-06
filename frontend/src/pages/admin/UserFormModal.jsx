@@ -4,12 +4,18 @@ import { usersApi } from '../../api/users'
 import FormModal from '../../components/FormModal'
 import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
+import useAuth from '../../hooks/useAuth'
 import useFetch from '../../hooks/useFetch'
 import useFormSubmit from '../../hooks/useFormSubmit'
 import { ALL, toOptions } from '../../utils/academic'
 import { ROLE_LABELS, ROLES } from '../../utils/constants'
 
-const ROLE_OPTIONS = Object.values(ROLES).map((value) => ({ value, label: ROLE_LABELS[value] }))
+// Peran Admin Yayasan hanya bisa diberikan oleh admin yayasan.
+function roleOptions(currentUser) {
+  return Object.values(ROLES)
+    .filter((value) => value !== ROLES.FOUNDATION || currentUser.role === ROLES.FOUNDATION)
+    .map((value) => ({ value, label: ROLE_LABELS[value] }))
+}
 
 function initialForm(user) {
   return {
@@ -28,6 +34,7 @@ function initialForm(user) {
 // `user` kosong = tambah pengguna baru; berisi = ubah pengguna tersebut.
 // Komponen ini di-mount ulang (lewat `key`) setiap kali dibuka, jadi form selalu segar.
 export default function UserFormModal({ user, onClose, onSaved }) {
+  const { user: currentUser } = useAuth()
   const isEdit = Boolean(user)
   const [form, setForm] = useState(() => initialForm(user))
   const classrooms = useFetch(classroomsApi.list, ALL)
@@ -81,7 +88,7 @@ export default function UserFormModal({ user, onClose, onSaved }) {
           name="role"
           value={form.role}
           onChange={handleChange}
-          options={ROLE_OPTIONS}
+          options={roleOptions(currentUser)}
           error={errors.role}
         />
       </div>

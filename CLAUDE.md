@@ -106,6 +106,16 @@ Pola yang wajib dipakai ulang:
   sudah ada kelas), identitas aplikasi (`/api/branding/`), memberi peran Admin Yayasan, ringkasan lintas sekolah.
   Admin sekolah hanya boleh mengubah nama/slogan/logo sekolahnya (`SchoolIdentitySerializer`).
   Upload logo memakai `apps/common/images.py::LogoSerializerMixin`.
+- **Frontend multi-sekolah:** `AuthProvider` memuat `/api/schools/` setelah login dan menyediakan
+  `school`, `schools`, `selectSchool`, `reloadSchools` (lewat `useAuth`). Id sekolah aktif disimpan di
+  `schoolStore` (`api/client.js`, localStorage) dan dikirim sebagai header `X-School` oleh interceptor.
+  `layouts/SchoolSwitcher.jsx` = tombol "Ganti Sekolah" (tampil jika >1 sekolah atau admin yayasan);
+  `DashboardLayout` diberi `key` = id sekolah agar semua halaman dimuat ulang saat pindah sekolah.
+  `useBranding()` mengembalikan `branding` (identitas sekolah aktif, cadangan identitas yayasan) dan
+  `app` (identitas yayasan; dipakai halaman login). Tingkat kelas: `hooks/useGrades.js` (jangan menulis
+  X/XI/XII langsung). Peran admin dicek dengan `isAdminRole(role)`; route admin memakai `ADMIN_ROLES`.
+  Halaman `/admin/sekolah` (Daftar Sekolah) khusus admin yayasan; `/admin/identitas` = identitas
+  sekolah (admin sekolah) atau identitas yayasan (admin yayasan). Fungsi murni: `utils/schools.js`.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan.
 - **Material** (materi): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `description`, `material_type` (`pdf`/`video`/`link`), `file` + `original_filename` (khusus PDF, maks. 10 MB), `url` (video/link), `is_published` (draf tidak terlihat siswa), `created_by`.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
@@ -422,7 +432,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] 8b: semua endpoint disaring per sekolah (selector, admin, impor/template, laporan, dashboard, obrolan),
         NIS unik per sekolah, pengampu: kelas & mapel & guru harus satu sekolah
   - [x] 8c: peran Admin Yayasan (kelola sekolah & admin sekolah, ringkasan lintas sekolah)
-  - [ ] 8d: frontend (pilihan sekolah, identitas per sekolah, halaman yayasan, pilihan tingkat per jenjang)
+  - [x] 8d: frontend (pilihan sekolah, identitas per sekolah, halaman yayasan, pilihan tingkat per jenjang)
   - [ ] 8e: seed_demo beberapa sekolah, README/DEPLOY
 - [x] Tambahan: impor pengguna dari Excel, tampilan baru, pengumuman, laporan nilai, sesi mengajar,
       ruang obrolan, lembar asesmen

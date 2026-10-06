@@ -30,18 +30,19 @@ import SelectField from '../../components/SelectField'
 import Spinner from '../../components/Spinner'
 import SubjectIcon from '../../components/SubjectIcon'
 import useFetch from '../../hooks/useFetch'
-import { ALL, toOptions } from '../../utils/academic'
+import useGrades from '../../hooks/useGrades'
+import { ALL, gradeFilterOptions, toOptions } from '../../utils/academic'
 import { countWith, filterAssignments } from '../../utils/adminFilters'
 import { ROLES } from '../../utils/constants'
 import { subjectStyle } from '../../utils/subjectStyles'
 import AssignmentFormModal from './AssignmentFormModal'
 
 const EMPTY = { search: '', subject: '', grade: '', teacher: '' }
-const GRADE_OPTIONS = [
-  { id: 'X', title: 'Kelas X', description: 'Pengampu di tingkat pertama', icon: Sprout, tile: 'bg-brand-100 text-brand-700' },
-  { id: 'XI', title: 'Kelas XI', description: 'Pengampu di tingkat kedua', icon: TreePine, tile: 'bg-blue-100 text-blue-600' },
-  { id: 'XII', title: 'Kelas XII', description: 'Pengampu di tingkat akhir', icon: Trees, tile: 'bg-amber-100 text-amber-700' },
-] // prettier-ignore
+const GRADE_STYLES = [
+  { icon: Sprout, tile: 'bg-brand-100 text-brand-700' },
+  { icon: TreePine, tile: 'bg-blue-100 text-blue-600' },
+  { icon: Trees, tile: 'bg-amber-100 text-amber-700' },
+]
 const HERO_ICONS = [
   GraduationCap,
   Library,
@@ -58,6 +59,7 @@ export default function AssignmentsPage() {
   const [dialog, setDialog] = useState(null)
 
   const assignments = useFetch(assignmentsApi.list, ALL)
+  const { grades } = useGrades()
   const classrooms = useFetch(classroomsApi.list, ALL)
   const subjects = useFetch(subjectsApi.list, ALL)
   const teachers = useFetch(usersApi.list, { ...ALL, role: ROLES.TEACHER })
@@ -141,7 +143,7 @@ export default function AssignmentsPage() {
           />
           <OptionPanel
             title="Tingkat Kelas"
-            options={GRADE_OPTIONS}
+            options={gradeFilterOptions(grades, GRADE_STYLES, 'Pengampu di')}
             counts={countWith(all, (a) => gradeOf(a.classroom))}
             selected={filters.grade}
             onSelect={(grade) => set({ grade })}

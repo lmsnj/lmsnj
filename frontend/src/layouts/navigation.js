@@ -10,6 +10,7 @@ import {
   Library,
   Megaphone,
   MessagesSquare,
+  Building2,
   Palette,
   School,
   Trophy,
@@ -31,23 +32,35 @@ const PROFILE = { label: 'Profil Saya', icon: UserRound, to: '/profil' }
 const CHAT = { label: 'Ruang Obrolan', icon: MessagesSquare, to: '/obrolan', badge: 'chat' }
 const ANNOUNCEMENTS = { label: 'Pengumuman', icon: Megaphone, to: '/pengumuman' }
 
+// Menu admin dipakai juga oleh admin yayasan (di sekolah yang sedang dibuka).
+const ADMIN_MAIN = [
+  { label: 'Beranda', icon: House, to: '/admin', end: true },
+  { label: 'Pengguna', icon: Users, to: '/admin/pengguna' },
+  { label: 'Ruang Kelas', icon: School, to: '/admin/kelas' },
+  { label: 'Mata Pelajaran', icon: Library, to: '/admin/mapel' },
+  { label: 'Pengampu', icon: GraduationCap, to: '/admin/pengampu' },
+  CHAT,
+]
+const ADMIN_MORE = [
+  { label: 'Laporan Nilai', icon: ChartColumn, to: '/admin/laporan' },
+  { ...ANNOUNCEMENTS, label: 'Pengumuman Sekolah' },
+  { label: 'Tahun Ajaran Baru', icon: CalendarSync, to: '/admin/tahun-ajaran' },
+]
+// Admin sekolah: identitas sekolahnya. Admin yayasan: identitas yayasan/aplikasi (halaman sama).
+const IDENTITY = { label: 'Identitas Sekolah', icon: Palette, to: '/admin/identitas' }
+
 export const NAVIGATION = {
-  [ROLES.ADMIN]: {
+  [ROLES.FOUNDATION]: {
     main: [
-      { label: 'Beranda', icon: House, to: '/admin', end: true },
-      { label: 'Pengguna', icon: Users, to: '/admin/pengguna' },
-      { label: 'Ruang Kelas', icon: School, to: '/admin/kelas' },
-      { label: 'Mata Pelajaran', icon: Library, to: '/admin/mapel' },
-      { label: 'Pengampu', icon: GraduationCap, to: '/admin/pengampu' },
-      CHAT,
+      ADMIN_MAIN[0],
+      { label: 'Daftar Sekolah', icon: Building2, to: '/admin/sekolah' },
+      ...ADMIN_MAIN.slice(1),
     ],
-    more: [
-      { label: 'Laporan Nilai', icon: ChartColumn, to: '/admin/laporan' },
-      { ...ANNOUNCEMENTS, label: 'Pengumuman Sekolah' },
-      { label: 'Tahun Ajaran Baru', icon: CalendarSync, to: '/admin/tahun-ajaran' },
-      { label: 'Identitas Sekolah', icon: Palette, to: '/admin/identitas' },
-      PROFILE,
-    ],
+    more: [...ADMIN_MORE, { ...IDENTITY, label: 'Identitas Yayasan' }, PROFILE],
+  },
+  [ROLES.ADMIN]: {
+    main: ADMIN_MAIN,
+    more: [...ADMIN_MORE, IDENTITY, PROFILE],
   },
   [ROLES.TEACHER]: {
     main: [

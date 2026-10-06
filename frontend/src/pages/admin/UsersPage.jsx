@@ -1,9 +1,11 @@
 import {
   BadgeCheck,
+  Building2,
   Contact,
   FileSpreadsheet,
   GraduationCap,
   KeyRound,
+  Link2,
   Mail,
   Pencil,
   School,
@@ -24,13 +26,16 @@ import Button from '../../components/Button'
 import { Avatar } from '../../components/ClassHero'
 import DeleteDialog from '../../components/DeleteDialog'
 import EmptyState from '../../components/EmptyState'
+import FormModal from '../../components/FormModal'
 import { FilterChips, OptionPanel, SubjectPanel } from '../../components/ExplorePanels'
 import PageHero, { HeroButton } from '../../components/PageHero'
 import Pagination from '../../components/Pagination'
 import Spinner from '../../components/Spinner'
+import TextField from '../../components/TextField'
 import useAuth from '../../hooks/useAuth'
 import useDebounce from '../../hooks/useDebounce'
 import useFetch from '../../hooks/useFetch'
+import useFormSubmit from '../../hooks/useFormSubmit'
 import useQueryFlag from '../../hooks/useQueryFlag'
 import { ALL } from '../../utils/academic'
 import { ROLE_LABELS, ROLES } from '../../utils/constants'
@@ -38,7 +43,43 @@ import ImportUsersModal from './ImportUsersModal'
 import ResetPasswordModal from './ResetPasswordModal'
 import UserFormModal from './UserFormModal'
 
-const ROLE_COLORS = { [ROLES.ADMIN]: 'amber', [ROLES.TEACHER]: 'blue', [ROLES.STUDENT]: 'gray' }
+const ROLE_COLORS = {
+  [ROLES.FOUNDATION]: 'green',
+  [ROLES.ADMIN]: 'amber',
+  [ROLES.TEACHER]: 'blue',
+  [ROLES.STUDENT]: 'gray',
+}
+
+// Guru yang juga mengajar di sekolah lain memakai akun yang sama: cukup didaftarkan ke sekolah ini.
+function JoinUserModal({ onClose, onJoined }) {
+  const [username, setUsername] = useState('')
+  const { submit, submitting, errors, generalError } = useFormSubmit(async () => {
+    onJoined(await usersApi.join(username))
+  })
+  return (
+    <FormModal
+      title="Tambah dari Sekolah Lain"
+      submitLabel="Daftarkan"
+      onClose={onClose}
+      onSubmit={submit}
+      submitting={submitting}
+      error={generalError}
+    >
+      <p className="text-sm text-slate-600">
+        Untuk guru atau admin yang sudah punya akun di sekolah lain dalam yayasan. Akunnya tetap
+        satu (username & password sama); ia bisa berpindah sekolah lewat tombol “Ganti Sekolah”.
+      </p>
+      <TextField
+        label="Username"
+        value={username}
+        onChange={(event) => setUsername(event.target.value)}
+        error={errors.username}
+        autoComplete="off"
+        required
+      />
+    </FormModal>
+  )
+}
 const EMPTY = { search: '', group: '', classroom: '', is_active: '' }
 
 // Pilihan di panel "Peran Pengguna". `params` = filter yang dikirim ke API.
@@ -102,7 +143,7 @@ function useRoleCounts() {
 }
 
 export default function UsersPage() {
-  const { user: currentUser } = useAuth()
+  const { user: currentUser, school } = useAuth()
   const [filters, setFilters] = useState(EMPTY)
   const [page, setPage] = useState(1)
   const [notice, setNotice] = useState('')
@@ -138,7 +179,11 @@ export default function UsersPage() {
   }
   const handleDeleted = (user) => {
     closeDialog()
-    setNotice(`${user.full_name} dihapus.`)
+    setNotice(
+      user.schools.length > 1
+        ? `${user.full_name} dikeluarkan dari sekolah ini.`
+        : `${user.full_name} dihapus.`,
+    )
     // Jika data terakhir di halaman ini terhapus, mundur satu halaman.
     if (users.data?.results.length === 1 && page > 1) setPage(page - 1)
     else users.reload()
@@ -185,6 +230,9 @@ export default function UsersPage() {
               </HeroButton>
               <HeroButton icon={FileSpreadsheet} onClick={() => setDialog({ type: 'import' })}>
                 Impor Excel
+              </HeroButton>
+              <HeroButton icon={Link2} onClick={() => setDialog({ type: 'join' })}>
+                Dari Sekolah Lain
               </HeroButton>
             </>
           }
@@ -309,6 +357,13 @@ export default function UsersPage() {
                     ),
                   },
                   user.email && { icon: Mail, content: user.email },
+                  user.schools.length > 1 && {
+                    icon: Building2,
+                    content: `Juga di: ${user.schools
+                      .filter((s) => s.id !== school?.id)
+                      .map((s) => s.name)
+                      .join(', ')}`,
+                  },
                 ]}
                 actions={
                   <>
@@ -369,6 +424,17 @@ export default function UsersPage() {
           }}
         />
       )}
+      {dialog?.type === 'join' && (
+        <JoinUserModal
+          onClose={closeDialog}
+          onJoined={(joined) => {
+            closeDialog()
+            setNotice(`${joined.full_name} sekarang terdaftar di sekolah ini.`)
+            users.reload()
+            reloadCounts()
+          }}
+        />
+      )}
       {dialog?.type === 'reset' && (
         <ResetPasswordModal
           user={dialog.user}
@@ -383,7 +449,9 @@ export default function UsersPage() {
         item={dialog?.type === 'delete' ? dialog.user : null}
         title="Hapus Pengguna"
         message={(user) =>
-          `Hapus akun ${user.full_name}? Tindakan ini tidak bisa dibatalkan. Untuk sementara melarang login, lebih baik nonaktifkan akun lewat menu Ubah.`
+          user.schools.length > 1
+            ? `Keluarkan ${user.full_name} dari sekolah ini? Akunnya tetap ada di sekolah lain.`
+            : `Hapus akun ${user.full_name}? Tindakan ini tidak bisa dibatalkan. Untuk sementara melarang login, lebih baik nonaktifkan akun lewat menu Ubah.`
         }
         onDelete={(user) => usersApi.remove(user.id)}
         onDeleted={handleDeleted}

@@ -8,9 +8,10 @@ import Spinner from '../components/Spinner'
 import useAuth from '../hooks/useAuth'
 import useUnreadMessages from '../hooks/useUnreadMessages'
 import useBranding from '../hooks/useBranding'
-import { ROLE_HOME } from '../utils/constants'
+import { ROLE_HOME, ROLES } from '../utils/constants'
 import { LanguageMenu, NotificationBell, UserMenu } from './HeaderMenus'
 import { NAVIGATION } from './navigation'
+import SchoolSwitcher from './SchoolSwitcher'
 
 // Tombol menu di bar hijau. Aktif = latar putih, teks hijau.
 function navItemClass(isActive) {
@@ -170,16 +171,37 @@ function MobileMenu({ nav, badges, onClose }) {
   )
 }
 
+// Akun yang belum terdaftar di sekolah mana pun tidak punya data untuk ditampilkan.
+function NoSchoolNotice({ role }) {
+  return (
+    <div className="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-200">
+      {role === ROLES.FOUNDATION ? (
+        <>
+          Belum ada sekolah aktif.{' '}
+          <Link to="/admin/sekolah" className="font-semibold underline">
+            Tambahkan sekolah
+          </Link>{' '}
+          terlebih dahulu.
+        </>
+      ) : (
+        'Akun Anda belum terdaftar di sekolah mana pun. Hubungi admin sekolah.'
+      )}
+    </div>
+  )
+}
+
 export default function DashboardLayout() {
-  const { user } = useAuth()
+  const { user, school } = useAuth()
   const { branding } = useBranding()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const nav = NAVIGATION[user.role]
   const badges = { chat: useUnreadMessages() }
 
+  // key = sekolah aktif: saat pindah sekolah semua isi halaman dipasang ulang sehingga data
+  // dimuat ulang dari sekolah yang baru (tidak ada data sekolah lama yang tertinggal).
   return (
-    <div className="min-h-screen bg-surface">
+    <div key={school?.id ?? 'none'} className="min-h-screen bg-surface">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
           <button
@@ -205,6 +227,7 @@ export default function DashboardLayout() {
               </span>
             </span>
           </Link>
+          <SchoolSwitcher />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <NotificationBell />
             <LanguageMenu />
@@ -216,6 +239,7 @@ export default function DashboardLayout() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="pt-4">
           <NavBar nav={nav} badges={badges} />
+          {!school && <NoSchoolNotice role={user.role} />}
         </div>
         <main className="py-6">
           {/* key: error di satu halaman tidak terbawa saat pindah halaman. */}

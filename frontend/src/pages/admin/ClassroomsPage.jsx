@@ -29,17 +29,18 @@ import PageHero, { HeroButton } from '../../components/PageHero'
 import Spinner from '../../components/Spinner'
 import SubjectIcon from '../../components/SubjectIcon'
 import useFetch from '../../hooks/useFetch'
-import { ALL } from '../../utils/academic'
+import useGrades from '../../hooks/useGrades'
+import { ALL, gradeFilterOptions } from '../../utils/academic'
 import { countWith, filterClassrooms, sumOf } from '../../utils/adminFilters'
 import { subjectStyle } from '../../utils/subjectStyles'
 import ClassroomFormModal from './ClassroomFormModal'
 
 const EMPTY = { search: '', grade: '', year: '' }
-const GRADE_OPTIONS = [
-  { id: 'X', title: 'Kelas X', description: 'Tingkat pertama', icon: Sprout, tile: 'bg-brand-100 text-brand-700' },
-  { id: 'XI', title: 'Kelas XI', description: 'Tingkat kedua', icon: TreePine, tile: 'bg-blue-100 text-blue-600' },
-  { id: 'XII', title: 'Kelas XII', description: 'Tingkat akhir', icon: Trees, tile: 'bg-amber-100 text-amber-700' },
-] // prettier-ignore
+const GRADE_STYLES = [
+  { icon: Sprout, tile: 'bg-brand-100 text-brand-700' },
+  { icon: TreePine, tile: 'bg-blue-100 text-blue-600' },
+  { icon: Trees, tile: 'bg-amber-100 text-amber-700' },
+]
 const HERO_ICONS = [School, Users, DoorOpen, CalendarDays, BookOpen, GraduationCap, LayoutGrid]
 
 export default function ClassroomsPage() {
@@ -47,6 +48,7 @@ export default function ClassroomsPage() {
   const [notice, setNotice] = useState('')
   const [dialog, setDialog] = useState(null)
   const classrooms = useFetch(classroomsApi.list, ALL)
+  const { grades } = useGrades()
 
   const all = classrooms.data?.results ?? []
   const shown = filterClassrooms(all, filters)
@@ -120,7 +122,7 @@ export default function ClassroomsPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <OptionPanel
             title="Tingkat Kelas"
-            options={GRADE_OPTIONS}
+            options={gradeFilterOptions(grades, GRADE_STYLES)}
             counts={countWith(all, (c) => c.grade)}
             selected={filters.grade}
             onSelect={(grade) => set({ grade })}

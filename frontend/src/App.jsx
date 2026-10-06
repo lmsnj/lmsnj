@@ -10,11 +10,12 @@ const router = createBrowserRouter([
   {
     path: '*',
     element: (
-      <BrandingProvider>
-        <AuthProvider>
+      // Identitas yang tampil mengikuti sekolah yang sedang dibuka, jadi Branding di dalam Auth.
+      <AuthProvider>
+        <BrandingProvider>
           <AppRoutes />
-        </AuthProvider>
-      </BrandingProvider>
+        </BrandingProvider>
+      </AuthProvider>
     ),
   },
 ])
