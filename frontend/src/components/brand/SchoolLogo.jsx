@@ -14,6 +14,25 @@ export default function SchoolLogo({ className = 'size-10', src }) {
   return <DefaultLogo className={className} label={label} />
 }
 
+// Logo satu sekolah tertentu (bukan sekolah aktif) dalam kotak putih, mis. di daftar sekolah.
+export function SchoolLogoBox({ school, className = 'size-12' }) {
+  return (
+    <span
+      className={`flex shrink-0 items-center justify-center rounded-xl bg-white p-1 ring-1 ring-slate-200 ${className}`}
+    >
+      {school.logo_url ? (
+        <img
+          src={apiUrl(school.logo_url)}
+          alt={`Logo ${school.name}`}
+          className="size-full object-contain"
+        />
+      ) : (
+        <DefaultLogo className="size-full" label={`Logo ${school.name}`} />
+      )}
+    </span>
+  )
+}
+
 export function DefaultLogo({ className = 'size-10', label = 'Logo sekolah' }) {
   return (
     <svg viewBox="0 0 48 48" className={className} role="img" aria-label={label}>

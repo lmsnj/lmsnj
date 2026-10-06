@@ -1,17 +1,21 @@
 import os
+from datetime import timedelta
 
+from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from apps.academics.models import TeachingAssignment
 from apps.accounts.models import Role
 from apps.accounts.permissions import IsAdmin, IsFoundation
+from apps.assessments.models import Assessment
 from apps.common.files import delete_file, file_response
 from apps.common.mixins import ProtectedDeleteMixin
 from apps.materials.models import Material
-from apps.tasks.models import Task
+from apps.tasks.models import Submission, Task
 
 from .context import schools_for
 from .models import School
@@ -67,25 +71,39 @@ class SchoolViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
 
     @action(detail=False)
     def summary(self, request):
-        """Ringkasan semua sekolah untuk admin yayasan (jumlah sekolah sedikit, jadi dihitung per sekolah)."""
+        """Ringkasan semua sekolah untuk Beranda & Daftar Sekolah admin yayasan.
+        Jumlah sekolah sedikit, jadi cukup dihitung per sekolah (beberapa query per sekolah)."""
+        week_ago = timezone.now() - timedelta(days=7)
         rows = []
         for school in School.objects.all():
             year = (
                 school.classrooms.order_by("-academic_year").values_list("academic_year", flat=True).first()
             )
             members = school.members.filter(is_active=True)
+            students = members.filter(role=Role.STUDENT)
+            classrooms = school.classrooms.filter(academic_year=year)
             in_school = {"teaching_assignment__classroom__school": school}
             rows.append(
                 {
                     **SchoolSerializer(school, context={"request": request}).data,
                     "academic_year": year,
-                    "students": members.filter(role=Role.STUDENT).count(),
+                    "students": students.count(),
                     "teachers": members.filter(role=Role.TEACHER).count(),
                     "admins": members.filter(role=Role.ADMIN).count(),
-                    "classrooms": school.classrooms.filter(academic_year=year).count(),
+                    "classrooms": classrooms.count(),
                     "subjects": school.subjects.count(),
+                    "teaching_assignments": TeachingAssignment.objects.filter(
+                        classroom__in=classrooms
+                    ).count(),
                     "materials": Material.objects.filter(**in_school).count(),
                     "tasks": Task.objects.filter(**in_school).count(),
+                    "assessments": Assessment.objects.filter(**in_school).count(),
+                    "submissions_this_week": Submission.objects.filter(
+                        task__teaching_assignment__classroom__school=school, submitted_at__gte=week_ago
+                    ).count(),
+                    # Hal yang perlu ditindaklanjuti admin sekolah.
+                    "students_without_classroom": students.filter(classroom__isnull=True).count(),
+                    "classrooms_without_homeroom": classrooms.filter(homeroom_teacher__isnull=True).count(),
                 }
             )
         return Response(rows)

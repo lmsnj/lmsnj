@@ -10,6 +10,7 @@ import ProtectedRoute from './ProtectedRoute'
 // Setiap halaman dimuat saat pertama kali dibuka (code splitting), agar unduhan awal kecil
 // untuk internet sekolah yang lambat. Tampilan "memuat" diatur oleh <Suspense> di layout.
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'))
+const FoundationDashboard = lazy(() => import('../pages/admin/FoundationDashboard'))
 const AssignmentsPage = lazy(() => import('../pages/admin/AssignmentsPage'))
 const BrandingPage = lazy(() => import('../pages/admin/BrandingPage'))
 const PromotionPage = lazy(() => import('../pages/admin/PromotionPage'))
@@ -42,6 +43,12 @@ const StudentSubjectPage = lazy(() => import('../pages/siswa/StudentSubjectPage'
 const StudentTaskPage = lazy(() => import('../pages/siswa/StudentTaskPage'))
 const StudentTasksPage = lazy(() => import('../pages/siswa/StudentTasksPage'))
 
+// Beranda /admin: admin yayasan melihat ringkasan semua sekolah, admin sekolah melihat sekolahnya.
+function AdminHome() {
+  const { user } = useAuth()
+  return user.role === ROLES.FOUNDATION ? <FoundationDashboard /> : <AdminDashboard />
+}
+
 function HomeRedirect() {
   const { user, initializing } = useAuth()
   if (initializing) return <FullPageSpinner />
@@ -58,7 +65,7 @@ export default function AppRoutes() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="admin" element={<ProtectedRoute roles={ADMIN_ROLES} />}>
-              <Route index element={<AdminDashboard />} />
+              <Route index element={<AdminHome />} />
               <Route path="pengguna" element={<UsersPage />} />
               <Route path="kelas" element={<ClassroomsPage />} />
               <Route path="kelas/:id" element={<ClassroomDetailPage />} />

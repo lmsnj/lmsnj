@@ -147,6 +147,12 @@ class FoundationTests(APITestCase):
         mi = next(row for row in res.data if row["code"] == "minj")
         self.assertEqual((mi["students"], mi["teachers"], mi["classrooms"]), (1, 1, 1))
         self.assertEqual(mi["academic_year"], "2026/2027")
+        self.assertEqual(
+            (mi["admins"], mi["students_without_classroom"], mi["classrooms_without_homeroom"]), (0, 0, 1)
+        )
+        self.assertEqual(
+            (mi["materials"], mi["tasks"], mi["assessments"], mi["submissions_this_week"]), (0, 0, 0, 0)
+        )
 
     def test_foundation_can_chat_with_everyone(self):
         self.assertTrue(can_chat(self.foundation, self.student_mi))

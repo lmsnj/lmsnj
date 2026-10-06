@@ -12,13 +12,12 @@ import {
   Users,
 } from 'lucide-react'
 import { useState } from 'react'
-import { apiUrl } from '../../api/client'
 import { schoolsApi } from '../../api/schools'
 import AdminCard, { CardGrid } from '../../components/AdminCard'
 import Alert from '../../components/Alert'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
-import { DefaultLogo } from '../../components/brand/SchoolLogo'
+import { SchoolLogoBox } from '../../components/brand/SchoolLogo'
 import DeleteDialog from '../../components/DeleteDialog'
 import EmptyState from '../../components/EmptyState'
 import FileInput from '../../components/FileInput'
@@ -121,22 +120,6 @@ function SchoolFormModal({ school, onClose, onSaved }) {
         </label>
       )}
     </FormModal>
-  )
-}
-
-function SchoolLogoBox({ school }) {
-  return (
-    <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white p-1 ring-1 ring-slate-200">
-      {school.logo_url ? (
-        <img
-          src={apiUrl(school.logo_url)}
-          alt={`Logo ${school.name}`}
-          className="size-full object-contain"
-        />
-      ) : (
-        <DefaultLogo className="size-full" label={`Logo ${school.name}`} />
-      )}
-    </span>
   )
 }
 
