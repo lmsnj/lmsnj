@@ -1,6 +1,8 @@
-# LMS SMKS Nurul Jadid
+# LMS Nurul Jadid
 
-Learning Management System untuk SMKS Nurul Jadid. Dikembangkan oleh guru RPL, sekaligus dapat dipakai sebagai contoh proyek pembelajaran bagi siswa.
+Learning Management System untuk sekolah-sekolah di bawah Biro Pendidikan Pondok Pesantren Nurul Jadid
+(SD/MI, SMP/MTs, SMA/MA/SMK; awalnya hanya SMKS Nurul Jadid). Dikembangkan oleh guru RPL, sekaligus dapat
+dipakai sebagai contoh proyek pembelajaran bagi siswa.
 
 **Bahasa komunikasi:** selalu jawab dan jelaskan dalam Bahasa Indonesia.
 
@@ -309,7 +311,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   soal divalidasi `QuestionSerializer` (sama dengan form). Semua-atau-tidak-sama-sekali. Kolom Jenis:
   pg / pg kompleks / kategori / esai; Kunci PG kompleks "A, C", kategori "B, S, B" (mengikuti huruf
   awal label); kolom Grup & Label Kategori. Semua contoh di template harus lolos impor (ada test).
-- **Data demo:** `seed_demo` juga membuat ujian contoh "Simulasi TKA" (isi di
+- **Data demo:** `seed_demo` membuat 3 sekolah (SMKS lengkap; MTs & MI ringkas, `OTHER_SCHOOLS`), akun
+  Admin Yayasan `yayasan`, guru `bu.siti` di SMKS & MTs, dan NIS yang sama di sekolah berbeda. Juga ujian contoh "Simulasi TKA" (isi di
   `apps/common/management/commands/_demo_exam.py`) berisi semua bentuk soal.
 - **Tahun ajaran baru / kenaikan kelas** (`apps/academics/promotion.py`, halaman `/admin/tahun-ajaran`):
   tahun ajaran aktif = tahun ajaran TERBARU yang punya kelas (tidak ada pengaturan terpisah). Proses
@@ -426,13 +429,13 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - [x] Fase 5: Penilaian
 - [x] Fase 6: Dashboard per peran
 - [x] Fase 7: Pemantapan
-- [ ] Fase 8: Multi-sekolah (yayasan: SD/MI, SMP/MTs, SMA/MA/SMK)
+- [x] Fase 8: Multi-sekolah (yayasan: SD/MI, SMP/MTs, SMA/MA/SMK)
   - [x] 8a: model School + keanggotaan, migrasi data lama ke sekolah `smknj`, sekolah aktif (X-School),
         tingkat kelas per jenjang, kenaikan kelas per sekolah
   - [x] 8b: semua endpoint disaring per sekolah (selector, admin, impor/template, laporan, dashboard, obrolan),
         NIS unik per sekolah, pengampu: kelas & mapel & guru harus satu sekolah
   - [x] 8c: peran Admin Yayasan (kelola sekolah & admin sekolah, ringkasan lintas sekolah)
   - [x] 8d: frontend (pilihan sekolah, identitas per sekolah, halaman yayasan, pilihan tingkat per jenjang)
-  - [ ] 8e: seed_demo beberapa sekolah, README/DEPLOY
+  - [x] 8e: seed_demo beberapa sekolah, README/DEPLOY
 - [x] Tambahan: impor pengguna dari Excel, tampilan baru, pengumuman, laporan nilai, sesi mengajar,
       ruang obrolan, lembar asesmen

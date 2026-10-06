@@ -50,7 +50,8 @@ CSRF_TRUSTED_ORIGINS=https://lms.smknj.sch.id
 HTTPS=True            # False jika belum memakai sertifikat SSL (mis. hanya di jaringan lokal)
 ```
 
-Siapkan database, file statis, dan akun admin pertama:
+Siapkan database, file statis, dan akun **Admin Yayasan** pertama (`createsuperuser`
+otomatis memberi peran Admin Yayasan):
 
 ```bash
 sudo -u lms .venv/bin/python manage.py migrate
@@ -66,8 +67,12 @@ sudo -u lms .venv/bin/python manage.py check --deploy
 - `W004`, `W008`, `W012`, `W016` — muncul jika `HTTPS=False`. Wajar untuk server yang hanya
   bisa diakses di jaringan lokal sekolah, tetapi sebaiknya segera pasang HTTPS (langkah 5).
 
-> **Jangan** menjalankan `seed_demo` di server asli. Buat akun guru dan siswa lewat menu
-> Pengguna di aplikasi.
+> **Jangan** menjalankan `seed_demo` di server asli. Setelah login sebagai Admin Yayasan:
+> tambahkan sekolah di menu **Daftar Sekolah**, buka sekolah itu lewat **Ganti Sekolah**, lalu
+> buat akun admin sekolah di menu **Pengguna**. Akun guru dan siswa dibuat oleh admin sekolah.
+>
+> Server yang di-upgrade dari versi satu sekolah: `migrate` otomatis membuat sekolah `smknj`
+> dari identitas sekolah lama dan memasukkan semua kelas, mapel, dan pengguna lama ke sana.
 
 ### Layanan Gunicorn (systemd)
 
@@ -75,7 +80,7 @@ Buat `/etc/systemd/system/lms.service`:
 
 ```ini
 [Unit]
-Description=LMS SMKS Nurul Jadid (Gunicorn)
+Description=LMS Nurul Jadid (Gunicorn)
 After=network.target
 
 [Service]
@@ -166,7 +171,8 @@ Setelah yakin HTTPS berjalan stabil, `SECURE_HSTS_SECONDS=31536000` boleh ditamb
 
 ## 6. Pindah ke PostgreSQL (Opsional)
 
-SQLite cukup untuk satu sekolah dengan beberapa ratus pengguna. Jika ingin PostgreSQL:
+SQLite cukup untuk beberapa sekolah dengan total beberapa ratus pengguna. Jika jumlah
+pengguna semua sekolah sudah ribuan, sebaiknya pindah ke PostgreSQL:
 
 ```bash
 sudo apt install -y postgresql
@@ -245,7 +251,8 @@ alamat lain ke `index.html`, dan naikkan batas ukuran upload.
 - [ ] `DEBUG=False` dan `SECRET_KEY` acak sudah diisi
 - [ ] `python manage.py check --deploy` tanpa error
 - [ ] HTTPS aktif (atau server hanya bisa diakses dari jaringan sekolah)
-- [ ] Tidak ada akun demo; admin memakai password yang kuat
+- [ ] Tidak ada akun demo; Admin Yayasan dan admin sekolah memakai password yang kuat
+- [ ] Setiap sekolah sudah dibuat (jenjang benar) dan punya minimal satu admin sekolah
 - [ ] Upload PDF 9 MB berhasil (memastikan `client_max_body_size` benar)
 - [ ] Refresh browser di halaman dalam (mis. `/guru/kelas/1`) tidak menghasilkan 404
 - [ ] Backup database + folder media berjalan dan sudah diuji pulihkan

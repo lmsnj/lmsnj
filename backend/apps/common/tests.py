@@ -11,6 +11,7 @@ from apps.academics.models import Classroom, TeachingAssignment
 from apps.accounts.models import Role, User
 from apps.assessments.models import Assessment
 from apps.materials.models import Material
+from apps.schools.models import School
 from apps.tasks.models import Submission, Task
 
 TEMP_MEDIA = tempfile.mkdtemp()
@@ -45,6 +46,19 @@ class SeedDemoTests(APITestCase):
             res = self.client.post(reverse("auth-login"), {"username": username, "password": password})
             self.assertEqual(res.status_code, 200, username)
         self.assertTrue(User.objects.get(username="admin").is_superuser)
+
+        # Beberapa sekolah sesuai jenjang, admin yayasan, guru di dua sekolah, NIS sama beda sekolah.
+        self.assertEqual(
+            {s.code: s.level for s in School.objects.all()}, {"smknj": "smk", "mtsnj": "mts", "minj": "mi"}
+        )
+        self.assertEqual(
+            set(Classroom.objects.filter(school__code="minj").values_list("grade", flat=True)), {"I", "IV"}
+        )
+        self.assertEqual(User.objects.get(username="yayasan").role, Role.FOUNDATION)
+        res = self.client.post(reverse("auth-login"), {"username": "yayasan", "password": "Yayasan#Nj2026"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(User.objects.get(username="bu.siti").schools.count(), 2)
+        self.assertEqual(User.objects.filter(nis="26001").count(), 3)
         self.assertIsNone(User.objects.get(username="fajar").classroom)
 
         # PDF demo valid dan bisa diunduh siswa.

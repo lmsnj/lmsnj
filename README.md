@@ -1,19 +1,25 @@
-# LMS SMKS Nurul Jadid
+# LMS Nurul Jadid
 
-Learning Management System (LMS) untuk SMKS Nurul Jadid: tempat guru membagikan materi dan
-tugas, siswa mengumpulkan jawaban, dan guru memberi nilai. Dikembangkan oleh guru RPL dan
+Learning Management System (LMS) untuk sekolah-sekolah di bawah **Biro Pendidikan Pondok Pesantren
+Nurul Jadid** (SD/MI, SMP/MTs, SMA/MA/SMK): tempat guru membagikan materi dan tugas, siswa
+mengumpulkan jawaban, dan guru memberi nilai. Dikembangkan oleh guru RPL SMKS Nurul Jadid dan
 dapat dipakai sebagai contoh proyek pembelajaran bagi siswa.
 
 ## Fitur
 
 | Peran | Yang bisa dilakukan |
 |-------|---------------------|
-| **Admin** | Mengelola akun guru & siswa (termasuk **impor massal dari Excel**), kelas, mata pelajaran, dan pengampu. Pengumuman sekolah, laporan nilai per kelas (+ CSV), dan dashboard statistik. |
+| **Admin Yayasan** | Menambah, mengubah, dan menonaktifkan **sekolah** (jenjang menentukan tingkat kelas: I–VI, VII–IX, X–XII), melihat ringkasan semua sekolah, mengatur identitas yayasan (halaman login), dan membuka sekolah mana pun sebagai admin. |
+| **Admin** (per sekolah) | Mengelola akun guru & siswa (termasuk **impor massal dari Excel**), kelas, mata pelajaran, dan pengampu. Pengumuman sekolah, laporan nilai per kelas (+ CSV), dan dashboard statistik. |
 | **Guru** | Membagikan materi (PDF, video YouTube, link), tugas dengan tenggat, **lembar asesmen/kuis** (pilihan ganda, PG kompleks, kategori Benar/Salah — dinilai otomatis — dan esai; soal grup dengan stimulus bersama, tabel), menilai dengan umpan balik, rekap nilai + CSV, jadwal **sesi mengajar** (tatap muka/online), pengumuman kelas, dan laporan kelas wali. |
 | **Siswa** | Membaca materi, mengumpulkan tugas, mengerjakan lembar asesmen dengan tampilan bergaya simulasi TKA (nomor soal, ragu-ragu, timer, ukuran huruf), melihat nilai & progres, jadwal sesi, dan pengumuman. |
 | **Guru (tambahan)** | Impor soal dari **Word (tempel teks) atau Excel + ZIP gambar**, dengan **rumus matematika** (LaTeX + editor rumus visual) dan **teks Arab berharakat** (RTL otomatis). Form diberi contoh isian cepat. |
 | **Admin (tambahan)** | Impor mata pelajaran, kelas, dan pengampu dari Excel. |
 | **Semua** | **Ruang obrolan** (pesan langsung; siswa hanya dengan guru di kelasnya, wali kelas, dan admin). |
+
+**Multi-sekolah:** satu aplikasi dan satu database untuk semua sekolah, tetapi data tiap sekolah
+terpisah (admin SMK tidak melihat data MTs). Guru yang mengajar di beberapa sekolah cukup memakai
+**satu akun** dan berpindah lewat tombol **Ganti Sekolah** di header.
 
 Tampilan responsif (bisa dipakai di HP) dan seluruh teks berbahasa Indonesia.
 
@@ -75,14 +81,25 @@ Tersedia setelah menjalankan `python manage.py seed_demo`:
 
 | Peran | Username | Password |
 |-------|----------|----------|
-| Admin | `admin` | `AdminSmknj#2026` |
-| Guru | `guru.rpl`, `bu.siti`, `pak.budi` | `Belajar#Koding26` |
-| Siswa | `rizki`, `aisyah`, `dimas`, `hafiz`, `bagus`, dll. | `Siswa#Smknj26` |
+| Admin Yayasan | `yayasan` | `Yayasan#Nj2026` |
+| Admin sekolah | `admin` (SMKS), `admin.mts` (MTs), `admin.mi` (MI) | `AdminSmknj#2026` |
+| Guru | `guru.rpl`, `pak.budi` (SMKS), `bu.siti` (SMKS **dan** MTs), `ustadz.ali` (MTs), `ustadzah.aminah` (MI) | `Belajar#Koding26` |
+| Siswa | `rizki`, `aisyah`, `hafiz`, dll. (SMKS), `zaki` (MTs), `hasan` (MI) | `Siswa#Smknj26` |
+
+Data demo berisi tiga sekolah: **SMKS** (contoh paling lengkap, termasuk asesmen dan obrolan),
+**MTs**, dan **MI** Nurul Jadid.
 
 `seed_demo` aman dijalankan berulang kali (tidak membuat data ganda dan tidak mengubah password
 akun yang sudah ada) dan menolak berjalan jika `DEBUG=False`. **Jangan** gunakan akun demo di
-server sekolah yang asli. Untuk membuat akun admin pertama tanpa data demo:
-`python manage.py createsuperuser`.
+server sekolah yang asli.
+
+### Mulai Tanpa Data Demo
+
+1. `python manage.py createsuperuser` — akun ini otomatis menjadi **Admin Yayasan**.
+2. Login, buka menu **Daftar Sekolah**, lalu tambahkan sekolah (nama, kode, jenjang).
+3. Klik **Ganti Sekolah** di header untuk membuka sekolah itu, lalu buat akun **admin sekolah**
+   di menu Pengguna (peran Admin). Admin sekolah yang melanjutkan mengisi kelas, mapel, guru,
+   dan siswa sekolahnya.
 
 ## Perintah Pengembangan
 

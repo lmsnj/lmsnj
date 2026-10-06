@@ -28,6 +28,7 @@ from apps.tasks.models import Submission, Task
 from . import _demo_exam as demo_exam
 
 PASSWORDS = {
+    Role.FOUNDATION: "Yayasan#Nj2026",
     Role.ADMIN: "AdminSmknj#2026",
     Role.TEACHER: "Belajar#Koding26",
     Role.STUDENT: "Siswa#Smknj26",
@@ -84,6 +85,64 @@ ASSIGNMENTS = [
     ("XI TKJ 1", "BINDO", "bu.siti"),
 ]
 
+SMK_SCHOOL = {
+    "code": "smknj",
+    "name": "SMKS Nurul Jadid",
+    "level": Level.SMK,
+    "slogan": "Cerdas, Terampil, Berakhlak Mulia",
+    "admin": ("admin", "Administrator", {"is_staff": True, "is_superuser": True}),
+    "teachers": TEACHERS,
+    "subjects": SUBJECTS,
+    "classrooms": CLASSROOMS,
+    "students": STUDENTS,
+    "assignments": ASSIGNMENTS,
+}
+
+# Sekolah lain di yayasan (contoh multi-sekolah). "bu.siti" mengajar di SMKS dan MTs dengan SATU akun
+# (NIP None = akun yang sudah ada). NIS sengaja ada yang sama dengan SMKS: NIS cukup unik per sekolah.
+OTHER_SCHOOLS = [
+    {
+        "code": "mtsnj",
+        "name": "MTs Nurul Jadid",
+        "level": Level.MTS,
+        "slogan": "Berilmu, Beramal, Berakhlak",
+        "admin": ("admin.mts", "Admin MTs", {}),
+        "teachers": [("ustadz.ali", "Ali Mahfudz", "198804042014"), ("bu.siti", "Siti Aminah", None)],
+        "subjects": [("FIQIH", "Fikih"), ("MTK", "Matematika"), ("BINDO", "Bahasa Indonesia")],
+        "classrooms": [("VII A", "VII", "UMUM", "ustadz.ali"), ("VIII A", "VIII", "UMUM", "bu.siti")],
+        "students": [
+            ("zaki", "Ahmad Zaki", "26001", "VII A"),
+            ("laila", "Laila Nur Azizah", "26002", "VII A"),
+            ("yusuf", "Yusuf Hakim", "25001", "VIII A"),
+        ],
+        "assignments": [
+            ("VII A", "FIQIH", "ustadz.ali"),
+            ("VII A", "BINDO", "bu.siti"),
+            ("VIII A", "MTK", "ustadz.ali"),
+        ],
+    },
+    {
+        "code": "minj",
+        "name": "MI Nurul Jadid",
+        "level": Level.MI,
+        "slogan": "Ceria, Cerdas, Sholih",
+        "admin": ("admin.mi", "Admin MI", {}),
+        "teachers": [("ustadzah.aminah", "Aminah Zahro", "199105052016")],
+        "subjects": [("MTK", "Matematika"), ("BINDO", "Bahasa Indonesia"), ("QURDIS", "Al-Qur'an Hadis")],
+        "classrooms": [("I A", "I", "UMUM", "ustadzah.aminah"), ("IV A", "IV", "UMUM", "ustadzah.aminah")],
+        "students": [
+            ("hasan", "Hasan Basri", "26001", "I A"),
+            ("husna", "Husnul Khotimah", "26002", "I A"),
+            ("rafi", "Rafi Ahmad", "23001", "IV A"),
+        ],
+        "assignments": [
+            ("I A", "MTK", "ustadzah.aminah"),
+            ("I A", "QURDIS", "ustadzah.aminah"),
+            ("IV A", "BINDO", "ustadzah.aminah"),
+        ],
+    },
+]
+
 # Konten per mapel. Tugas: (judul, instruksi, selisih hari tenggat dari sekarang).
 CONTENT = {
     "PWEB": {
@@ -121,6 +180,18 @@ CONTENT = {
     "BINDO": {
         "link": ("KBBI Daring", "https://kbbi.kemdikbud.go.id/"),
         "tasks": [("Menulis Teks Prosedur", "Tulis teks prosedur cara memasang aplikasi di komputer.", 3)],
+    },
+    "FIQIH": {
+        "link": ("Bacaan: Thaharah (Bersuci)", "https://id.wikipedia.org/wiki/Thaharah"),
+        "tasks": [("Menulis Tata Cara Wudhu", "Tuliskan urutan wudhu beserta doa setelahnya.", 4)],
+    },
+    "MTK": {
+        "pdf": "Modul: Bilangan Bulat",
+        "tasks": [("Latihan Bilangan Bulat", "Kerjakan 10 soal latihan di halaman terakhir modul.", -1)],
+    },
+    "QURDIS": {
+        "link": ("Mengenal Huruf Hijaiyah", "https://id.wikipedia.org/wiki/Abjad_Arab"),
+        "tasks": [("Menulis Huruf Hijaiyah", "Tulis huruf alif sampai ya di buku, lalu kirim fotonya.", 6)],
     },
 }
 
@@ -189,10 +260,11 @@ class Command(BaseCommand):
         if user:
             user.schools.add(self.school)
             return user
-        # NIS/NIP bisa saja sudah dipakai akun lain; lewati agar tidak melanggar aturan unique.
-        for field in ("nis", "nip"):
-            if extra.get(field) and User.objects.filter(**{field: extra[field]}).exists():
-                extra.pop(field)
+        # NIS (unik per sekolah) / NIP (unik global) bisa saja sudah dipakai; lewati agar tidak bentrok.
+        if extra.get("nis") and self.school.members.filter(nis=extra["nis"]).exists():
+            extra.pop("nis")
+        if extra.get("nip") and User.objects.filter(nip=extra["nip"]).exists():
+            extra.pop("nip")
         user = User.objects.create_user(
             username=username, password=PASSWORDS[role], full_name=full_name, role=role, **extra
         )
@@ -202,29 +274,42 @@ class Command(BaseCommand):
 
     def seed(self):
         year = current_academic_year(self.now)
+        # Admin yayasan tidak terdaftar di sekolah mana pun: ia bisa membuka semua sekolah.
+        if not User.objects.filter(username="yayasan").exists():
+            User.objects.create_user(
+                username="yayasan",
+                password=PASSWORDS[Role.FOUNDATION],
+                full_name="Pengurus Biro Pendidikan",
+                role=Role.FOUNDATION,
+            )
+            self.count("pengguna", True)
+
+        teachers = self.seed_school(SMK_SCHOOL, year)
+        self.seed_extras(teachers)  # contoh lengkap (asesmen, obrolan, dll.) hanya di SMKS
+        for spec in OTHER_SCHOOLS:
+            self.seed_school(spec, year)
+
+    def seed_school(self, spec, year):
+        """Satu sekolah: admin, guru, mapel, kelas, siswa, pengampu, materi & tugas. Mengembalikan guru."""
         self.school, created = School.objects.get_or_create(
-            code="smknj",
-            defaults={
-                "name": "SMKS Nurul Jadid",
-                "level": Level.SMK,
-                "slogan": "Cerdas, Terampil, Berakhlak Mulia",
-            },
+            code=spec["code"],
+            defaults={"name": spec["name"], "level": spec["level"], "slogan": spec["slogan"]},
         )
         self.count("sekolah", created)
-        if not User.objects.filter(role=Role.ADMIN).exists():
-            self.user("admin", "Administrator", Role.ADMIN, is_staff=True, is_superuser=True)
+        username, full_name, extra = spec["admin"]
+        self.user(username, full_name, Role.ADMIN, **extra)
 
-        teachers = {u: self.user(u, name, Role.TEACHER, nip=nip) for u, name, nip in TEACHERS}
+        teachers = {u: self.user(u, name, Role.TEACHER, nip=nip) for u, name, nip in spec["teachers"]}
 
         subjects = {}
-        for code, name in SUBJECTS:
+        for code, name in spec["subjects"]:
             subjects[code], created = Subject.objects.get_or_create(
                 school=self.school, code=code, defaults={"name": name}
             )
             self.count("mapel", created)
 
         classrooms = {}
-        for name, grade, major, homeroom in CLASSROOMS:
+        for name, grade, major, homeroom in spec["classrooms"]:
             classrooms[name], created = Classroom.objects.get_or_create(
                 school=self.school,
                 name=name,
@@ -233,7 +318,7 @@ class Command(BaseCommand):
             )
             self.count("kelas", created)
 
-        for username, full_name, nis, classroom in STUDENTS:
+        for username, full_name, nis, classroom in spec["students"]:
             student = self.user(
                 username, full_name, Role.STUDENT, nis=nis, classroom=classrooms.get(classroom)
             )
@@ -242,14 +327,13 @@ class Command(BaseCommand):
                 student.classroom = classrooms[classroom]
                 student.save(update_fields=["classroom"])
 
-        for classroom, code, username in ASSIGNMENTS:
+        for classroom, code, username in spec["assignments"]:
             assignment, created = TeachingAssignment.objects.get_or_create(
                 teacher=teachers[username], subject=subjects[code], classroom=classrooms[classroom]
             )
             self.count("pengampu", created)
             self.seed_content(assignment, CONTENT[code])
-
-        self.seed_extras(teachers)
+        return teachers
 
     def seed_content(self, assignment, content):
         teacher = assignment.teacher
@@ -443,8 +527,9 @@ class Command(BaseCommand):
             self.stdout.write("Data demo sudah lengkap, tidak ada yang ditambahkan.")
         self.stdout.write(
             "\nAkun demo (password akun yang sudah ada sebelumnya tidak diubah):\n"
-            f"  Admin : admin                           / {PASSWORDS[Role.ADMIN]}\n"
-            f"  Guru  : guru.rpl, bu.siti, pak.budi     / {PASSWORDS[Role.TEACHER]}\n"
-            f"  Siswa : rizki, aisyah, dimas, hafiz, ... / {PASSWORDS[Role.STUDENT]}\n"
+            f"  Admin Yayasan : yayasan                              / {PASSWORDS[Role.FOUNDATION]}\n"
+            f"  Admin sekolah : admin (SMKS), admin.mts, admin.mi    / {PASSWORDS[Role.ADMIN]}\n"
+            f"  Guru          : guru.rpl, bu.siti (SMKS & MTs), ...  / {PASSWORDS[Role.TEACHER]}\n"
+            f"  Siswa         : rizki (SMKS), zaki (MTs), hasan (MI) / {PASSWORDS[Role.STUDENT]}\n"
             "Ganti semua password ini sebelum aplikasi dipakai sungguhan."
         )
