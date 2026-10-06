@@ -13,7 +13,7 @@ from .models import Classroom, TeachingAssignment
 
 def classrooms_for(user, school):
     queryset = Classroom.objects.filter(school=school) if school else Classroom.objects.none()
-    if user.role == Role.ADMIN:
+    if user.is_admin_role:
         return queryset
     if user.role == Role.TEACHER:
         # Kelas yang ia ajar atau yang ia walikan.
@@ -27,7 +27,7 @@ def teaching_assignments_for(user, school):
         if school
         else TeachingAssignment.objects.none()
     )
-    if user.role == Role.ADMIN:
+    if user.is_admin_role:
         return queryset
     if user.role == Role.TEACHER:
         return queryset.filter(teacher=user)

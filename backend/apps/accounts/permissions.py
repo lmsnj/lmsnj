@@ -1,6 +1,6 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
-from .models import Role
+from .models import ADMIN_ROLES, Role
 
 
 class HasRole(BasePermission):
@@ -15,7 +15,14 @@ class HasRole(BasePermission):
 
 
 class IsAdmin(HasRole):
-    allowed_roles = (Role.ADMIN,)
+    """Admin sekolah atau admin yayasan."""
+
+    allowed_roles = ADMIN_ROLES
+
+
+class IsFoundation(HasRole):
+    allowed_roles = (Role.FOUNDATION,)
+    message = "Hanya admin yayasan yang dapat melakukan ini."
 
 
 class IsTeacher(HasRole):
@@ -27,7 +34,7 @@ class IsStudent(HasRole):
 
 
 class IsAdminOrTeacher(HasRole):
-    allowed_roles = (Role.ADMIN, Role.TEACHER)
+    allowed_roles = (*ADMIN_ROLES, Role.TEACHER)
 
 
 class IsAdminOrReadOnly(BasePermission):
@@ -42,7 +49,7 @@ class IsAdminOrReadOnly(BasePermission):
         user = request.user
         if not (user and user.is_authenticated):
             return False
-        return request.method in SAFE_METHODS or user.role == Role.ADMIN
+        return request.method in SAFE_METHODS or user.is_admin_role
 
 
 class ContentPermission(BasePermission):
@@ -62,5 +69,5 @@ class ContentPermission(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         if request.method == "DELETE":
-            return user.role in (Role.TEACHER, Role.ADMIN)
+            return user.role == Role.TEACHER or user.is_admin_role
         return user.role == Role.TEACHER

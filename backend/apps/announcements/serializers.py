@@ -50,7 +50,7 @@ class AnnouncementSerializer(SchoolOwnedSerializer):
 
     def get_can_edit(self, obj):
         user = self.context["request"].user
-        return user.role == Role.ADMIN or obj.author_id == user.id
+        return user.is_admin_role or obj.author_id == user.id
 
     def validate(self, attrs):
         user = self.context["request"].user

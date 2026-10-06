@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
@@ -80,12 +81,12 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     )
 
     def get_queryset(self):
-        # Admin hanya mengelola pengguna di sekolah yang sedang dibuka.
-        return (
-            User.objects.filter(schools=active_school(self.request))
-            .select_related("classroom")
-            .prefetch_related("schools")
-        )
+        # Admin hanya mengelola pengguna di sekolah yang sedang dibuka. Admin yayasan juga melihat
+        # akun admin yayasan lain (yang tidak terdaftar di sekolah mana pun).
+        members = Q(schools=active_school(self.request))
+        if self.request.user.is_foundation:
+            members |= Q(role=Role.FOUNDATION)
+        return User.objects.filter(members).distinct().select_related("classroom").prefetch_related("schools")
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -96,7 +97,8 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         # Pengguna baru otomatis terdaftar di sekolah yang sedang dibuka admin.
         school = require_school(self.request)
         user = serializer.save()
-        user.schools.add(school)
+        if user.role != Role.FOUNDATION:  # admin yayasan tidak perlu terdaftar di sekolah
+            user.schools.add(school)
 
     def perform_update(self, serializer):
         # Cegah admin mengunci dirinya sendiri keluar dari sistem.
@@ -127,6 +129,8 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             raise ValidationError({"username": "Akun dengan username ini tidak ditemukan."})
         if user.role == Role.STUDENT:
             raise ValidationError({"username": "Siswa hanya boleh terdaftar di satu sekolah."})
+        if user.role == Role.FOUNDATION:
+            raise ValidationError({"username": "Admin yayasan sudah bisa membuka semua sekolah."})
         if user.schools.filter(pk=school.pk).exists():
             raise ValidationError({"username": f"{user.full_name} sudah terdaftar di sekolah ini."})
         user.schools.add(school)

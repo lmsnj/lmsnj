@@ -13,7 +13,7 @@ from .serializers import AnnouncementSerializer
 def announcements_for(user, school):
     """Admin: semua di sekolah ini. Guru & siswa: pengumuman sekolah + pengumuman kelas-mapel miliknya."""
     queryset = Announcement.objects.filter(school=school)
-    if user.role == Role.ADMIN:
+    if user.is_admin_role:
         return queryset
     return queryset.filter(
         Q(teaching_assignment__isnull=True)
@@ -30,12 +30,12 @@ class AnnouncementPermission(BasePermission):
         user = request.user
         if not (user and user.is_authenticated):
             return False
-        return request.method in SAFE_METHODS or user.role in (Role.ADMIN, Role.TEACHER)
+        return request.method in SAFE_METHODS or (user.is_admin_role or user.role == Role.TEACHER)
 
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
-        return request.user.role == Role.ADMIN or obj.author_id == request.user.id
+        return request.user.is_admin_role or obj.author_id == request.user.id
 
 
 class AnnouncementViewSet(viewsets.ModelViewSet):

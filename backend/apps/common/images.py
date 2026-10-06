@@ -38,3 +38,38 @@ def image_error(name, data):
     if not _matches_signature(ext, data):
         return f"'{name}': isi file bukan gambar yang valid."
     return None
+
+
+class LogoSerializerMixin:
+    """Field `logo` (upload, write_only) + `remove_logo` untuk serializer yang punya FileField `logo`.
+
+    Dipakai identitas aplikasi (branding) dan identitas sekolah. Subclass tetap harus menuliskan
+    `logo = serializers.FileField(write_only=True, required=False)` dan
+    `remove_logo = serializers.BooleanField(write_only=True, required=False, default=False)`.
+    """
+
+    def validate_logo(self, file):
+        from rest_framework import serializers
+
+        data = file.read()
+        file.seek(0)
+        error = image_error(file.name, data)
+        if error:
+            raise serializers.ValidationError(error)
+        return file
+
+    def save_logo(self, instance, validated_data):
+        """Pasang/hapus logo lalu simpan. File lama dihapus dari disk setelah data baru tersimpan."""
+        remove = validated_data.pop("remove_logo", False)
+        new_logo = validated_data.pop("logo", None)
+        old_logo = instance.logo if (remove or new_logo) else None
+        if new_logo:
+            instance.logo = new_logo
+        elif remove:
+            instance.logo = ""
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+        if old_logo and old_logo.name != instance.logo.name:
+            old_logo.storage.delete(old_logo.name)
+        return instance

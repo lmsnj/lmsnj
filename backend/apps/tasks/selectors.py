@@ -16,7 +16,7 @@ def tasks_for(user, school):
 def submissions_for(user, school):
     """Admin: semua (di sekolah ini). Guru: pengumpulan untuk tugas miliknya. Siswa: miliknya sendiri."""
     queryset = Submission.objects.filter(task__teaching_assignment__classroom__school=school)
-    if user.role == Role.ADMIN:
+    if user.is_admin_role:
         return queryset
     if user.role == Role.TEACHER:
         return queryset.filter(task__teaching_assignment__teacher=user)

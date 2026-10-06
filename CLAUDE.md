@@ -90,7 +90,7 @@ Pola yang wajib dipakai ulang:
 ## Model Data
 
 - **School** (sekolah): `code` (slug unik, mis. `smknj`), `name`, `level` (sd/mi/smp/mts/sma/ma/smk), `slogan`, `logo`, `is_active`. `grades` = tingkat per jenjang (SD/MI I–VI, SMP/MTs VII–IX, SMA/MA/SMK X–XII).
-- **User** (custom, `AUTH_USER_MODEL = "accounts.User"`): username, `full_name`, email, `role` (nilai: `admin`/`teacher`/`student`, label: Admin/Guru/Siswa), `nis` (siswa, unik per sekolah — dicek di serializer & impor) / `nip` (guru, unik global), `classroom` (FK ke Classroom, khusus siswa, SET_NULL), `schools` (M2M ke School; guru & admin boleh lebih dari satu sekolah).
+- **User** (custom, `AUTH_USER_MODEL = "accounts.User"`): username, `full_name`, email, `role` (nilai: `foundation`/`admin`/`teacher`/`student`, label: Admin Yayasan/Admin/Guru/Siswa; `ADMIN_ROLES` = admin + yayasan, cek dengan `user.is_admin_role`), `nis` (siswa, unik per sekolah — dicek di serializer & impor) / `nip` (guru, unik global), `classroom` (FK ke Classroom, khusus siswa, SET_NULL), `schools` (M2M ke School; guru & admin boleh lebih dari satu sekolah).
 - **Classroom** (kelas): `school` (PROTECT), `name` (mis. "XI RPL 1"), `grade` (harus ada di `school.grades`), `major` (huruf besar), `academic_year` ("2026/2027"), `homeroom_teacher` (wali kelas). Unik per (sekolah, nama, tahun ajaran).
 - **Subject** (mapel): `school` (PROTECT), `code` (unik per sekolah, huruf besar), `name`.
 - Pengampu, materi, tugas, asesmen, dll. TIDAK punya kolom sekolah: sekolahnya = sekolah kelasnya.
@@ -100,6 +100,12 @@ Pola yang wajib dipakai ulang:
   mengecek keanggotaan (bukan anggota = 403), tanpa header = sekolah pertama milik user. Serializer data
   milik sekolah mewarisi `SchoolOwnedSerializer` (field `school` terisi otomatis, tidak bisa dipindah);
   impor Excel menitipkan sekolah lewat `context["school"]`. Test memakai `apps/common/testing.py::default_school`.
+- **Admin Yayasan** (`Role.FOUNDATION`, `createsuperuser` otomatis peran ini): tidak perlu terdaftar di sekolah,
+  bisa membuka semua sekolah aktif dan di sana bertindak sebagai admin (`IsAdmin` mencakup yayasan). Khusus
+  yayasan (`IsFoundation`): tambah/hapus/nonaktifkan sekolah, ubah jenjang (dikunci jika tingkatnya beda dan
+  sudah ada kelas), identitas aplikasi (`/api/branding/`), memberi peran Admin Yayasan, ringkasan lintas sekolah.
+  Admin sekolah hanya boleh mengubah nama/slogan/logo sekolahnya (`SchoolIdentitySerializer`).
+  Upload logo memakai `apps/common/images.py::LogoSerializerMixin`.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan.
 - **Material** (materi): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `description`, `material_type` (`pdf`/`video`/`link`), `file` + `original_filename` (khusus PDF, maks. 10 MB), `url` (video/link), `is_published` (draf tidak terlihat siswa), `created_by`.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
@@ -355,7 +361,9 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/auth/refresh/`              | Publik           |
 | POST   | `/api/auth/logout/`               | Login            |
 | GET    | `/api/auth/me/`                   | Login (berisi `schools`) |
-| GET    | `/api/schools/`, `/api/schools/{id}/logo/` | Login: sekolah milik sendiri. Logo: publik |
+| CRUD   | `/api/schools/` (multipart `logo`, `remove_logo`) | Baca: sekolah yang boleh dibuka (yayasan: semua, termasuk nonaktif). Tambah/hapus: yayasan. Ubah: yayasan, atau admin sekolah (nama/slogan/logo sekolahnya) |
+| GET    | `/api/schools/summary/`           | Admin Yayasan: jumlah siswa/guru/kelas/materi/tugas per sekolah |
+| GET    | `/api/schools/{id}/logo/`         | Publik           |
 | POST   | `/api/auth/change-password/`      | Login            |
 | CRUD   | `/api/users/` (filter `role`, `is_active`, `classroom`, `classroom__isnull`, `search`) | Admin |
 | POST   | `/api/users/{id}/reset-password/` | Admin            |
@@ -393,7 +401,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/assessments/{id}/import-questions/` (`mode` excel/text, `file`/`text`, `images` ZIP, `dry_run`) | Guru pengampu |
 | GET/POST | `/api/{subjects,classrooms,teaching-assignments}/import-template/` dan `.../import/` | Admin |
 | GET/POST | `/api/academic-years/promotion/` (GET: pratinjau `from_year`, `to_year`; POST: jalankan, + `hold_back`, `graduate`, `copy_homeroom`, `copy_assignments`, `recreate_first_grade`) | Admin |
-| GET/PATCH | `/api/branding/` (multipart `school_name`, `slogan`, `app_name`, `logo`, `remove_logo`) | GET publik (halaman login), PATCH admin |
+| GET/PATCH | `/api/branding/` (multipart `school_name`, `slogan`, `app_name`, `logo`, `remove_logo`) | GET publik (halaman login), PATCH admin yayasan. Isinya identitas yayasan/aplikasi |
 | GET    | `/api/branding/logo/` | Publik; alamat diberi `?v=` (cache lama aman) |
 | GET/PATCH | `/api/assessment-attempts/{id}/`, `.../grade/` | Guru pengampu (grade), admin (lihat) |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
@@ -413,7 +421,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
         tingkat kelas per jenjang, kenaikan kelas per sekolah
   - [x] 8b: semua endpoint disaring per sekolah (selector, admin, impor/template, laporan, dashboard, obrolan),
         NIS unik per sekolah, pengampu: kelas & mapel & guru harus satu sekolah
-  - [ ] 8c: peran Admin Yayasan (kelola sekolah & admin sekolah, ringkasan lintas sekolah)
+  - [x] 8c: peran Admin Yayasan (kelola sekolah & admin sekolah, ringkasan lintas sekolah)
   - [ ] 8d: frontend (pilihan sekolah, identitas per sekolah, halaman yayasan, pilihan tingkat per jenjang)
   - [ ] 8e: seed_demo beberapa sekolah, README/DEPLOY
 - [x] Tambahan: impor pengguna dari Excel, tampilan baru, pengumuman, laporan nilai, sesi mengajar,

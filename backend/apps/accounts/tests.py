@@ -140,6 +140,6 @@ class UserManagementTests(APITestCase):
         self.student.refresh_from_db()
         self.assertTrue(self.student.check_password("ResetKuat#2026"))
 
-    def test_createsuperuser_gets_admin_role(self):
+    def test_createsuperuser_gets_foundation_role(self):
         user = User.objects.create_superuser("root", "root@example.com", PASSWORD, full_name="Root")
-        self.assertEqual(user.role, Role.ADMIN)
+        self.assertEqual(user.role, Role.FOUNDATION)

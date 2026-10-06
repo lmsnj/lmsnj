@@ -14,9 +14,11 @@ SCHOOL_HEADER = "X-School"
 
 
 def schools_for(user):
-    """Sekolah (yang masih aktif) tempat user terdaftar."""
+    """Sekolah (yang masih aktif) yang boleh dibuka user: admin yayasan semua, lainnya tempat ia terdaftar."""
     if not (user and user.is_authenticated):
         return School.objects.none()
+    if user.is_foundation:
+        return School.objects.filter(is_active=True)
     return user.schools.filter(is_active=True)
 
 

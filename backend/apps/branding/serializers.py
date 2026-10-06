@@ -1,12 +1,12 @@
 from django.urls import reverse
 from rest_framework import serializers
 
-from apps.common.images import image_error
+from apps.common.images import LogoSerializerMixin
 
 from .models import SiteSettings
 
 
-class SiteSettingsSerializer(serializers.ModelSerializer):
+class SiteSettingsSerializer(LogoSerializerMixin, serializers.ModelSerializer):
     # Alamat logo diberi versi (waktu diubah) agar browser langsung memuat logo baru.
     logo_url = serializers.SerializerMethodField()
     logo = serializers.FileField(write_only=True, required=False)
@@ -35,24 +35,5 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
     def validate_slogan(self, value):
         return value.strip()
 
-    def validate_logo(self, file):
-        data = file.read()
-        file.seek(0)
-        error = image_error(file.name, data)
-        if error:
-            raise serializers.ValidationError(error)
-        return file
-
     def update(self, instance, validated_data):
-        remove = validated_data.pop("remove_logo", False)
-        new_logo = validated_data.pop("logo", None)
-        old_logo = instance.logo if (remove or new_logo) else None
-        if new_logo:
-            instance.logo = new_logo
-        elif remove:
-            instance.logo = ""
-        instance = super().update(instance, validated_data)
-        # File lama dihapus dari disk setelah data baru tersimpan.
-        if old_logo and old_logo.name != instance.logo.name:
-            old_logo.storage.delete(old_logo.name)
-        return instance
+        return self.save_logo(instance, validated_data)

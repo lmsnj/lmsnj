@@ -4,14 +4,19 @@ from django.db import models
 
 class Role(models.TextChoices):
     ADMIN = "admin", "Admin"
+    # Admin yayasan: mengelola daftar sekolah dan bisa membuka sekolah mana pun sebagai admin.
+    FOUNDATION = "foundation", "Admin Yayasan"
     TEACHER = "teacher", "Guru"
     STUDENT = "student", "Siswa"
 
 
+ADMIN_ROLES = (Role.ADMIN, Role.FOUNDATION)
+
+
 class LmsUserManager(UserManager):
     def create_superuser(self, username, email=None, password=None, **extra_fields):
-        # Superuser dari `createsuperuser` otomatis berperan admin di aplikasi.
-        extra_fields.setdefault("role", Role.ADMIN)
+        # Superuser dari `createsuperuser` otomatis menjadi admin yayasan (bisa membuat sekolah pertama).
+        extra_fields.setdefault("role", Role.FOUNDATION)
         return super().create_superuser(username, email, password, **extra_fields)
 
 
@@ -60,7 +65,12 @@ class User(AbstractUser):
 
     @property
     def is_admin_role(self):
-        return self.role == Role.ADMIN
+        """Admin sekolah atau admin yayasan (yang di sekolah mana pun bertindak sebagai admin)."""
+        return self.role in ADMIN_ROLES
+
+    @property
+    def is_foundation(self):
+        return self.role == Role.FOUNDATION
 
     @property
     def is_teacher(self):

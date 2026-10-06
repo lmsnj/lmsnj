@@ -80,6 +80,9 @@ class UserWriteSerializer(serializers.ModelSerializer):
                 attrs[field] = None
 
         role = attrs.get("role", getattr(self.instance, "role", None))
+        request = self.context.get("request")
+        if role == Role.FOUNDATION and not (request and request.user.is_foundation):
+            raise serializers.ValidationError({"role": "Hanya admin yayasan yang dapat memberi peran ini."})
         if role != Role.STUDENT:
             attrs["nis"] = None
             attrs["classroom"] = None

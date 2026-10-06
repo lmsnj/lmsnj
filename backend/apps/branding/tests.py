@@ -31,7 +31,9 @@ class BrandingTests(APITestCase):
         shutil.rmtree(TEMP_MEDIA, ignore_errors=True)
 
     def setUp(self):
-        self.admin = make_user("admin1", Role.ADMIN)
+        # Identitas aplikasi berlaku untuk semua sekolah, jadi hanya admin yayasan yang mengubahnya.
+        self.admin = make_user("yayasan", Role.FOUNDATION)
+        self.school_admin = make_user("admin1", Role.ADMIN)
         self.teacher = make_user("guru1", Role.TEACHER)
         self.url = reverse("branding")
 
@@ -47,16 +49,17 @@ class BrandingTests(APITestCase):
         self.assertIsNone(res.data["logo_url"])
         self.assertNotIn("logo", res.data)  # path file tidak dikirim ke klien
 
-    def test_only_admin_can_change(self):
+    def test_only_foundation_admin_can_change(self):
         self.assertEqual(
             self.client.patch(self.url, {"app_name": "X"}, format="json").status_code,
             status.HTTP_401_UNAUTHORIZED,
         )
-        self.client.force_authenticate(self.teacher)
-        self.assertEqual(
-            self.client.patch(self.url, {"app_name": "X"}, format="json").status_code,
-            status.HTTP_403_FORBIDDEN,
-        )
+        for user in (self.teacher, self.school_admin):
+            self.client.force_authenticate(user)
+            self.assertEqual(
+                self.client.patch(self.url, {"app_name": "X"}, format="json").status_code,
+                status.HTTP_403_FORBIDDEN,
+            )
 
     def test_admin_changes_names_and_blank_name_rejected(self):
         self.client.force_authenticate(self.admin)

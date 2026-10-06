@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsAdmin
+from apps.accounts.permissions import IsFoundation
 from apps.common.files import file_response
 
 from .models import SiteSettings
@@ -13,12 +13,12 @@ from .serializers import SiteSettingsSerializer
 
 
 class SiteSettingsView(APIView):
-    """GET: identitas sekolah (publik, dipakai juga di halaman login). PATCH: ubah (khusus admin)."""
+    """GET: identitas sekolah (publik, dipakai juga di halaman login). PATCH: ubah (khusus admin yayasan)."""
 
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_permissions(self):
-        return [AllowAny()] if self.request.method == "GET" else [IsAdmin()]
+        return [AllowAny()] if self.request.method == "GET" else [IsFoundation()]
 
     def get(self, request):
         return Response(SiteSettingsSerializer(SiteSettings.load()).data)

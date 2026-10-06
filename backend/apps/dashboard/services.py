@@ -251,6 +251,7 @@ def student_dashboard(user, school):
 
 DASHBOARDS = {
     Role.ADMIN: admin_dashboard,
+    Role.FOUNDATION: admin_dashboard,  # ringkasan sekolah yang sedang dibuka
     Role.TEACHER: teacher_dashboard,
     Role.STUDENT: student_dashboard,
 }
