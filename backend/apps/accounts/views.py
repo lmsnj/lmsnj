@@ -94,11 +94,14 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         return UserSerializer
 
     def perform_create(self, serializer):
-        # Pengguna baru otomatis terdaftar di sekolah yang sedang dibuka admin.
+        # Pengguna baru otomatis terdaftar di sekolah yang sedang dibuka admin. Admin yayasan tidak
+        # perlu terdaftar di sekolah, jadi boleh dibuat tanpa membuka sekolah.
+        if serializer.validated_data.get("role") == Role.FOUNDATION:
+            serializer.save()
+            return
         school = require_school(self.request)
         user = serializer.save()
-        if user.role != Role.FOUNDATION:  # admin yayasan tidak perlu terdaftar di sekolah
-            user.schools.add(school)
+        user.schools.add(school)
 
     def perform_update(self, serializer):
         # Cegah admin mengunci dirinya sendiri keluar dari sistem.

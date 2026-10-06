@@ -117,7 +117,13 @@ Pola yang wajib dipakai ulang:
   `app` (identitas yayasan; dipakai halaman login). Tingkat kelas: `hooks/useGrades.js` (jangan menulis
   X/XI/XII langsung). Peran admin dicek dengan `isAdminRole(role)`; route admin memakai `ADMIN_ROLES`.
   Halaman `/admin/sekolah` (Daftar Sekolah) khusus admin yayasan; `/admin/identitas` = identitas
-  sekolah (admin sekolah) atau identitas yayasan (admin yayasan). Fungsi murni: `utils/schools.js`.
+  sekolah yang dibuka, atau identitas yayasan (admin yayasan di mode yayasan). Fungsi murni: `utils/schools.js`.
+- **Mode yayasan:** admin yayasan TIDAK otomatis membuka sekolah. Tanpa sekolah (`school = null`, tanpa
+  header `X-School` — backend juga mengembalikan `active_school = None`) header menampilkan identitas
+  Biro Pendidikan, menu = `navigationFor()` (Beranda ringkasan semua sekolah `FoundationDashboard`,
+  Daftar Sekolah, Obrolan, Identitas Yayasan), dan halaman data sekolah dilindungi `SchoolRoute`
+  (dialihkan ke `/admin`). Setelah memilih sekolah di "Ganti Sekolah" berlaku menu admin sekolah;
+  pilihan "Biro Pendidikan" (`selectSchool(null)`) kembali ke mode yayasan.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan.
 - **Material** (materi): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `description`, `material_type` (`pdf`/`video`/`link`), `file` + `original_filename` (khusus PDF, maks. 10 MB), `url` (video/link), `is_published` (draf tidak terlihat siswa), `created_by`.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.

@@ -149,7 +149,7 @@ function FoundationContent({ schools, sum }) {
   )
 }
 
-// Tabel data semua sekolah. "Buka" = pindah ke sekolah itu untuk mengelola datanya.
+// Tabel data semua sekolah. "Buka" = membuka sekolah itu (header & menu berganti ke sekolah tsb.).
 function SchoolTable({ schools }) {
   const { school: current, schools: openable, selectSchool } = useAuth()
   const navigate = useNavigate()
@@ -157,7 +157,7 @@ function SchoolTable({ schools }) {
     const target = openable.find((item) => item.id === row.id)
     if (!target) return
     if (target.id !== current?.id) selectSchool(target)
-    navigate('/admin/pengguna')
+    navigate('/admin')
   }
 
   const columns = [

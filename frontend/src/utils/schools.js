@@ -2,9 +2,11 @@
 
 // Sekolah yang dibuka: yang tersimpan sebelumnya jika masih boleh dibuka, selain itu sekolah
 // pertama. Sekolah nonaktif (hanya terlihat oleh admin yayasan) tidak bisa dibuka.
-export function pickSchool(schools, storedId) {
+// `firstAsDefault: false` (admin yayasan): tanpa pilihan tersimpan = mode yayasan (null).
+export function pickSchool(schools, storedId, { firstAsDefault = true } = {}) {
   const open = schools.filter((school) => school.is_active !== false)
-  return open.find((school) => String(school.id) === String(storedId)) ?? open[0] ?? null
+  const stored = open.find((school) => String(school.id) === String(storedId))
+  return stored ?? (firstAsDefault ? open[0] : null) ?? null
 }
 
 // Identitas yang tampil: identitas yayasan/aplikasi, ditimpa nama, slogan, dan logo sekolah yang

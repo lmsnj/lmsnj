@@ -7,13 +7,17 @@ import {
   tokenStore,
 } from '../api/client'
 import { schoolsApi } from '../api/schools'
+import { ROLES } from '../utils/constants'
 import { pickSchool } from '../utils/schools'
 import { AuthContext } from './auth-context'
 
 // Daftar sekolah yang boleh dibuka + sekolah aktif (yang tersimpan, atau sekolah pertama).
-async function loadSchools() {
+// Admin yayasan tidak otomatis membuka sekolah: tanpa pilihan ia berada di "mode yayasan".
+async function loadSchools(user) {
   const schools = await schoolsApi.list()
-  const school = pickSchool(schools, schoolStore.get())
+  const school = pickSchool(schools, schoolStore.get(), {
+    firstAsDefault: user.role !== ROLES.FOUNDATION,
+  })
   if (school) schoolStore.set(school.id)
   else schoolStore.clear()
   return { schools, school }
@@ -34,9 +38,9 @@ export default function AuthProvider({ children }) {
 
     if (!tokenStore.getRefresh()) return
     refreshAccessToken()
-      .then(() => Promise.all([authApi.me(), loadSchools()]))
-      .then(([me, schools]) => {
-        setSchoolState(schools)
+      .then(() => authApi.me())
+      .then(async (me) => {
+        setSchoolState(await loadSchools(me))
         setUser(me)
       })
       .catch(() => tokenStore.clear())
@@ -46,7 +50,7 @@ export default function AuthProvider({ children }) {
   const login = useCallback(async (username, password) => {
     const data = await authApi.login(username, password)
     tokenStore.set(data)
-    setSchoolState(await loadSchools())
+    setSchoolState(await loadSchools(data.user))
     setUser(data.user)
     return data.user
   }, [])
@@ -66,13 +70,15 @@ export default function AuthProvider({ children }) {
 
   // Pindah sekolah: request berikutnya memakai sekolah baru. Halaman dimuat ulang oleh
   // DashboardLayout (key = id sekolah) agar tidak ada data sekolah lama yang tertinggal.
+  // `null` = admin yayasan kembali ke mode yayasan (tanpa header X-School).
   const selectSchool = useCallback((school) => {
-    schoolStore.set(school.id)
+    if (school) schoolStore.set(school.id)
+    else schoolStore.clear()
     setSchoolState((state) => ({ ...state, school }))
   }, [])
 
   // Muat ulang daftar sekolah (mis. setelah identitas sekolah diubah atau sekolah baru dibuat).
-  const reloadSchools = useCallback(async () => setSchoolState(await loadSchools()), [])
+  const reloadSchools = useCallback(async () => setSchoolState(await loadSchools(user)), [user])
 
   const value = useMemo(
     () => ({

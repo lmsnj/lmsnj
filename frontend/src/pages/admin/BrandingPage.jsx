@@ -34,7 +34,7 @@ function PreviewCard({ title, children }) {
 function useIdentitySource() {
   const { user, school, reloadSchools } = useAuth()
   const { app, setBranding } = useBranding()
-  if (user.role === ROLES.FOUNDATION) {
+  if (user.role === ROLES.FOUNDATION && !school) {
     return {
       isApp: true,
       current: app,

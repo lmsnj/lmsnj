@@ -10,7 +10,7 @@ import useUnreadMessages from '../hooks/useUnreadMessages'
 import useBranding from '../hooks/useBranding'
 import { ROLE_HOME, ROLES } from '../utils/constants'
 import { LanguageMenu, NotificationBell, UserMenu } from './HeaderMenus'
-import { NAVIGATION } from './navigation'
+import { navigationFor } from './navigation'
 import SchoolSwitcher from './SchoolSwitcher'
 
 // Tombol menu di bar hijau. Aktif = latar putih, teks hijau.
@@ -191,11 +191,13 @@ function NoSchoolNotice({ role }) {
 }
 
 export default function DashboardLayout() {
-  const { user, school } = useAuth()
+  const { user, school, schools } = useAuth()
+  // Admin yayasan tanpa sekolah terbuka = mode yayasan (normal), kecuali belum ada sekolah sama sekali.
+  const showNoSchool = !school && (user.role !== ROLES.FOUNDATION || schools.length === 0)
   const { branding } = useBranding()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
-  const nav = NAVIGATION[user.role]
+  const nav = navigationFor(user.role, school)
   const badges = { chat: useUnreadMessages() }
 
   // key = sekolah aktif: saat pindah sekolah semua isi halaman dipasang ulang sehingga data
@@ -239,7 +241,7 @@ export default function DashboardLayout() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="pt-4">
           <NavBar nav={nav} badges={badges} />
-          {!school && <NoSchoolNotice role={user.role} />}
+          {showNoSchool && <NoSchoolNotice role={user.role} />}
         </div>
         <main className="py-6">
           {/* key: error di satu halaman tidak terbawa saat pindah halaman. */}

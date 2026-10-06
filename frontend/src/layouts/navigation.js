@@ -46,18 +46,26 @@ const ADMIN_MORE = [
   { ...ANNOUNCEMENTS, label: 'Pengumuman Sekolah' },
   { label: 'Tahun Ajaran Baru', icon: CalendarSync, to: '/admin/tahun-ajaran' },
 ]
-// Admin sekolah: identitas sekolahnya. Admin yayasan: identitas yayasan/aplikasi (halaman sama).
+// Identitas sekolah yang sedang dibuka; di mode yayasan halaman yang sama = identitas yayasan.
 const IDENTITY = { label: 'Identitas Sekolah', icon: Palette, to: '/admin/identitas' }
+const SCHOOL_LIST = { label: 'Daftar Sekolah', icon: Building2, to: '/admin/sekolah' }
+
+// Admin yayasan punya dua mode:
+// - mode yayasan (belum membuka sekolah): ringkasan semua sekolah & pengaturan yayasan;
+// - membuka satu sekolah (lewat "Ganti Sekolah"): menu admin sekolah itu.
+const FOUNDATION_HOME = {
+  main: [{ label: 'Beranda', icon: House, to: '/admin', end: true }, SCHOOL_LIST, CHAT],
+  more: [{ ...IDENTITY, label: 'Identitas Yayasan' }, PROFILE],
+}
+
+/** Menu untuk user ini. `school` = sekolah yang sedang dibuka (null = mode yayasan). */
+export function navigationFor(role, school) {
+  if (role !== ROLES.FOUNDATION) return NAVIGATION[role]
+  if (!school) return FOUNDATION_HOME
+  return { main: ADMIN_MAIN, more: [...ADMIN_MORE, IDENTITY, SCHOOL_LIST, PROFILE] }
+}
 
 export const NAVIGATION = {
-  [ROLES.FOUNDATION]: {
-    main: [
-      ADMIN_MAIN[0],
-      { label: 'Daftar Sekolah', icon: Building2, to: '/admin/sekolah' },
-      ...ADMIN_MAIN.slice(1),
-    ],
-    more: [...ADMIN_MORE, { ...IDENTITY, label: 'Identitas Yayasan' }, PROFILE],
-  },
   [ROLES.ADMIN]: {
     main: ADMIN_MAIN,
     more: [...ADMIN_MORE, IDENTITY, PROFILE],

@@ -63,6 +63,18 @@ class FoundationTests(APITestCase):
         res = self.client.get(reverse("dashboard"), headers={"X-School": str(self.mi.id)})
         self.assertEqual(res.data["stats"]["classrooms"], 1)
 
+    def test_foundation_without_header_is_in_foundation_mode(self):
+        # Tanpa X-School admin yayasan belum membuka sekolah: data per sekolah kosong, bukan sekolah pertama.
+        self.client.force_authenticate(self.foundation)
+        self.assertEqual(self.client.get(reverse("classroom-list")).data["results"], [])
+        self.assertEqual(self.client.get(reverse("dashboard")).data["stats"]["classrooms"], 0)
+        res = self.client.post(
+            reverse("classroom-list"),
+            {"name": "I B", "grade": "I", "major": "UMUM", "academic_year": "2026/2027"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_foundation_creates_school_and_school_admin(self):
         self.client.force_authenticate(self.foundation)
         res = self.client.post(

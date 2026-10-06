@@ -23,8 +23,9 @@ def schools_for(user):
 
 
 def active_school(request):
-    """Sekolah dari header X-School. Tanpa header: sekolah pertama milik user (urut nama).
-    Mengembalikan None jika user belum terdaftar di sekolah mana pun."""
+    """Sekolah dari header X-School. Tanpa header: sekolah pertama milik user (urut nama), kecuali
+    admin yayasan: tanpa header berarti "mode yayasan" (belum membuka sekolah) -> None.
+    Mengembalikan None juga jika user belum terdaftar di sekolah mana pun."""
     if not hasattr(request, "_active_school"):
         schools = schools_for(request.user)
         school_id = request.headers.get(SCHOOL_HEADER, "").strip()
@@ -32,6 +33,8 @@ def active_school(request):
             school = schools.filter(pk=school_id).first() if school_id.isdigit() else None
             if school is None:
                 raise PermissionDenied("Anda tidak terdaftar di sekolah ini.")
+        elif request.user.is_authenticated and request.user.is_foundation:
+            school = None
         else:
             school = schools.first()
         request._active_school = school

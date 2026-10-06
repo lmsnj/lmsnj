@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { FullPageSpinner } from '../components/Spinner'
 import useAuth from '../hooks/useAuth'
 import DashboardLayout from '../layouts/DashboardLayout'
@@ -43,10 +43,18 @@ const StudentSubjectPage = lazy(() => import('../pages/siswa/StudentSubjectPage'
 const StudentTaskPage = lazy(() => import('../pages/siswa/StudentTaskPage'))
 const StudentTasksPage = lazy(() => import('../pages/siswa/StudentTasksPage'))
 
-// Beranda /admin: admin yayasan melihat ringkasan semua sekolah, admin sekolah melihat sekolahnya.
+// Beranda /admin: admin yayasan di mode yayasan melihat ringkasan semua sekolah; admin sekolah
+// (dan admin yayasan yang sedang membuka sebuah sekolah) melihat Beranda sekolah itu.
 function AdminHome() {
-  const { user } = useAuth()
-  return user.role === ROLES.FOUNDATION ? <FoundationDashboard /> : <AdminDashboard />
+  const { user, school } = useAuth()
+  return user.role === ROLES.FOUNDATION && !school ? <FoundationDashboard /> : <AdminDashboard />
+}
+
+// Halaman data satu sekolah. Admin yayasan yang belum membuka sekolah diarahkan ke Beranda.
+function SchoolRoute() {
+  const { user, school } = useAuth()
+  if (user.role === ROLES.FOUNDATION && !school) return <Navigate to="/admin" replace />
+  return <Outlet />
 }
 
 function HomeRedirect() {
@@ -66,14 +74,16 @@ export default function AppRoutes() {
           <Route element={<DashboardLayout />}>
             <Route path="admin" element={<ProtectedRoute roles={ADMIN_ROLES} />}>
               <Route index element={<AdminHome />} />
-              <Route path="pengguna" element={<UsersPage />} />
-              <Route path="kelas" element={<ClassroomsPage />} />
-              <Route path="kelas/:id" element={<ClassroomDetailPage />} />
-              <Route path="mapel" element={<SubjectsPage />} />
-              <Route path="pengampu" element={<AssignmentsPage />} />
-              <Route path="laporan" element={<ReportPage />} />
               <Route path="identitas" element={<BrandingPage />} />
-              <Route path="tahun-ajaran" element={<PromotionPage />} />
+              <Route element={<SchoolRoute />}>
+                <Route path="pengguna" element={<UsersPage />} />
+                <Route path="kelas" element={<ClassroomsPage />} />
+                <Route path="kelas/:id" element={<ClassroomDetailPage />} />
+                <Route path="mapel" element={<SubjectsPage />} />
+                <Route path="pengampu" element={<AssignmentsPage />} />
+                <Route path="laporan" element={<ReportPage />} />
+                <Route path="tahun-ajaran" element={<PromotionPage />} />
+              </Route>
               <Route element={<ProtectedRoute roles={[ROLES.FOUNDATION]} />}>
                 <Route path="sekolah" element={<SchoolsPage />} />
               </Route>
@@ -107,7 +117,9 @@ export default function AppRoutes() {
 
             <Route path="profil" element={<ProfilePage />} />
             {/* Halaman bersama semua peran (isi & hak akses menyesuaikan peran). */}
-            <Route path="pengumuman" element={<AnnouncementsPage />} />
+            <Route element={<SchoolRoute />}>
+              <Route path="pengumuman" element={<AnnouncementsPage />} />
+            </Route>
             <Route path="obrolan" element={<ChatPage />} />
           </Route>
         </Route>

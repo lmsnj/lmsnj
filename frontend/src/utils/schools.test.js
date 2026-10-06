@@ -20,6 +20,13 @@ test('kembali ke sekolah pertama jika tersimpan tidak valid atau nonaktif', () =
   assert.equal(pickSchool([], '1'), null)
 })
 
+test('admin yayasan tanpa pilihan tersimpan berada di mode yayasan', () => {
+  const options = { firstAsDefault: false }
+  assert.equal(pickSchool(schools, null, options), null)
+  assert.equal(pickSchool(schools, '99', options), null)
+  assert.equal(pickSchool(schools, '2', options).id, 2)
+})
+
 test('identitas sekolah menimpa identitas yayasan', () => {
   const app = { school_name: 'Yayasan', slogan: 'A', app_name: 'LMS', logo_url: '/logo-yayasan' }
   assert.deepEqual(mergeBranding(app, null), app)
