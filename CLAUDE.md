@@ -337,7 +337,10 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - **Sesi mengajar:** mode `offline` (ruang) atau `online` (wajib link). Guru pengampu yang mengatur.
 - **Ruang obrolan:** hanya antar pengguna yang satu sekolah. Aturan di `apps/chat/rules.py` (`can_chat` & `contacts_for` harus selalu
   sejalan — ada test yang memeriksa semua pasangan). Siswa–siswa tidak boleh. Pesan baru dicek
-  berkala (polling 4 detik saat percakapan terbuka, 30 detik untuk badge), bukan WebSocket.
+  berkala (polling 4 detik saat percakapan terbuka), bukan WebSocket. Pemberitahuan pesan baru:
+  `hooks/useChatNotifications.js` (tiap 15 detik cek `unread-count`; daftar percakapan diambil hanya
+  jika jumlahnya berubah) -> badge menu, isi lonceng, dan pemberitahuan melayang `ChatToasts`
+  (bukan di halaman Ruang Obrolan). Tautan `/obrolan?c=<id>` membuka percakapan itu.
   Kirim pesan dibatasi 30/menit.
 - **Lembar asesmen:** soal terkunci setelah ada `Attempt`; kunci jawaban (`correct_choice`,
   `correct_choices`) hanya lewat `QuestionSerializer` (guru) — siswa memakai

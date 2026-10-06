@@ -6,7 +6,8 @@ import Dropdown, { DropdownItem, SoonBadge } from '../components/Dropdown'
 import ErrorBoundary from '../components/ErrorBoundary'
 import Spinner from '../components/Spinner'
 import useAuth from '../hooks/useAuth'
-import useUnreadMessages from '../hooks/useUnreadMessages'
+import ChatToasts from '../components/ChatToasts'
+import useChatNotifications from '../hooks/useChatNotifications'
 import useBranding from '../hooks/useBranding'
 import { ROLE_HOME, ROLES } from '../utils/constants'
 import { LanguageMenu, NotificationBell, UserMenu } from './HeaderMenus'
@@ -198,7 +199,10 @@ export default function DashboardLayout() {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const nav = navigationFor(user.role, school)
-  const badges = { chat: useUnreadMessages() }
+  // Pesan obrolan baru: badge menu, isi lonceng, dan pemberitahuan melayang. Di Ruang Obrolan
+  // sendiri pemberitahuan melayang tidak perlu (daftar percakapan sudah terlihat).
+  const chat = useChatNotifications({ showToasts: location.pathname !== '/obrolan' })
+  const badges = { chat: chat.unread }
 
   // key = sekolah aktif: saat pindah sekolah semua isi halaman dipasang ulang sehingga data
   // dimuat ulang dari sekolah yang baru (tidak ada data sekolah lama yang tertinggal).
@@ -231,7 +235,7 @@ export default function DashboardLayout() {
           </Link>
           <SchoolSwitcher />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
-            <NotificationBell />
+            <NotificationBell chat={chat.conversations} />
             <LanguageMenu />
             <UserMenu />
           </div>
@@ -261,6 +265,7 @@ export default function DashboardLayout() {
       </div>
 
       {menuOpen && <MobileMenu nav={nav} badges={badges} onClose={() => setMenuOpen(false)} />}
+      <ChatToasts toasts={chat.toasts} onDismiss={chat.dismiss} />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { dashboardApi } from '../api/dashboard'
 import Dropdown, { DropdownItem } from '../components/Dropdown'
 import useAuth from '../hooks/useAuth'
 import useFetch from '../hooks/useFetch'
+import { previewText } from '../utils/chatNotices'
 import { ROLE_LABELS, ROLES } from '../utils/constants'
 
 const iconButton =
@@ -51,10 +52,22 @@ function buildNotices(role, data) {
   return { count: items.length, items }
 }
 
-export function NotificationBell() {
+// Percakapan yang belum dibaca tampil paling atas di lonceng.
+function chatNotices(conversations) {
+  return conversations.map((conversation) => ({
+    key: `chat-${conversation.id}`,
+    text: `Pesan baru dari ${conversation.other.full_name}`,
+    meta: `${conversation.unread} belum dibaca · ${previewText(conversation.last_message, 50)}`,
+    to: `/obrolan?c=${conversation.id}`,
+  }))
+}
+
+export function NotificationBell({ chat = [] }) {
   const { user } = useAuth()
   const dashboard = useFetch(dashboardApi.get)
-  const { count, items } = buildNotices(user.role, dashboard.data)
+  const notices = buildNotices(user.role, dashboard.data)
+  const count = chat.length + notices.count
+  const items = [...chatNotices(chat), ...notices.items]
 
   return (
     <Dropdown

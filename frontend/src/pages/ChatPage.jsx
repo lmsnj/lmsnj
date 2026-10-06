@@ -273,8 +273,11 @@ function Thread({ conversation, onBack, onActivity }) {
 // Ruang Obrolan: pesan langsung antar pengguna (aturan siapa-boleh-dengan-siapa ada di backend).
 export default function ChatPage() {
   const openPicker = useQueryFlag('baru') === '1'
+  // ?c=<id> dari pemberitahuan pesan baru: langsung buka percakapan itu.
+  const linkedId = useQueryFlag('c')
   const [picking, setPicking] = useState(openPicker)
-  const [selected, setSelected] = useState(null)
+  // undefined = belum memilih (boleh memakai ?c=), null = sengaja menutup percakapan (tombol kembali).
+  const [selected, setSelected] = useState(undefined)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const conversations = useFetch(chatApi.conversations)
@@ -295,7 +298,10 @@ export default function ChatPage() {
   const shownList = list.filter((c) => matchesSearch(c.other.full_name, search))
   const unreadTotal = list.reduce((sum, c) => sum + (c.unread ?? 0), 0)
   // Data percakapan terpilih diperbarui dari daftar (mis. status can_send).
-  const current = selected && (list.find((c) => c.id === selected.id) ?? selected)
+  const linked =
+    selected === undefined && linkedId ? list.find((c) => String(c.id) === linkedId) : null
+  const active = selected ?? linked
+  const current = active && (list.find((c) => c.id === active.id) ?? active)
 
   return (
     <>
