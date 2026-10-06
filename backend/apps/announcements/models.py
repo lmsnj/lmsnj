@@ -5,8 +5,11 @@ from apps.academics.models import TeachingAssignment
 
 
 class Announcement(models.Model):
-    """Pengumuman. teaching_assignment kosong = untuk seluruh sekolah (hanya admin)."""
+    """Pengumuman. teaching_assignment kosong = untuk seluruh sekolah `school` (hanya admin)."""
 
+    school = models.ForeignKey(
+        "schools.School", verbose_name="sekolah", on_delete=models.CASCADE, related_name="announcements"
+    )
     title = models.CharField("judul", max_length=200)
     body = models.TextField("isi")
     # CASCADE: pengumuman bersifat ringan dan tidak boleh menghalangi penghapusan pengampu.

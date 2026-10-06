@@ -2,6 +2,7 @@ from rest_framework import viewsets
 
 from apps.academics.selectors import teaching_assignments_for
 from apps.accounts.permissions import ContentPermission
+from apps.schools.context import active_school
 
 from .models import TeachingSession
 from .serializers import TeachingSessionSerializer
@@ -17,7 +18,7 @@ class TeachingSessionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return TeachingSession.objects.filter(
-            teaching_assignment__in=teaching_assignments_for(self.request.user)
+            teaching_assignment__in=teaching_assignments_for(self.request.user, active_school(self.request))
         ).select_related(
             "teaching_assignment__subject", "teaching_assignment__classroom", "teaching_assignment__teacher"
         )

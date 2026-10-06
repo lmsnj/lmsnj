@@ -3,12 +3,18 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from apps.academics.models import Classroom
+from apps.schools.context import active_school
+from apps.schools.serializers import SchoolSerializer
+
 from .models import Role, User
 
 
 class UserSerializer(serializers.ModelSerializer):
     role_display = serializers.CharField(source="get_role_display", read_only=True)
     classroom_name = serializers.CharField(source="classroom.name", read_only=True, default=None)
+    # Sekolah tempat user terdaftar; frontend memakai daftar ini untuk pilihan sekolah aktif.
+    schools = SchoolSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -23,6 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
             "nip",
             "classroom",
             "classroom_name",
+            "schools",
             "is_active",
             "date_joined",
             "last_login",
@@ -49,6 +56,22 @@ class UserWriteSerializer(serializers.ModelSerializer):
             "is_active",
             "password",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        self.school = active_school(request) if request else None
+        # Kelas hanya boleh dipilih dari sekolah yang sedang dibuka.
+        self.fields["classroom"].queryset = Classroom.objects.filter(school=self.school)
+
+    def validate_nis(self, value):
+        if value:
+            taken = User.objects.filter(nis=value, schools=self.school)
+            if self.instance:
+                taken = taken.exclude(pk=self.instance.pk)
+            if taken.exists():
+                raise serializers.ValidationError("NIS ini sudah dipakai siswa lain di sekolah ini.")
+        return value
 
     def validate(self, attrs):
         # String kosong disimpan sebagai NULL agar tidak melanggar aturan unique.

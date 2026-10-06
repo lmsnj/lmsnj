@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from apps.accounts.models import Role, User
+from apps.schools.context import SchoolOwnedSerializer, active_school
 
 from .models import Classroom, Subject, TeachingAssignment
 
@@ -13,13 +13,20 @@ class UpperCaseCharField(serializers.CharField):
         return super().to_internal_value(data).upper()
 
 
+def ensure_member(user, school):
+    """Guru/siswa dari sekolah lain tidak boleh dipakai di data sekolah ini."""
+    if user is not None and not user.schools.filter(pk=school.pk).exists():
+        raise serializers.ValidationError(f"{user.full_name} tidak terdaftar di sekolah ini.")
+    return user
+
+
 def ensure_teacher(user):
     if user is not None and user.role != Role.TEACHER:
         raise serializers.ValidationError(f"{user.full_name} bukan guru.")
     return user
 
 
-class ClassroomSerializer(serializers.ModelSerializer):
+class ClassroomSerializer(SchoolOwnedSerializer):
     homeroom_teacher_name = serializers.CharField(
         source="homeroom_teacher.full_name", read_only=True, default=None
     )
@@ -30,6 +37,7 @@ class ClassroomSerializer(serializers.ModelSerializer):
         model = Classroom
         fields = [
             "id",
+            "school",
             "name",
             "grade",
             "major",
@@ -50,17 +58,42 @@ class ClassroomSerializer(serializers.ModelSerializer):
     def validate_homeroom_teacher(self, value):
         return ensure_teacher(value)
 
+    def validate(self, attrs):
+        # Tingkat harus sesuai jenjang sekolah: SD/MI I-VI, SMP/MTs VII-IX, SMA/MA/SMK X-XII.
+        school = self.instance.school if self.instance else attrs["school"]
+        grade = attrs.get("grade", getattr(self.instance, "grade", None))
+        if grade not in school.grades:
+            allowed = ", ".join(school.grades)
+            raise serializers.ValidationError(
+                {"grade": f"Tingkat untuk {school.get_level_display()} hanya: {allowed}."}
+            )
+        if attrs.get("homeroom_teacher"):
+            try:
+                ensure_member(attrs["homeroom_teacher"], school)
+            except serializers.ValidationError as error:
+                raise serializers.ValidationError({"homeroom_teacher": error.detail})
+        return attrs
 
-class SubjectSerializer(serializers.ModelSerializer):
-    # Kode disimpan huruf besar, jadi "pweb" dan "PWEB" dianggap sama.
-    code = UpperCaseCharField(
-        max_length=20,
-        validators=[UniqueValidator(Subject.objects.all(), message="Kode mapel ini sudah dipakai.")],
-    )
+
+class SubjectSerializer(SchoolOwnedSerializer):
+    # Kode disimpan huruf besar, jadi "pweb" dan "PWEB" dianggap sama (unik per sekolah).
+    code = UpperCaseCharField(max_length=20)
 
     class Meta:
         model = Subject
-        fields = ["id", "code", "name"]
+        fields = ["id", "school", "code", "name"]
+        # Cek kode unik ditulis sendiri di validate() agar pesannya menempel di field "code".
+        validators = []
+
+    def validate(self, attrs):
+        school = self.instance.school if self.instance else attrs["school"]
+        code = attrs.get("code")
+        duplicates = school.subjects.filter(code=code)
+        if self.instance:
+            duplicates = duplicates.exclude(pk=self.instance.pk)
+        if code and duplicates.exists():
+            raise serializers.ValidationError({"code": "Kode mapel ini sudah dipakai."})
+        return attrs
 
 
 class TeachingAssignmentSerializer(serializers.ModelSerializer):
@@ -93,6 +126,24 @@ class TeachingAssignmentSerializer(serializers.ModelSerializer):
     def validate_teacher(self, value):
         return ensure_teacher(value)
 
+    def validate(self, attrs):
+        # Guru, mapel, dan kelas harus dari sekolah yang sama dengan kelasnya.
+        classroom = attrs.get("classroom", getattr(self.instance, "classroom", None))
+        subject = attrs.get("subject", getattr(self.instance, "subject", None))
+        teacher = attrs.get("teacher", getattr(self.instance, "teacher", None))
+        school = self.context.get("school") or active_school(self.context["request"])
+        if classroom.school_id != school.id:
+            raise serializers.ValidationError(
+                {"classroom": "Kelas ini bukan dari sekolah yang sedang dibuka."}
+            )
+        if subject.school_id != school.id:
+            raise serializers.ValidationError({"subject": "Mapel ini bukan dari sekolah yang sedang dibuka."})
+        try:
+            ensure_member(teacher, school)
+        except serializers.ValidationError as error:
+            raise serializers.ValidationError({"teacher": error.detail})
+        return attrs
+
 
 class StudentBriefSerializer(serializers.ModelSerializer):
     class Meta:
@@ -105,7 +156,7 @@ class StudentIdsSerializer(serializers.Serializer):
 
     def validate_student_ids(self, value):
         ids = set(value)
-        found = User.objects.filter(pk__in=ids, role=Role.STUDENT).count()
+        found = User.objects.filter(pk__in=ids, role=Role.STUDENT, schools=self.context["school"]).count()
         if found != len(ids):
-            raise serializers.ValidationError("Sebagian ID tidak ditemukan atau bukan siswa.")
+            raise serializers.ValidationError("Sebagian ID tidak ditemukan atau bukan siswa sekolah ini.")
         return list(ids)

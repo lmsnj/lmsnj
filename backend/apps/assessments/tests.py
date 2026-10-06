@@ -7,14 +7,17 @@ from rest_framework.test import APITestCase
 
 from apps.academics.models import Classroom, Subject, TeachingAssignment
 from apps.accounts.models import Role, User
+from apps.common.testing import default_school
 
 from .models import Assessment, Attempt, Question
 
 
 def make_user(username, role, **extra):
-    return User.objects.create_user(
+    user = User.objects.create_user(
         username=username, password="x", full_name=username.title(), role=role, **extra
     )
+    user.schools.add(default_school())
+    return user
 
 
 class AssessmentTestBase(APITestCase):
@@ -22,9 +25,13 @@ class AssessmentTestBase(APITestCase):
         self.admin = make_user("admin1", Role.ADMIN)
         self.teacher = make_user("guru1", Role.TEACHER)
         self.other_teacher = make_user("guru2", Role.TEACHER)
-        rpl = Classroom.objects.create(name="XI RPL 1", grade="XI", major="RPL", academic_year="2026/2027")
-        tkj = Classroom.objects.create(name="XI TKJ 1", grade="XI", major="TKJ", academic_year="2026/2027")
-        web = Subject.objects.create(code="PWEB", name="Pemrograman Web")
+        rpl = Classroom.objects.create(
+            school=default_school(), name="XI RPL 1", grade="XI", major="RPL", academic_year="2026/2027"
+        )
+        tkj = Classroom.objects.create(
+            school=default_school(), name="XI TKJ 1", grade="XI", major="TKJ", academic_year="2026/2027"
+        )
+        web = Subject.objects.create(school=default_school(), code="PWEB", name="Pemrograman Web")
         self.assignment = TeachingAssignment.objects.create(teacher=self.teacher, subject=web, classroom=rpl)
         self.other = TeachingAssignment.objects.create(teacher=self.other_teacher, subject=web, classroom=tkj)
         self.student = make_user("siswa1", Role.STUDENT, classroom=rpl)

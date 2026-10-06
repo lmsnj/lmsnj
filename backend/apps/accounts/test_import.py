@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.academics.models import Classroom
+from apps.common.testing import default_school
 
 from .models import Role, User
 from .user_import import IMPORT_HASH_ITERATIONS
@@ -35,13 +36,16 @@ class UserImportTests(APITestCase):
         self.admin = User.objects.create_user(
             username="admin1", password=PASSWORD, full_name="Admin", role=Role.ADMIN
         )
+        self.admin.schools.add(default_school())
         self.rpl = Classroom.objects.create(
-            name="XI RPL 1", grade="XI", major="RPL", academic_year="2026/2027"
+            school=default_school(), name="XI RPL 1", grade="XI", major="RPL", academic_year="2026/2027"
         )
-        Classroom.objects.create(name="XI RPL 1", grade="XI", major="RPL", academic_year="2025/2026")
+        Classroom.objects.create(
+            school=default_school(), name="XI RPL 1", grade="XI", major="RPL", academic_year="2025/2026"
+        )
         User.objects.create_user(
             username="rizki", password=PASSWORD, full_name="Rizki", role=Role.STUDENT, nis="26001"
-        )
+        ).schools.add(default_school())
         self.client.force_authenticate(self.admin)
 
     def upload(self, file, dry_run=True):

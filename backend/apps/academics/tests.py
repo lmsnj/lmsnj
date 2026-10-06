@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import Role, User
+from apps.common.testing import default_school
 
 from .models import Classroom, Subject, TeachingAssignment
 
@@ -10,9 +11,11 @@ PASSWORD = "RahasiaKuat#2026"
 
 
 def make_user(username, role, **extra):
-    return User.objects.create_user(
+    user = User.objects.create_user(
         username=username, password=PASSWORD, full_name=username.title(), role=role, **extra
     )
+    user.schools.add(default_school())
+    return user
 
 
 class AcademicsTestBase(APITestCase):
@@ -22,13 +25,13 @@ class AcademicsTestBase(APITestCase):
         self.other_teacher = make_user("guru2", Role.TEACHER)
 
         self.rpl = Classroom.objects.create(
-            name="XI RPL 1", grade="XI", major="RPL", academic_year="2026/2027"
+            school=default_school(), name="XI RPL 1", grade="XI", major="RPL", academic_year="2026/2027"
         )
         self.tkj = Classroom.objects.create(
-            name="XI TKJ 1", grade="XI", major="TKJ", academic_year="2026/2027"
+            school=default_school(), name="XI TKJ 1", grade="XI", major="TKJ", academic_year="2026/2027"
         )
-        self.web = Subject.objects.create(code="PWEB", name="Pemrograman Web")
-        self.net = Subject.objects.create(code="JARKOM", name="Jaringan Komputer")
+        self.web = Subject.objects.create(school=default_school(), code="PWEB", name="Pemrograman Web")
+        self.net = Subject.objects.create(school=default_school(), code="JARKOM", name="Jaringan Komputer")
 
         self.student = make_user("siswa1", Role.STUDENT, classroom=self.rpl)
         self.student_tkj = make_user("siswa2", Role.STUDENT, classroom=self.tkj)
@@ -94,7 +97,7 @@ class ClassroomTests(AcademicsTestBase):
         res = self.client.delete(reverse("classroom-detail", args=[self.rpl.id]))
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         empty = Classroom.objects.create(
-            name="XII RPL 1", grade="XII", major="RPL", academic_year="2026/2027"
+            school=default_school(), name="XII RPL 1", grade="XII", major="RPL", academic_year="2026/2027"
         )
         res = self.client.delete(reverse("classroom-detail", args=[empty.id]))
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
@@ -134,14 +137,20 @@ class ClassroomTests(AcademicsTestBase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_list_is_ordered_by_year_grade_name(self):
-        Classroom.objects.create(name="X RPL 1", grade="X", major="RPL", academic_year="2025/2026")
-        Classroom.objects.create(name="X TKJ 1", grade="X", major="TKJ", academic_year="2026/2027")
+        Classroom.objects.create(
+            school=default_school(), name="X RPL 1", grade="X", major="RPL", academic_year="2025/2026"
+        )
+        Classroom.objects.create(
+            school=default_school(), name="X TKJ 1", grade="X", major="TKJ", academic_year="2026/2027"
+        )
         self.client.force_authenticate(self.admin)
         names = [c["name"] for c in self.client.get(self.url).data["results"]]
         self.assertEqual(names, ["X TKJ 1", "XI RPL 1", "XI TKJ 1", "X RPL 1"])
 
     def test_academic_years(self):
-        Classroom.objects.create(name="X RPL 1", grade="X", major="RPL", academic_year="2025/2026")
+        Classroom.objects.create(
+            school=default_school(), name="X RPL 1", grade="X", major="RPL", academic_year="2025/2026"
+        )
         self.client.force_authenticate(self.admin)
         res = self.client.get(reverse("classroom-academic-years"))
         self.assertEqual(res.data, ["2026/2027", "2025/2026"])

@@ -13,6 +13,7 @@ from apps.accounts.models import Role
 from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStudent, IsTeacher
 from apps.common.files import file_response
 from apps.common.mixins import ProtectedDeleteMixin
+from apps.schools.context import active_school
 
 from .gradebook import build_gradebook, gradebook_csv, roster_students
 from .models import Submission, Task
@@ -42,7 +43,7 @@ class TaskViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = (
-            tasks_for(user)
+            tasks_for(user, active_school(self.request))
             .select_related("teaching_assignment__subject", "teaching_assignment__classroom")
             .annotate(
                 submission_count=Count("submissions", distinct=True),
@@ -112,7 +113,9 @@ class SubmissionViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ["task", "student", "is_late"]
 
     def get_queryset(self):
-        return submissions_for(self.request.user).select_related("student", "task", "graded_by")
+        return submissions_for(self.request.user, active_school(self.request)).select_related(
+            "student", "task", "graded_by"
+        )
 
     @action(detail=True, methods=["patch"], permission_classes=[IsTeacher])
     def grade(self, request, pk=None):
@@ -137,7 +140,10 @@ class GradebookView(APIView):
 
     def get(self, request, assignment_id):
         assignment = get_object_or_404(
-            teaching_assignments_for(request.user).select_related("subject", "classroom"), pk=assignment_id
+            teaching_assignments_for(request.user, active_school(request)).select_related(
+                "subject", "classroom"
+            ),
+            pk=assignment_id,
         )
         gradebook = build_gradebook(assignment)
         if not self.export:
@@ -157,7 +163,9 @@ class ClassroomReportView(APIView):
     export = False
 
     def get(self, request, classroom_id):
-        classrooms = Classroom.objects.select_related("homeroom_teacher")
+        classrooms = Classroom.objects.filter(school=active_school(request)).select_related(
+            "homeroom_teacher"
+        )
         if request.user.role == Role.TEACHER:
             # Guru hanya bisa melihat laporan kelas yang ia walikan.
             classrooms = classrooms.filter(homeroom_teacher=request.user)

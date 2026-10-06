@@ -54,7 +54,8 @@ lms-smknj/
 │   │   ├── schedule/        # Jadwal sesi mengajar (TeachingSession); bukan "sessions" (bentrok app Django)
 │   │   ├── chat/            # Ruang obrolan; rules.py = siapa boleh mengobrol dengan siapa
 │   │   ├── assessments/     # Lembar asesmen (kuis); services.py = aturan mengerjakan & menilai
-│   │   └── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
+│   │   ├── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
+│   │   └── schools/         # Sekolah (multi-sekolah yayasan); context.py = sekolah aktif (header X-School)
 │   └── media/               # File upload (tidak di-commit, TIDAK disajikan publik)
 └── frontend/
     ├── index.html
@@ -82,15 +83,23 @@ lms-smknj/
 Setiap app Django mengikuti pola: `models.py`, `serializers.py`, `views.py`, `urls.py`, `permissions.py` (bila perlu), `admin.py`, `tests.py` (atau folder `tests/`).
 
 Pola yang wajib dipakai ulang:
-- **Backend:** batasi data per peran lewat `apps/academics/selectors.py` (`classrooms_for`, `teaching_assignments_for`). Modul materi/tugas harus memakai fungsi ini, jangan menulis ulang aturan aksesnya. Relasi yang datanya tidak boleh hilang memakai `on_delete=PROTECT` + `ProtectedDeleteMixin` di view.
+- **Backend:** batasi data per peran DAN sekolah aktif lewat `apps/academics/selectors.py` (`classrooms_for(user, school)`, `teaching_assignments_for(user, school)`; `school = active_school(request)`). Modul materi/tugas harus memakai fungsi ini, jangan menulis ulang aturan aksesnya. Relasi yang datanya tidak boleh hilang memakai `on_delete=PROTECT` + `ProtectedDeleteMixin` di view.
 - **File upload:** simpan dengan `RandomUploadPath` (nama diacak), validasi dengan `validate_upload` (ekstensi + ukuran `MAX_UPLOAD_SIZE_MB`) dan cek isi file bila memungkinkan. File **tidak pernah** disajikan lewat `/media/`; sediakan action `download` yang memakai `get_queryset` (cek akses) dan mengembalikan `FileResponse`. Path file tidak dikirim ke klien (`write_only`). Hapus file dari disk saat data dihapus atau file diganti.
 - **Frontend:** muat data dengan `useFetch`, kirim form dengan `useFormSubmit` + `FormModal`, tabel dengan `DataTable`, hapus dengan `DeleteDialog`. Isi dropdown memakai `ALL` (`page_size=500`) dan `toOptions` dari `utils/academic.js`. File dari API diambil sebagai blob (`responseType: 'blob'`) lalu ditampilkan lewat `URL.createObjectURL`; upload memakai FormData dengan progress (`onUploadProgress`).
 
 ## Model Data
 
-- **User** (custom, `AUTH_USER_MODEL = "accounts.User"`): username, `full_name`, email, `role` (nilai: `admin`/`teacher`/`student`, label: Admin/Guru/Siswa), `nis` (siswa) / `nip` (guru), `classroom` (FK ke Classroom, khusus siswa, SET_NULL).
-- **Classroom** (kelas): `name` (mis. "XI RPL 1"), `grade` (X/XI/XII), `major` (huruf besar), `academic_year` ("2026/2027"), `homeroom_teacher` (wali kelas). Unik per (nama, tahun ajaran).
-- **Subject** (mapel): `code` (unik, huruf besar), `name`.
+- **School** (sekolah): `code` (slug unik, mis. `smknj`), `name`, `level` (sd/mi/smp/mts/sma/ma/smk), `slogan`, `logo`, `is_active`. `grades` = tingkat per jenjang (SD/MI I–VI, SMP/MTs VII–IX, SMA/MA/SMK X–XII).
+- **User** (custom, `AUTH_USER_MODEL = "accounts.User"`): username, `full_name`, email, `role` (nilai: `admin`/`teacher`/`student`, label: Admin/Guru/Siswa), `nis` (siswa, unik per sekolah — dicek di serializer & impor) / `nip` (guru, unik global), `classroom` (FK ke Classroom, khusus siswa, SET_NULL), `schools` (M2M ke School; guru & admin boleh lebih dari satu sekolah).
+- **Classroom** (kelas): `school` (PROTECT), `name` (mis. "XI RPL 1"), `grade` (harus ada di `school.grades`), `major` (huruf besar), `academic_year` ("2026/2027"), `homeroom_teacher` (wali kelas). Unik per (sekolah, nama, tahun ajaran).
+- **Subject** (mapel): `school` (PROTECT), `code` (unik per sekolah, huruf besar), `name`.
+- Pengampu, materi, tugas, asesmen, dll. TIDAK punya kolom sekolah: sekolahnya = sekolah kelasnya.
+  Guru, mapel, dan kelas pada pengampu (juga wali kelas & siswa di kelas) wajib dari sekolah yang sama.
+  **Announcement** punya `school` sendiri (pengumuman seluruh sekolah).
+- **Sekolah aktif** (`apps/schools/context.py`): frontend mengirim header `X-School: <id>`; `active_school(request)`
+  mengecek keanggotaan (bukan anggota = 403), tanpa header = sekolah pertama milik user. Serializer data
+  milik sekolah mewarisi `SchoolOwnedSerializer` (field `school` terisi otomatis, tidak bisa dipindah);
+  impor Excel menitipkan sekolah lewat `context["school"]`. Test memakai `apps/common/testing.py::default_school`.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan.
 - **Material** (materi): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `description`, `material_type` (`pdf`/`video`/`link`), `file` + `original_filename` (khusus PDF, maks. 10 MB), `url` (video/link), `is_published` (draf tidak terlihat siswa), `created_by`.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
@@ -301,7 +310,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - **Laporan nilai kelas** (`apps/tasks/reports.py`): dibangun dari `build_gradebook`, jadi rata-ratanya
   sama dengan rekap guru. Akses: admin dan wali kelas (hanya kelasnya).
 - **Sesi mengajar:** mode `offline` (ruang) atau `online` (wajib link). Guru pengampu yang mengatur.
-- **Ruang obrolan:** aturan di `apps/chat/rules.py` (`can_chat` & `contacts_for` harus selalu
+- **Ruang obrolan:** hanya antar pengguna yang satu sekolah. Aturan di `apps/chat/rules.py` (`can_chat` & `contacts_for` harus selalu
   sejalan — ada test yang memeriksa semua pasangan). Siswa–siswa tidak boleh. Pesan baru dicek
   berkala (polling 4 detik saat percakapan terbuka, 30 detik untuk badge), bukan WebSocket.
   Kirim pesan dibatasi 30/menit.
@@ -345,10 +354,12 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/auth/login/`                | Publik (dibatasi 10/menit) |
 | POST   | `/api/auth/refresh/`              | Publik           |
 | POST   | `/api/auth/logout/`               | Login            |
-| GET    | `/api/auth/me/`                   | Login            |
+| GET    | `/api/auth/me/`                   | Login (berisi `schools`) |
+| GET    | `/api/schools/`, `/api/schools/{id}/logo/` | Login: sekolah milik sendiri. Logo: publik |
 | POST   | `/api/auth/change-password/`      | Login            |
 | CRUD   | `/api/users/` (filter `role`, `is_active`, `classroom`, `classroom__isnull`, `search`) | Admin |
 | POST   | `/api/users/{id}/reset-password/` | Admin            |
+| POST   | `/api/users/join/` (`username`)   | Admin: daftarkan akun guru/admin yang sudah ada ke sekolah aktif. Hapus pengguna yang terdaftar di >1 sekolah = hanya keluar dari sekolah aktif |
 | GET    | `/api/users/import-template/`     | Admin: template Excel (.xlsx) dengan dropdown peran & kelas |
 | POST   | `/api/users/import/` (multipart `file`, `dry_run`) | Admin: `dry_run=true` hanya memeriksa; `false` menyimpan jika SEMUA baris benar (semua atau tidak sama sekali) |
 | CRUD   | `/api/classrooms/` (filter `grade`, `major`, `academic_year`, `homeroom_teacher`) | Tulis: admin. Baca: admin semua, guru kelas yang diajar/diwalikan, siswa kelasnya |
@@ -397,5 +408,13 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - [x] Fase 5: Penilaian
 - [x] Fase 6: Dashboard per peran
 - [x] Fase 7: Pemantapan
+- [ ] Fase 8: Multi-sekolah (yayasan: SD/MI, SMP/MTs, SMA/MA/SMK)
+  - [x] 8a: model School + keanggotaan, migrasi data lama ke sekolah `smknj`, sekolah aktif (X-School),
+        tingkat kelas per jenjang, kenaikan kelas per sekolah
+  - [x] 8b: semua endpoint disaring per sekolah (selector, admin, impor/template, laporan, dashboard, obrolan),
+        NIS unik per sekolah, pengampu: kelas & mapel & guru harus satu sekolah
+  - [ ] 8c: peran Admin Yayasan (kelola sekolah & admin sekolah, ringkasan lintas sekolah)
+  - [ ] 8d: frontend (pilihan sekolah, identitas per sekolah, halaman yayasan, pilihan tingkat per jenjang)
+  - [ ] 8e: seed_demo beberapa sekolah, README/DEPLOY
 - [x] Tambahan: impor pengguna dari Excel, tampilan baru, pengumuman, laporan nilai, sesi mengajar,
       ruang obrolan, lembar asesmen

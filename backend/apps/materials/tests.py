@@ -10,6 +10,7 @@ from rest_framework.test import APITestCase
 
 from apps.academics.models import Classroom, Subject, TeachingAssignment
 from apps.accounts.models import Role, User
+from apps.common.testing import default_school
 
 from .models import Material, MaterialType
 
@@ -18,9 +19,11 @@ TEMP_MEDIA = tempfile.mkdtemp()
 
 
 def make_user(username, role, **extra):
-    return User.objects.create_user(
+    user = User.objects.create_user(
         username=username, password=PASSWORD, full_name=username.title(), role=role, **extra
     )
+    user.schools.add(default_school())
+    return user
 
 
 def pdf_file(name="modul.pdf", content=b"%PDF-1.4 isi materi"):
@@ -40,9 +43,13 @@ class MaterialTests(APITestCase):
         self.admin = make_user("admin1", Role.ADMIN)
         self.teacher = make_user("guru1", Role.TEACHER)
         self.other_teacher = make_user("guru2", Role.TEACHER)
-        rpl = Classroom.objects.create(name="XI RPL 1", grade="XI", major="RPL", academic_year="2026/2027")
-        tkj = Classroom.objects.create(name="XI TKJ 1", grade="XI", major="TKJ", academic_year="2026/2027")
-        web = Subject.objects.create(code="PWEB", name="Pemrograman Web")
+        rpl = Classroom.objects.create(
+            school=default_school(), name="XI RPL 1", grade="XI", major="RPL", academic_year="2026/2027"
+        )
+        tkj = Classroom.objects.create(
+            school=default_school(), name="XI TKJ 1", grade="XI", major="TKJ", academic_year="2026/2027"
+        )
+        web = Subject.objects.create(school=default_school(), code="PWEB", name="Pemrograman Web")
         self.assignment = TeachingAssignment.objects.create(teacher=self.teacher, subject=web, classroom=rpl)
         self.other_assignment = TeachingAssignment.objects.create(
             teacher=self.other_teacher, subject=web, classroom=tkj
@@ -184,7 +191,7 @@ class MaterialTests(APITestCase):
         material_id = self.create_pdf().data["id"]
         other = TeachingAssignment.objects.create(
             teacher=self.teacher,
-            subject=Subject.objects.create(code="PBO", name="PBO"),
+            subject=Subject.objects.create(school=default_school(), code="PBO", name="PBO"),
             classroom=self.assignment.classroom,
         )
         res = self.client.patch(

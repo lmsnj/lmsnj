@@ -4,10 +4,10 @@ from apps.accounts.models import Role
 from .models import Material
 
 
-def materials_for(user):
+def materials_for(user, school):
     """Admin: semua materi. Guru: materi di kelas-mapel yang ia ampu (termasuk draf).
     Siswa: hanya materi yang sudah terbit di kelasnya."""
-    queryset = Material.objects.filter(teaching_assignment__in=teaching_assignments_for(user))
+    queryset = Material.objects.filter(teaching_assignment__in=teaching_assignments_for(user, school))
     if user.role == Role.STUDENT:
         queryset = queryset.filter(is_published=True)
     return queryset

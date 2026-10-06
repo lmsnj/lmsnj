@@ -22,6 +22,7 @@ from apps.assessments.models import Assessment, Question
 from apps.chat.models import Conversation, Message
 from apps.materials.models import Material, MaterialType
 from apps.schedule.models import TeachingSession
+from apps.schools.models import Level, School
 from apps.tasks.models import Submission, Task
 
 from . import _demo_exam as demo_exam
@@ -186,6 +187,7 @@ class Command(BaseCommand):
     def user(self, username, full_name, role, **extra):
         user = User.objects.filter(username=username).first()
         if user:
+            user.schools.add(self.school)
             return user
         # NIS/NIP bisa saja sudah dipakai akun lain; lewati agar tidak melanggar aturan unique.
         for field in ("nis", "nip"):
@@ -195,10 +197,20 @@ class Command(BaseCommand):
             username=username, password=PASSWORDS[role], full_name=full_name, role=role, **extra
         )
         self.count("pengguna", True)
+        user.schools.add(self.school)
         return user
 
     def seed(self):
         year = current_academic_year(self.now)
+        self.school, created = School.objects.get_or_create(
+            code="smknj",
+            defaults={
+                "name": "SMKS Nurul Jadid",
+                "level": Level.SMK,
+                "slogan": "Cerdas, Terampil, Berakhlak Mulia",
+            },
+        )
+        self.count("sekolah", created)
         if not User.objects.filter(role=Role.ADMIN).exists():
             self.user("admin", "Administrator", Role.ADMIN, is_staff=True, is_superuser=True)
 
@@ -206,12 +218,15 @@ class Command(BaseCommand):
 
         subjects = {}
         for code, name in SUBJECTS:
-            subjects[code], created = Subject.objects.get_or_create(code=code, defaults={"name": name})
+            subjects[code], created = Subject.objects.get_or_create(
+                school=self.school, code=code, defaults={"name": name}
+            )
             self.count("mapel", created)
 
         classrooms = {}
         for name, grade, major, homeroom in CLASSROOMS:
             classrooms[name], created = Classroom.objects.get_or_create(
+                school=self.school,
                 name=name,
                 academic_year=year,
                 defaults={"grade": grade, "major": major, "homeroom_teacher": teachers[homeroom]},
@@ -284,6 +299,7 @@ class Command(BaseCommand):
         """Contoh pengumuman, sesi mengajar, lembar asesmen, dan obrolan di kelas XI RPL 1."""
         admin = User.objects.filter(role=Role.ADMIN).order_by("id").first()
         _, created = Announcement.objects.get_or_create(
+            school=self.school,
             title="Selamat datang di LMS SMKS Nurul Jadid",
             teaching_assignment=None,
             defaults={
@@ -296,11 +312,15 @@ class Command(BaseCommand):
         self.count("pengumuman", created)
 
         web = TeachingAssignment.objects.filter(
-            subject__code="PWEB", classroom__name="XI RPL 1", teacher=teachers["guru.rpl"]
+            subject__code="PWEB",
+            classroom__name="XI RPL 1",
+            classroom__school=self.school,
+            teacher=teachers["guru.rpl"],
         ).first()
         if web is None:
             return
         _, created = Announcement.objects.get_or_create(
+            school=self.school,
             title="Praktik HTML pekan ini di Lab RPL",
             teaching_assignment=web,
             defaults={"body": "Bawa flashdisk berisi tugas profil diri.", "author": web.teacher},

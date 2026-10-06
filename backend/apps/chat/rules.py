@@ -4,11 +4,13 @@
 - Guru <-> guru.
 - Guru <-> siswa: hanya jika guru mengajar di kelas siswa itu atau menjadi wali kelasnya.
 - Siswa <-> siswa: tidak boleh (mencegah obrolan tanpa pengawasan di LMS sekolah).
+- Semua aturan di atas hanya berlaku untuk orang yang terdaftar di sekolah (aktif) yang sama.
 """
 
 from django.db.models import Q
 
 from apps.accounts.models import Role, User
+from apps.schools.models import School
 
 
 def _teacher_student_linked(teacher, student):
@@ -21,8 +23,15 @@ def _teacher_student_linked(teacher, student):
     )
 
 
+def _shared_school(user, other):
+    # Dua filter() terpisah = dua join, jadi sekolahnya harus punya KEDUA anggota itu.
+    return School.objects.filter(is_active=True, members=user).filter(members=other).exists()
+
+
 def can_chat(user, other):
     if user.id == other.id or not (user.is_active and other.is_active):
+        return False
+    if not _shared_school(user, other):
         return False
     roles = {user.role, other.role}
     if Role.ADMIN in roles:
@@ -37,7 +46,8 @@ def can_chat(user, other):
 
 def contacts_for(user):
     """Semua orang yang boleh diajak mengobrol oleh `user` (cerminan can_chat dalam bentuk query)."""
-    people = User.objects.filter(is_active=True).exclude(pk=user.pk)
+    school_ids = user.schools.filter(is_active=True).values("id")
+    people = User.objects.filter(is_active=True, schools__in=school_ids).exclude(pk=user.pk).distinct()
     if user.role == Role.ADMIN:
         return people
     if user.role == Role.TEACHER:

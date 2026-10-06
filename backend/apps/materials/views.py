@@ -4,6 +4,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
 from apps.accounts.permissions import ContentPermission
 from apps.common.files import file_response
+from apps.schools.context import active_school
 
 from .models import Material
 from .selectors import materials_for
@@ -19,7 +20,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "title"]
 
     def get_queryset(self):
-        return materials_for(self.request.user).select_related(
+        return materials_for(self.request.user, active_school(self.request)).select_related(
             "teaching_assignment__subject", "teaching_assignment__classroom", "created_by"
         )
 

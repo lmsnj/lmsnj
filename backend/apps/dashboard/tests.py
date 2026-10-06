@@ -6,6 +6,7 @@ from rest_framework.test import APITestCase
 
 from apps.academics.models import Classroom, Subject, TeachingAssignment
 from apps.accounts.models import Role, User
+from apps.common.testing import default_school
 from apps.materials.models import Material, MaterialType
 from apps.tasks.models import Submission, Task
 
@@ -13,9 +14,11 @@ PASSWORD = "RahasiaKuat#2026"
 
 
 def make_user(username, role, **extra):
-    return User.objects.create_user(
+    user = User.objects.create_user(
         username=username, password=PASSWORD, full_name=username.title(), role=role, **extra
     )
+    user.schools.add(default_school())
+    return user
 
 
 class DashboardTests(APITestCase):
@@ -28,13 +31,20 @@ class DashboardTests(APITestCase):
         self.other_teacher = make_user("guru2", Role.TEACHER)
         make_user("guru3", Role.TEACHER)  # belum mengampu apa pun
         self.rpl = Classroom.objects.create(
-            name="XI RPL 1", grade="XI", major="RPL", academic_year="2026/2027", homeroom_teacher=self.teacher
+            school=default_school(),
+            name="XI RPL 1",
+            grade="XI",
+            major="RPL",
+            academic_year="2026/2027",
+            homeroom_teacher=self.teacher,
         )
-        tkj = Classroom.objects.create(name="XI TKJ 1", grade="XI", major="TKJ", academic_year="2026/2027")
+        tkj = Classroom.objects.create(
+            school=default_school(), name="XI TKJ 1", grade="XI", major="TKJ", academic_year="2026/2027"
+        )
         Classroom.objects.create(
-            name="X RPL 1", grade="X", major="RPL", academic_year="2025/2026"
+            school=default_school(), name="X RPL 1", grade="X", major="RPL", academic_year="2025/2026"
         )  # tahun lalu
-        web = Subject.objects.create(code="PWEB", name="Pemrograman Web")
+        web = Subject.objects.create(school=default_school(), code="PWEB", name="Pemrograman Web")
         self.assignment = TeachingAssignment.objects.create(
             teacher=self.teacher, subject=web, classroom=self.rpl
         )

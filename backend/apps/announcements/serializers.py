@@ -3,11 +3,12 @@ from rest_framework import serializers
 from apps.academics.models import TeachingAssignment
 from apps.academics.selectors import teaching_assignments_for
 from apps.accounts.models import Role
+from apps.schools.context import SchoolOwnedSerializer, active_school
 
 from .models import Announcement
 
 
-class AnnouncementSerializer(serializers.ModelSerializer):
+class AnnouncementSerializer(SchoolOwnedSerializer):
     teaching_assignment = serializers.PrimaryKeyRelatedField(
         queryset=TeachingAssignment.objects.none(), allow_null=True, required=False
     )
@@ -20,6 +21,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         model = Announcement
         fields = [
             "id",
+            "school",
             "title",
             "body",
             "teaching_assignment",
@@ -36,8 +38,10 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request is not None:
-            # Admin boleh memilih kelas-mapel mana pun; guru hanya yang ia ampu.
-            self.fields["teaching_assignment"].queryset = teaching_assignments_for(request.user)
+            # Admin boleh memilih kelas-mapel mana pun di sekolahnya; guru hanya yang ia ampu.
+            self.fields["teaching_assignment"].queryset = teaching_assignments_for(
+                request.user, active_school(request)
+            )
 
     def get_target_label(self, obj):
         if obj.teaching_assignment is None:

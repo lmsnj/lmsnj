@@ -12,8 +12,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.common.files import validate_upload
 from apps.common.mixins import ProtectedDeleteMixin
+from apps.schools.context import active_school, require_school
 
-from .models import User
+from .models import Role, User
 from .permissions import IsAdmin
 from .serializers import (
     ChangePasswordSerializer,
@@ -68,7 +69,6 @@ class ChangePasswordView(APIView):
 class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     """Manajemen pengguna, khusus admin."""
 
-    queryset = User.objects.select_related("classroom")
     permission_classes = [IsAdmin]
     # classroom__isnull=true dipakai untuk mencari siswa yang belum punya kelas.
     filterset_fields = {"role": ["exact"], "is_active": ["exact"], "classroom": ["exact", "isnull"]}
@@ -79,10 +79,24 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         "Nonaktifkan akunnya saja agar datanya tetap tersimpan."
     )
 
+    def get_queryset(self):
+        # Admin hanya mengelola pengguna di sekolah yang sedang dibuka.
+        return (
+            User.objects.filter(schools=active_school(self.request))
+            .select_related("classroom")
+            .prefetch_related("schools")
+        )
+
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
             return UserWriteSerializer
         return UserSerializer
+
+    def perform_create(self, serializer):
+        # Pengguna baru otomatis terdaftar di sekolah yang sedang dibuka admin.
+        school = require_school(self.request)
+        user = serializer.save()
+        user.schools.add(school)
 
     def perform_update(self, serializer):
         # Cegah admin mengunci dirinya sendiri keluar dari sistem.
@@ -97,7 +111,26 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if instance == self.request.user:
             raise ValidationError({"detail": "Anda tidak dapat menghapus akun sendiri."})
+        # Guru yang juga mengajar di sekolah lain hanya dikeluarkan dari sekolah ini, akunnya tetap.
+        if instance.schools.count() > 1:
+            instance.schools.remove(require_school(self.request))
+            return
         super().perform_destroy(instance)
+
+    @action(detail=False, methods=["post"])
+    def join(self, request):
+        """Daftarkan akun guru/admin yang sudah ada (dari sekolah lain) ke sekolah ini, lewat username."""
+        school = require_school(request)
+        username = str(request.data.get("username", "")).strip()
+        user = User.objects.filter(username__iexact=username).first() if username else None
+        if user is None:
+            raise ValidationError({"username": "Akun dengan username ini tidak ditemukan."})
+        if user.role == Role.STUDENT:
+            raise ValidationError({"username": "Siswa hanya boleh terdaftar di satu sekolah."})
+        if user.schools.filter(pk=school.pk).exists():
+            raise ValidationError({"username": f"{user.full_name} sudah terdaftar di sekolah ini."})
+        user.schools.add(school)
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="reset-password")
     def reset_password(self, request, pk=None):
@@ -111,7 +144,7 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     @action(detail=False, url_path="import-template")
     def import_template(self, request):
         """Template Excel untuk impor pengguna (dropdown kelas diisi dari data kelas terbaru)."""
-        response = HttpResponse(build_template(), content_type=XLSX_CONTENT_TYPE)
+        response = HttpResponse(build_template(require_school(request)), content_type=XLSX_CONTENT_TYPE)
         response["Content-Disposition"] = 'attachment; filename="Template Impor Pengguna.xlsx"'
         return response
 
@@ -127,7 +160,7 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         except ValidationError as error:
             # Beri nama field agar frontend tahu error ini milik isian file.
             raise ValidationError({"file": error.detail})
-        results = validate_rows(read_rows(file))
+        results = validate_rows(read_rows(file), require_school(request))
         invalid = [r for r in results if r["errors"]]
         summary = {"total": len(results), "valid": len(results) - len(invalid), "invalid": len(invalid)}
         preview = [
@@ -157,7 +190,7 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        accounts = create_users(results)
+        accounts = create_users(results, require_school(request))
         return Response(
             {"imported": True, "summary": summary, "accounts": accounts}, status=status.HTTP_201_CREATED
         )

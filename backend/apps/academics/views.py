@@ -9,6 +9,7 @@ from apps.accounts.models import Role, User
 from apps.accounts.permissions import IsAdmin, IsAdminOrReadOnly
 from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.mixins import ProtectedDeleteMixin
+from apps.schools.context import active_school, require_school
 
 from . import imports, promotion
 from .models import Classroom, Subject, TeachingAssignment
@@ -34,7 +35,7 @@ class ClassroomViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         return (
-            classrooms_for(self.request.user)
+            classrooms_for(self.request.user, active_school(self.request))
             .select_related("homeroom_teacher")
             .annotate(student_count=Count("students", distinct=True))
             # Meta.ordering tidak berlaku pada query dengan annotate(Count), jadi ditulis ulang.
@@ -43,7 +44,11 @@ class ClassroomViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
 
     @action(detail=False, url_path="academic-years", pagination_class=None)
     def academic_years(self, request):
-        years = Classroom.objects.order_by("-academic_year").values_list("academic_year", flat=True)
+        years = (
+            Classroom.objects.filter(school=active_school(request))
+            .order_by("-academic_year")
+            .values_list("academic_year", flat=True)
+        )
         return Response(list(dict.fromkeys(years)))
 
     @action(detail=True, methods=["get", "post"])
@@ -58,7 +63,7 @@ class ClassroomViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
 
         # POST: memasukkan siswa ke kelas ini (siswa dari kelas lain ikut dipindahkan).
         self._require_admin(request)
-        serializer = StudentIdsSerializer(data=request.data)
+        serializer = StudentIdsSerializer(data=request.data, context={"school": classroom.school})
         serializer.is_valid(raise_exception=True)
         updated = User.objects.filter(pk__in=serializer.validated_data["student_ids"]).update(
             classroom=classroom
@@ -69,7 +74,7 @@ class ClassroomViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     def remove_students(self, request, pk=None):
         self._require_admin(request)
         classroom = self.get_object()
-        serializer = StudentIdsSerializer(data=request.data)
+        serializer = StudentIdsSerializer(data=request.data, context={"school": classroom.school})
         serializer.is_valid(raise_exception=True)
         updated = classroom.students.filter(pk__in=serializer.validated_data["student_ids"]).update(
             classroom=None
@@ -79,12 +84,14 @@ class ClassroomViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     @action(detail=False, url_path="import-template", permission_classes=[IsAdmin])
     def import_template(self, request):
         """Template Excel untuk impor kelas."""
-        return template_response(imports.classroom_template(), "Template Impor Kelas.xlsx")
+        return template_response(
+            imports.classroom_template(require_school(request)), "Template Impor Kelas.xlsx"
+        )
 
     @action(detail=False, methods=["post"], url_path="import", permission_classes=[IsAdmin])
     def import_rows(self, request):
         """Impor kelas dari Excel. dry_run=true (bawaan) hanya memeriksa."""
-        rows, save = imports.check_classrooms(request.FILES.get("file"))
+        rows, save = imports.check_classrooms(request.FILES.get("file"), require_school(request))
         return import_response(rows, is_dry_run(request), save)
 
     def _require_admin(self, request):
@@ -93,12 +100,14 @@ class ClassroomViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
 
 
 class SubjectViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
-    queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
     permission_classes = [IsAdminOrReadOnly]
     search_fields = ["code", "name"]
     ordering_fields = ["code", "name"]
     protected_message = "Mapel ini masih diampu di beberapa kelas. Hapus data pengampunya terlebih dahulu."
+
+    def get_queryset(self):
+        return Subject.objects.filter(school=active_school(self.request))
 
     @action(detail=False, url_path="import-template", permission_classes=[IsAdmin])
     def import_template(self, request):
@@ -108,7 +117,7 @@ class SubjectViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=["post"], url_path="import", permission_classes=[IsAdmin])
     def import_rows(self, request):
         """Impor mata pelajaran dari Excel. dry_run=true (bawaan) hanya memeriksa."""
-        rows, save = imports.check_subjects(request.FILES.get("file"))
+        rows, save = imports.check_subjects(request.FILES.get("file"), require_school(request))
         return import_response(rows, is_dry_run(request), save)
 
 
@@ -128,7 +137,7 @@ class TeachingAssignmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         return (
-            teaching_assignments_for(self.request.user)
+            teaching_assignments_for(self.request.user, active_school(self.request))
             .select_related("teacher", "subject", "classroom")
             .annotate(student_count=Count("classroom__students", distinct=True))
             .order_by(*TeachingAssignment._meta.ordering)
@@ -137,12 +146,14 @@ class TeachingAssignmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     @action(detail=False, url_path="import-template", permission_classes=[IsAdmin])
     def import_template(self, request):
         """Template Excel untuk impor pengampu."""
-        return template_response(imports.assignment_template(), "Template Impor Pengampu.xlsx")
+        return template_response(
+            imports.assignment_template(require_school(request)), "Template Impor Pengampu.xlsx"
+        )
 
     @action(detail=False, methods=["post"], url_path="import", permission_classes=[IsAdmin])
     def import_rows(self, request):
         """Impor pengampu dari Excel. dry_run=true (bawaan) hanya memeriksa."""
-        rows, save = imports.check_assignments(request.FILES.get("file"))
+        rows, save = imports.check_assignments(request.FILES.get("file"), require_school(request))
         return import_response(rows, is_dry_run(request), save)
 
 
@@ -167,14 +178,15 @@ class PromotionView(APIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
-        latest = promotion.latest_academic_year()
+        school = require_school(request)
+        latest = promotion.latest_academic_year(school)
         if latest is None:
             return Response({"from_year": None, "years": [], "classes": []})
         from_year = request.query_params.get("from_year") or latest
         to_year = request.query_params.get("to_year") or promotion.suggest_next_year(latest)
         recreate = request.query_params.get("recreate_first_grade", "true").lower() != "false"
-        plan = promotion.build_plan(from_year, to_year, recreate_first_grade=recreate)
-        years = Classroom.objects.order_by("-academic_year").values_list("academic_year", flat=True)
+        plan = promotion.build_plan(school, from_year, to_year, recreate_first_grade=recreate)
+        years = school.classrooms.order_by("-academic_year").values_list("academic_year", flat=True)
         return Response({**plan, "latest_year": latest, "years": list(dict.fromkeys(years))})
 
     def post(self, request):
@@ -182,6 +194,7 @@ class PromotionView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         result = promotion.run_promotion(
+            require_school(request),
             data["from_year"],
             data["to_year"],
             hold_back=data["hold_back"],

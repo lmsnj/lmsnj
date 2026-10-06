@@ -21,8 +21,6 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.worksheet.datavalidation import DataValidation
 from rest_framework.exceptions import ValidationError
 
-from apps.academics.models import Classroom
-
 from .models import Role, User
 
 MAX_ROWS = 1000
@@ -77,18 +75,18 @@ def normalize(text):
     return " ".join(str(text).split()).lower()
 
 
-def latest_classrooms():
-    """Kelas di tahun ajaran terbaru, dicari berdasarkan nama (tidak peka huruf besar/spasi)."""
-    year = Classroom.objects.order_by("-academic_year").values_list("academic_year", flat=True).first()
-    classrooms = Classroom.objects.filter(academic_year=year).order_by("grade", "name")
+def latest_classrooms(school):
+    """Kelas sekolah ini di tahun ajaran terbaru, dicari berdasarkan nama (tidak peka huruf besar/spasi)."""
+    year = school.classrooms.order_by("-academic_year").values_list("academic_year", flat=True).first()
+    classrooms = school.classrooms.filter(academic_year=year).order_by("grade", "name")
     return year, {normalize(c.name): c for c in classrooms}
 
 
 # ---------------------------------------------------------------- template
 
 
-def build_template():
-    year, classrooms = latest_classrooms()
+def build_template(school):
+    year, classrooms = latest_classrooms(school)
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = DATA_SHEET
@@ -229,13 +227,14 @@ def read_rows(file):
 # ---------------------------------------------------------------- validasi
 
 
-def validate_rows(rows):
+def validate_rows(rows, school):
     """Periksa setiap baris. Mengembalikan baris yang sudah dibersihkan + daftar error per baris."""
-    year, classrooms = latest_classrooms()
+    year, classrooms = latest_classrooms(school)
     # Dibandingkan tanpa peduli huruf besar agar "Rizki" dan "rizki" tidak menjadi dua akun.
     # Jumlah akun satu sekolah kecil, jadi cukup ambil semua username sekaligus.
     taken_usernames = {u.lower() for u in User.objects.values_list("username", flat=True)}
-    taken_nis = set(User.objects.exclude(nis=None).values_list("nis", flat=True))
+    # NIS cukup unik di sekolah ini (sekolah lain boleh memakai nomor yang sama).
+    taken_nis = set(school.members.exclude(nis=None).values_list("nis", flat=True))
     taken_nip = set(User.objects.exclude(nip=None).values_list("nip", flat=True))
     seen = {"username": {}, "nis": {}, "nip": {}}
 
@@ -265,7 +264,7 @@ def validate_rows(rows):
         nis = data["nis"] if role == Role.STUDENT else ""
         nip = data["nip"] if role == Role.TEACHER else ""
         if nis and nis in taken_nis:
-            errors.append(f"NIS {nis} sudah dipakai akun lain.")
+            errors.append(f"NIS {nis} sudah dipakai siswa lain di sekolah ini.")
         if nip and nip in taken_nip:
             errors.append(f"NIP {nip} sudah dipakai akun lain.")
 
@@ -322,8 +321,9 @@ def validate_rows(rows):
 # ---------------------------------------------------------------- simpan
 
 
-def create_users(results):
-    """Simpan semua baris (dipanggil hanya jika tidak ada error). Mengembalikan daftar akun + password."""
+def create_users(results, school):
+    """Simpan semua baris (dipanggil hanya jika tidak ada error) sebagai anggota `school`.
+    Mengembalikan daftar akun + password."""
     passwords = [r["password"] or generate_password() for r in results]
     # Hashing password lambat (disengaja demi keamanan); dikerjakan paralel.
     with ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 2)) as pool:
@@ -345,6 +345,10 @@ def create_users(results):
     try:
         with transaction.atomic():
             User.objects.bulk_create(users)
+            Membership = User.schools.through
+            Membership.objects.bulk_create(
+                [Membership(user_id=user.pk, school_id=school.pk) for user in users]
+            )
     except IntegrityError:
         # Sangat jarang: data yang sama dibuat orang lain di antara pemeriksaan dan impor.
         raise ValidationError(

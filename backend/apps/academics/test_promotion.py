@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import Role, User
+from apps.common.testing import default_school
 from apps.materials.models import Material
 
 from .models import Classroom, Subject, TeachingAssignment
@@ -12,9 +13,11 @@ OLD, NEW = "2026/2027", "2027/2028"
 
 
 def make_user(username, role, **extra):
-    return User.objects.create_user(
+    user = User.objects.create_user(
         username=username, password="x", full_name=username.title(), role=role, **extra
     )
+    user.schools.add(default_school())
+    return user
 
 
 class RenameTests(APITestCase):
@@ -32,12 +35,21 @@ class PromotionTests(APITestCase):
         self.teacher = make_user("guru1", Role.TEACHER)
         self.teacher2 = make_user("guru2", Role.TEACHER)
         self.x = Classroom.objects.create(
-            name="X RPL 1", grade="X", major="RPL", academic_year=OLD, homeroom_teacher=self.teacher
+            school=default_school(),
+            name="X RPL 1",
+            grade="X",
+            major="RPL",
+            academic_year=OLD,
+            homeroom_teacher=self.teacher,
         )
-        self.xi = Classroom.objects.create(name="XI RPL 1", grade="XI", major="RPL", academic_year=OLD)
-        self.xii = Classroom.objects.create(name="XII RPL 1", grade="XII", major="RPL", academic_year=OLD)
-        self.subject = Subject.objects.create(code="PWEB", name="Pemrograman Web")
-        self.subject2 = Subject.objects.create(code="BD", name="Basis Data")
+        self.xi = Classroom.objects.create(
+            school=default_school(), name="XI RPL 1", grade="XI", major="RPL", academic_year=OLD
+        )
+        self.xii = Classroom.objects.create(
+            school=default_school(), name="XII RPL 1", grade="XII", major="RPL", academic_year=OLD
+        )
+        self.subject = Subject.objects.create(school=default_school(), code="PWEB", name="Pemrograman Web")
+        self.subject2 = Subject.objects.create(school=default_school(), code="BD", name="Basis Data")
         # Guru1 mengajar di X, guru2 mengajar di XI: pengampu disalin per tingkat.
         self.x_assignment = TeachingAssignment.objects.create(
             teacher=self.teacher, subject=self.subject, classroom=self.x

@@ -1,6 +1,7 @@
-"""Query yang membatasi data akademik sesuai peran user.
+"""Query yang membatasi data akademik sesuai peran user DAN sekolah yang sedang dibuka.
 
 Dipakai ulang oleh modul lain (materi, tugas) agar aturan akses cukup ditulis di satu tempat.
+`school` = sekolah aktif (`apps.schools.context.active_school`); None = tidak ada data.
 """
 
 from django.db.models import Q
@@ -10,8 +11,8 @@ from apps.accounts.models import Role
 from .models import Classroom, TeachingAssignment
 
 
-def classrooms_for(user):
-    queryset = Classroom.objects.all()
+def classrooms_for(user, school):
+    queryset = Classroom.objects.filter(school=school) if school else Classroom.objects.none()
     if user.role == Role.ADMIN:
         return queryset
     if user.role == Role.TEACHER:
@@ -20,8 +21,12 @@ def classrooms_for(user):
     return queryset.filter(pk=user.classroom_id)
 
 
-def teaching_assignments_for(user):
-    queryset = TeachingAssignment.objects.all()
+def teaching_assignments_for(user, school):
+    queryset = (
+        TeachingAssignment.objects.filter(classroom__school=school)
+        if school
+        else TeachingAssignment.objects.none()
+    )
     if user.role == Role.ADMIN:
         return queryset
     if user.role == Role.TEACHER:

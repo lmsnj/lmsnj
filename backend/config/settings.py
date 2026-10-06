@@ -10,6 +10,7 @@ import warnings
 from datetime import timedelta
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
     "django_filters",
     # Aplikasi LMS
     "apps.common",
+    "apps.schools",
     "apps.accounts",
     "apps.academics",
     "apps.materials",
@@ -212,6 +214,8 @@ SIMPLE_JWT = {
 
 # CORS: alamat frontend yang boleh mengakses API (pengembangan: Vite di port 5173).
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+# Header X-School = sekolah aktif yang dipilih pengguna (lihat apps/schools/context.py).
+CORS_ALLOW_HEADERS = (*default_headers, "x-school")
 # Diperlukan agar form login halaman /admin/ Django berfungsi di domain produksi.
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 

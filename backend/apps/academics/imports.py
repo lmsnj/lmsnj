@@ -6,15 +6,14 @@ dijalankan jika SEMUA baris benar (lihat apps/common/excel.py).
 
 from django.db import transaction
 
-from apps.accounts.models import Role, User
+from apps.accounts.models import Role
 from apps.common.excel import Column, build_template, first_errors, normalize, read_rows
 
-from .models import Classroom, Grade, Subject
 from .serializers import ClassroomSerializer, SubjectSerializer, TeachingAssignmentSerializer
 
 
-def current_academic_year():
-    year = Classroom.objects.order_by("-academic_year").values_list("academic_year", flat=True).first()
+def current_academic_year(school):
+    year = school.classrooms.order_by("-academic_year").values_list("academic_year", flat=True).first()
     if year:
         return year
     from django.utils import timezone
@@ -24,9 +23,9 @@ def current_academic_year():
     return f"{start}/{start + 1}"
 
 
-def teacher_usernames():
+def teacher_usernames(school):
     return list(
-        User.objects.filter(role=Role.TEACHER, is_active=True)
+        school.members.filter(role=Role.TEACHER, is_active=True)
         .order_by("username")
         .values_list("username", flat=True)
     )
@@ -83,49 +82,51 @@ def subject_template():
     )
 
 
-def check_subjects(file):
+def check_subjects(file, school):
     items = [
         {"row": r["row"], "data": r["data"], "preview": r["data"], "errors": []}
         for r in read_rows(file, "Mapel", SUBJECT_COLUMNS)
     ]
     _duplicates(items, lambda i: i["data"]["code"].upper(), "Kode")
-    rows = _check_all(items, lambda d: SubjectSerializer(data=d), {"code": "Kode", "name": "Nama mapel"})
+    labels = {"code": "Kode", "name": "Nama mapel"}
+    rows = _check_all(items, lambda d: SubjectSerializer(data=d, context={"school": school}), labels)
     return [r["preview"] for r in rows], lambda: _save_all(rows)
 
 
 # ---------------------------------------------------------------- kelas
 
 
-def classroom_columns():
+def classroom_columns(school):
     return [
         Column("name", "Nama Kelas", required=True, width=16),
-        Column("grade", "Tingkat", required=True, width=10, choices=list(Grade.values)),
+        Column("grade", "Tingkat", required=True, width=10, choices=school.grades),
         Column("major", "Jurusan", required=True, width=12),
         Column("academic_year", "Tahun Ajaran", required=True, width=14, text=True),
-        Column("homeroom", "Username Wali Kelas", width=22, choices=teacher_usernames() or None),
+        Column("homeroom", "Username Wali Kelas", width=22, choices=teacher_usernames(school) or None),
     ]
 
 
-def classroom_template():
-    year = current_academic_year()
+def classroom_template(school):
+    year = current_academic_year(school)
+    first, second = school.grades[0], school.grades[1]
     return build_template(
         "Kelas",
-        classroom_columns(),
+        classroom_columns(school),
         "Template Impor Kelas",
         [
-            "Tingkat: X, XI, atau XII. Tahun Ajaran: format 2026/2027.",
+            f"Tingkat: {', '.join(school.grades)}. Tahun Ajaran: format 2026/2027.",
             "Username Wali Kelas: username akun guru (opsional). Buat akun guru lebih dulu di menu Pengguna.",
         ],
-        [["X RPL 1", "X", "RPL", year, "guru.rpl"], ["XI TKJ 2", "XI", "TKJ", year, ""]],
+        [[f"{first} A", first, "UMUM", year, "guru.rpl"], [f"{second} B", second, "UMUM", year, ""]],
     )
 
 
-def check_classrooms(file):
+def check_classrooms(file, school):
     teachers = {
-        u.username.lower(): u for u in User.objects.filter(role=Role.TEACHER)
+        u.username.lower(): u for u in school.members.filter(role=Role.TEACHER)
     }  # termasuk nonaktif, agar pesannya jelas
     items = []
-    for r in read_rows(file, "Kelas", classroom_columns()):
+    for r in read_rows(file, "Kelas", classroom_columns(school)):
         data, errors = dict(r["data"]), []
         homeroom = data.pop("homeroom")
         teacher = teachers.get(homeroom.lower()) if homeroom else None
@@ -138,32 +139,34 @@ def check_classrooms(file):
     )
     labels = {"name": "Nama kelas", "grade": "Tingkat", "major": "Jurusan", "academic_year": "Tahun ajaran",
               "homeroom_teacher": "Wali kelas"}  # fmt: skip
-    rows = _check_all(items, lambda d: ClassroomSerializer(data=d), labels)
+    rows = _check_all(items, lambda d: ClassroomSerializer(data=d, context={"school": school}), labels)
     return [r["preview"] for r in rows], lambda: _save_all(rows)
 
 
 # ---------------------------------------------------------------- pengampu
 
 
-def assignment_columns():
-    year = current_academic_year()
+def assignment_columns(school):
+    year = current_academic_year(school)
     classrooms = list(
-        Classroom.objects.filter(academic_year=year).order_by("grade", "name").values_list("name", flat=True)
+        school.classrooms.filter(academic_year=year).order_by("grade", "name").values_list("name", flat=True)
     )
-    subjects = list(Subject.objects.order_by("code").values_list("code", flat=True))
+    subjects = list(school.subjects.order_by("code").values_list("code", flat=True))
     return [
         Column("classroom", "Kelas", required=True, width=16, choices=classrooms or None),
         Column("academic_year", "Tahun Ajaran", width=14, text=True),
         Column("subject", "Kode Mapel", required=True, width=14, text=True, choices=subjects or None),
-        Column("teacher", "Username Guru", required=True, width=22, choices=teacher_usernames() or None),
+        Column(
+            "teacher", "Username Guru", required=True, width=22, choices=teacher_usernames(school) or None
+        ),
     ]
 
 
-def assignment_template():
-    year = current_academic_year()
+def assignment_template(school):
+    year = current_academic_year(school)
     return build_template(
         "Pengampu",
-        assignment_columns(),
+        assignment_columns(school),
         "Template Impor Pengampu (Guru - Mapel - Kelas)",
         [
             f"Tahun Ajaran: kosongkan untuk memakai tahun ajaran terbaru ({year}).",
@@ -173,13 +176,14 @@ def assignment_template():
     )
 
 
-def check_assignments(file):
-    year = current_academic_year()
-    classrooms = {(normalize(c.name), c.academic_year): c for c in Classroom.objects.all()}
-    subjects = {s.code.upper(): s for s in Subject.objects.all()}
-    teachers = {u.username.lower(): u for u in User.objects.filter(role=Role.TEACHER)}
+def check_assignments(file, school):
+    year = current_academic_year(school)
+    # Hanya data sekolah ini, agar pengampu tidak tersambung ke kelas/mapel/guru sekolah lain.
+    classrooms = {(normalize(c.name), c.academic_year): c for c in school.classrooms.all()}
+    subjects = {s.code.upper(): s for s in school.subjects.all()}
+    teachers = {u.username.lower(): u for u in school.members.filter(role=Role.TEACHER)}
     items = []
-    for r in read_rows(file, "Pengampu", assignment_columns()):
+    for r in read_rows(file, "Pengampu", assignment_columns(school)):
         data, errors = r["data"], []
         row_year = data["academic_year"] or year
         classroom = classrooms.get((normalize(data["classroom"]), row_year))
@@ -210,5 +214,7 @@ def check_assignments(file):
         "Pengampu",
     )
     labels = {"classroom": "Kelas", "subject": "Mapel", "teacher": "Guru"}
-    rows = _check_all(items, lambda d: TeachingAssignmentSerializer(data=d), labels)
+    rows = _check_all(
+        items, lambda d: TeachingAssignmentSerializer(data=d, context={"school": school}), labels
+    )
     return [r["preview"] for r in rows], lambda: _save_all(rows)

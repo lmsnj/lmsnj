@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import Role, User
+from apps.common.testing import default_school
 
 from .models import DEFAULT_SCHOOL_NAME, SiteSettings
 
@@ -17,7 +18,9 @@ SVG = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
 
 
 def make_user(username, role):
-    return User.objects.create_user(username=username, password="x", full_name=username, role=role)
+    user = User.objects.create_user(username=username, password="x", full_name=username, role=role)
+    user.schools.add(default_school())
+    return user
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA)

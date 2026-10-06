@@ -16,14 +16,29 @@ def validate_academic_year(value):
 
 
 class Grade(models.TextChoices):
+    """Semua tingkat SD/MI (I-VI), SMP/MTs (VII-IX), SMA/MA/SMK (X-XII).
+    Tingkat yang boleh dipakai per sekolah: `School.grades`."""
+
+    I = "I", "I"  # noqa: E741
+    II = "II", "II"
+    III = "III", "III"
+    IV = "IV", "IV"
+    V = "V", "V"
+    VI = "VI", "VI"
+    VII = "VII", "VII"
+    VIII = "VIII", "VIII"
+    IX = "IX", "IX"
     X = "X", "X"
     XI = "XI", "XI"
     XII = "XII", "XII"
 
 
 class Classroom(models.Model):
+    school = models.ForeignKey(
+        "schools.School", verbose_name="sekolah", on_delete=models.PROTECT, related_name="classrooms"
+    )
     name = models.CharField("nama kelas", max_length=50, help_text="Contoh: XI RPL 1")
-    grade = models.CharField("tingkat", max_length=3, choices=Grade.choices)
+    grade = models.CharField("tingkat", max_length=4, choices=Grade.choices)
     major = models.CharField("jurusan", max_length=50, help_text="Contoh: RPL")
     academic_year = models.CharField("tahun ajaran", max_length=9, validators=[validate_academic_year])
     homeroom_teacher = models.ForeignKey(
@@ -41,7 +56,7 @@ class Classroom(models.Model):
         ordering = ["-academic_year", "grade", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "academic_year"],
+                fields=["school", "name", "academic_year"],
                 name="unique_classroom_per_year",
                 violation_error_message="Kelas dengan nama ini sudah ada di tahun ajaran tersebut.",
             ),
@@ -52,13 +67,24 @@ class Classroom(models.Model):
 
 
 class Subject(models.Model):
-    code = models.CharField("kode", max_length=20, unique=True)
+    school = models.ForeignKey(
+        "schools.School", verbose_name="sekolah", on_delete=models.PROTECT, related_name="subjects"
+    )
+    code = models.CharField("kode", max_length=20)
     name = models.CharField("nama mapel", max_length=100)
 
     class Meta:
         verbose_name = "mata pelajaran"
         verbose_name_plural = "mata pelajaran"
         ordering = ["name"]
+        constraints = [
+            # Kode mapel cukup unik di satu sekolah: "MTK" boleh ada di SD dan SMP sekaligus.
+            models.UniqueConstraint(
+                fields=["school", "code"],
+                name="unique_subject_code_per_school",
+                violation_error_message="Kode mapel ini sudah dipakai.",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.code} - {self.name}"

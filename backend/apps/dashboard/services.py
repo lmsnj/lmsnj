@@ -1,4 +1,4 @@
-"""Ringkasan dashboard untuk tiap peran.
+"""Ringkasan dashboard untuk tiap peran, di sekolah yang sedang dibuka (`school`).
 
 Semua data diambil lewat selector modul lain (classrooms_for, tasks_for, dst.) agar aturan
 akses tetap di satu tempat. App ini tidak punya model sendiri.
@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.db.models import Count, Q
 from django.utils import timezone
 
-from apps.academics.models import Classroom, Subject, TeachingAssignment
+from apps.academics.models import Classroom, TeachingAssignment
 from apps.academics.selectors import teaching_assignments_for
 from apps.accounts.models import Role, User
 from apps.materials.models import Material
@@ -53,27 +53,34 @@ def _average_percentage(graded_submissions):
     return round(sum(values) / len(values), 2) if values else None
 
 
-def current_academic_year():
-    return Classroom.objects.order_by("-academic_year").values_list("academic_year", flat=True).first()
+def current_academic_year(school):
+    if school is None:
+        return None
+    return school.classrooms.order_by("-academic_year").values_list("academic_year", flat=True).first()
 
 
-def admin_dashboard(user):
-    year = current_academic_year()
-    active = User.objects.filter(is_active=True)
+def admin_dashboard(user, school):
+    year = current_academic_year(school)
+    active = User.objects.filter(is_active=True, schools=school)
     role_counts = active.aggregate(
         students=Count("id", filter=Q(role=Role.STUDENT)),
         teachers=Count("id", filter=Q(role=Role.TEACHER)),
         admins=Count("id", filter=Q(role=Role.ADMIN)),
     )
-    classrooms = Classroom.objects.filter(academic_year=year)
-    assignments = TeachingAssignment.objects.filter(classroom__academic_year=year)
+    in_school = {"teaching_assignment__classroom__school": school}
+    classrooms = Classroom.objects.filter(school=school, academic_year=year)
+    assignments = TeachingAssignment.objects.filter(classroom__school=school, classroom__academic_year=year)
 
-    recent_materials = Material.objects.select_related(
-        "teaching_assignment__subject", "teaching_assignment__classroom", "created_by"
-    ).order_by("-created_at")[:5]
-    recent_tasks = Task.objects.select_related(
-        "teaching_assignment__subject", "teaching_assignment__classroom", "created_by"
-    ).order_by("-created_at")[:5]
+    recent_materials = (
+        Material.objects.filter(**in_school)
+        .select_related("teaching_assignment__subject", "teaching_assignment__classroom", "created_by")
+        .order_by("-created_at")[:5]
+    )
+    recent_tasks = (
+        Task.objects.filter(**in_school)
+        .select_related("teaching_assignment__subject", "teaching_assignment__classroom", "created_by")
+        .order_by("-created_at")[:5]
+    )
     activity = [
         {
             "type": "material",
@@ -98,12 +105,13 @@ def admin_dashboard(user):
         "stats": {
             **role_counts,
             "classrooms": classrooms.count(),
-            "subjects": Subject.objects.count(),
+            "subjects": school.subjects.count() if school else 0,
             "teaching_assignments": assignments.count(),
-            "materials": Material.objects.count(),
-            "tasks": Task.objects.count(),
+            "materials": Material.objects.filter(**in_school).count(),
+            "tasks": Task.objects.filter(**in_school).count(),
             "submissions_this_week": Submission.objects.filter(
-                submitted_at__gte=timezone.now() - timedelta(days=7)
+                task__teaching_assignment__classroom__school=school,
+                submitted_at__gte=timezone.now() - timedelta(days=7),
             ).count(),
         },
         # Hal yang perlu ditindaklanjuti admin.
@@ -119,23 +127,25 @@ def admin_dashboard(user):
     }
 
 
-def teacher_dashboard(user):
+def teacher_dashboard(user, school):
     now = timezone.now()
     assignments = (
-        teaching_assignments_for(user)
+        teaching_assignments_for(user, school)
         .select_related("subject", "classroom")
         .annotate(student_count=Count("classroom__students", distinct=True))
         .order_by("classroom__name", "subject__name")
     )
     to_grade = (
-        Submission.objects.filter(task__teaching_assignment__teacher=user, score__isnull=True).select_related(
+        Submission.objects.filter(
+            task__teaching_assignment__in=assignments, score__isnull=True
+        ).select_related(
             "student", "task__teaching_assignment__subject", "task__teaching_assignment__classroom"
         )
         # Yang paling lama menunggu dinilai tampil paling atas.
         .order_by("submitted_at")
     )
     upcoming = (
-        tasks_for(user)
+        tasks_for(user, school)
         .filter(is_published=True, due_at__gte=now, due_at__lte=now + timedelta(days=UPCOMING_DAYS))
         .select_related("teaching_assignment__subject", "teaching_assignment__classroom")
         .annotate(
@@ -144,20 +154,22 @@ def teacher_dashboard(user):
         )
         .order_by("due_at")
     )
-    my_tasks = tasks_for(user)
+    my_tasks = tasks_for(user, school)
 
     return {
         "role": Role.TEACHER,
         "stats": {
             "teaching_assignments": assignments.count(),
-            "students": User.objects.filter(classroom__teaching_assignments__teacher=user).distinct().count(),
+            "students": User.objects.filter(classroom__teaching_assignments__in=assignments)
+            .distinct()
+            .count(),
             "active_tasks": my_tasks.filter(is_published=True, due_at__gte=now).count(),
             "to_grade": to_grade.count(),
             "drafts": my_tasks.filter(is_published=False).count()
-            + materials_for(user).filter(is_published=False).count(),
+            + materials_for(user, school).filter(is_published=False).count(),
         },
         "homeroom_classes": list(
-            Classroom.objects.filter(homeroom_teacher=user)
+            user.homeroom_classes.filter(school=school)
             .order_by("-academic_year", "name")
             .values_list("name", flat=True)
         ),
@@ -190,9 +202,11 @@ def teacher_dashboard(user):
     }
 
 
-def student_dashboard(user):
+def student_dashboard(user, school):
     now = timezone.now()
-    tasks = tasks_for(user).select_related("teaching_assignment__subject", "teaching_assignment__classroom")
+    tasks = tasks_for(user, school).select_related(
+        "teaching_assignment__subject", "teaching_assignment__classroom"
+    )
     submissions = Submission.objects.filter(student=user).select_related("task__teaching_assignment__subject")
     submitted_task_ids = submissions.values_list("task_id", flat=True)
     # Belum dikumpulkan dan masih bisa dikumpulkan (belum lewat tenggat, atau terlambat diizinkan).
@@ -203,7 +217,7 @@ def student_dashboard(user):
     )
     graded = list(submissions.filter(score__isnull=False).order_by("-graded_at"))
     recent_materials = (
-        materials_for(user)
+        materials_for(user, school)
         .select_related("teaching_assignment__subject", "teaching_assignment__classroom")
         .order_by("-created_at")[:5]
     )

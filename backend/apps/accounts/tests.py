@@ -3,15 +3,19 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.common.testing import default_school
+
 from .models import Role, User
 
 PASSWORD = "RahasiaKuat#2026"
 
 
 def make_user(username, role, **extra):
-    return User.objects.create_user(
+    user = User.objects.create_user(
         username=username, password=PASSWORD, full_name=username.title(), role=role, **extra
     )
+    user.schools.add(default_school())
+    return user
 
 
 class AuthTests(APITestCase):

@@ -22,8 +22,9 @@ class User(AbstractUser):
 
     full_name = models.CharField("nama lengkap", max_length=150)
     role = models.CharField("peran", max_length=10, choices=Role.choices, default=Role.STUDENT)
-    # null=True agar banyak user tanpa NIS/NIP tidak bentrok dengan aturan unique.
-    nis = models.CharField("NIS", max_length=20, unique=True, null=True, blank=True)
+    # NIS dibuat sekolah masing-masing, jadi cukup unik per sekolah (dicek di serializer & impor).
+    nis = models.CharField("NIS", max_length=20, null=True, blank=True, db_index=True)
+    # null=True agar banyak user tanpa NIP tidak bentrok dengan aturan unique.
     nip = models.CharField("NIP", max_length=30, unique=True, null=True, blank=True)
     # Khusus siswa. Jika kelas dihapus, siswa hanya menjadi "belum punya kelas".
     classroom = models.ForeignKey(
@@ -33,6 +34,10 @@ class User(AbstractUser):
         null=True,
         blank=True,
         related_name="students",
+    )
+    # Sekolah tempat user terdaftar. Guru & admin boleh lebih dari satu sekolah; siswa satu.
+    schools = models.ManyToManyField(
+        "schools.School", verbose_name="sekolah", related_name="members", blank=True
     )
 
     REQUIRED_FIELDS = ["email", "full_name"]

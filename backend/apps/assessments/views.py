@@ -14,6 +14,7 @@ from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStu
 from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.files import file_response
 from apps.common.mixins import ProtectedDeleteMixin
+from apps.schools.context import active_school
 from apps.tasks.gradebook import roster_students
 
 from .images import image_error, read_zip, save_image
@@ -55,9 +56,9 @@ def _subquery(queryset, aggregate):
     )
 
 
-def assessments_for(user):
+def assessments_for(user, school):
     """Admin: semua. Guru: asesmen kelas-mapel miliknya (termasuk draf). Siswa: yang terbit di kelasnya."""
-    queryset = Assessment.objects.filter(teaching_assignment__in=teaching_assignments_for(user))
+    queryset = Assessment.objects.filter(teaching_assignment__in=teaching_assignments_for(user, school))
     if user.role == Role.STUDENT:
         queryset = queryset.filter(is_published=True)
     return queryset
@@ -81,7 +82,7 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         user = self.request.user
         submitted = Attempt.objects.filter(submitted_at__isnull=False)
         queryset = (
-            assessments_for(user)
+            assessments_for(user, active_school(self.request))
             .select_related("teaching_assignment__subject", "teaching_assignment__classroom")
             .annotate(
                 question_count=_subquery(Question.objects.all(), Count("pk")),
@@ -283,7 +284,9 @@ class AttemptViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAdminOrTeacher]
 
     def get_queryset(self):
-        queryset = attempt_with_answers()
+        queryset = attempt_with_answers().filter(
+            assessment__teaching_assignment__classroom__school=active_school(self.request)
+        )
         if self.request.user.role == Role.TEACHER:
             queryset = queryset.filter(assessment__teaching_assignment__teacher=self.request.user)
         return queryset
@@ -318,7 +321,7 @@ class AssessmentImageView(APIView):
     def get(self, request, pk):
         image = get_object_or_404(QuestionImage.objects.select_related("question__assessment"), pk=pk)
         assessment = image.question.assessment
-        if not assessments_for(request.user).filter(pk=assessment.pk).exists():
+        if not assessments_for(request.user, active_school(request)).filter(pk=assessment.pk).exists():
             raise NotFound()
         if (
             request.user.role == Role.STUDENT
