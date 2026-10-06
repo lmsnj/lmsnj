@@ -120,7 +120,8 @@ export default function LoginPage() {
               <SchoolLogo className="size-11" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-lg font-extrabold sm:text-xl">
+              {/* Nama yayasan cukup panjang: boleh turun ke baris kedua, tidak dipotong. */}
+              <span className="block text-lg leading-snug font-extrabold sm:text-xl">
                 {branding.school_name}
               </span>
               {branding.slogan && (
@@ -170,7 +171,7 @@ export default function LoginPage() {
           <h2 className="mt-4 text-2xl font-extrabold text-slate-900">Selamat datang 👋</h2>
           <p className="mt-1 text-sm text-slate-500">
             Masuk ke <strong className="text-slate-700">{branding.app_name}</strong> dengan akun
-            dari sekolah.
+            dari sekolah Anda.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">

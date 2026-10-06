@@ -2,9 +2,10 @@ from django.db import models
 
 from apps.common.files import RandomUploadPath
 
-DEFAULT_SCHOOL_NAME = "SMKS Nurul Jadid"
-DEFAULT_SLOGAN = "Cerdas, Terampil, Berakhlak Mulia"
-DEFAULT_APP_NAME = "LMS SMKS Nurul Jadid"
+# Identitas yayasan/aplikasi (tampil di halaman login). Identitas tiap sekolah ada di apps/schools.
+DEFAULT_SCHOOL_NAME = "Biro Pendidikan Pondok Pesantren Nurul Jadid"
+DEFAULT_SLOGAN = ""
+DEFAULT_APP_NAME = "LMS Nurul Jadid"
 
 
 class SiteSettings(models.Model):
