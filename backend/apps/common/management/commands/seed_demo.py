@@ -18,9 +18,10 @@ from django.utils import timezone
 from apps.academics.models import Classroom, Subject, TeachingAssignment
 from apps.accounts.models import Role, User
 from apps.announcements.models import Announcement
-from apps.attendance.models import Attendance
 from apps.assessments.models import Assessment, Question
+from apps.attendance.models import Attendance
 from apps.chat.models import Conversation, Message
+from apps.exams.models import ExamEvent
 from apps.materials.models import Material, MaterialType
 from apps.payments.models import PaymentStatus
 from apps.schedule.models import TeachingSession
@@ -461,6 +462,7 @@ class Command(BaseCommand):
         self.seed_demo_exam(web)
         self.seed_attendance(web)
         self.seed_payments(web.classroom)
+        self.seed_exam_event(web.classroom)
 
         student = User.objects.filter(username="rizki").first()
         if student:
@@ -516,6 +518,25 @@ class Command(BaseCommand):
                 defaults={"paid_quarter": behind.get(student.username, 2)},
             )
             self.count("status pembayaran", created)
+
+    def seed_exam_event(self, classroom):
+        """Acara ujian contoh dengan syarat kartu (presensi, tugas, pembayaran) untuk kelas XI."""
+        _, created = ExamEvent.objects.get_or_create(
+            school=self.school,
+            name=f"Penilaian Akhir Semester Ganjil {classroom.academic_year}",
+            defaults={
+                "academic_year": classroom.academic_year,
+                "grades": [classroom.grade],
+                "exam_start": (self.now + timedelta(days=30)).date(),
+                "exam_end": (self.now + timedelta(days=36)).date(),
+                "min_attendance": 80,
+                "min_task_rate": 50,
+                "min_paid_quarter": 2,
+                "card_note": "Kartu wajib dibawa selama ujian. Hadir 15 menit sebelum ujian dimulai.",
+                "signer_title": "Kepala Sekolah",
+            },
+        )
+        self.count("acara ujian", created)
 
     def seed_demo_exam(self, web):
         """Ujian contoh bergaya simulasi TKA (lihat _demo_exam.py) untuk mencoba mode ujian siswa."""

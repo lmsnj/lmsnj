@@ -56,6 +56,7 @@ lms-smknj/
 │   │   ├── schedule/        # Jadwal sesi mengajar (TeachingSession); bukan "sessions" (bentrok app Django)
 │   │   ├── chat/            # Ruang obrolan; rules.py = siapa boleh mengobrol dengan siapa
 │   │   ├── assessments/     # Lembar asesmen (kuis); services.py = aturan mengerjakan & menilai
+│   │   ├── exams/           # Acara ujian, syarat & pengecualian kartu ujian; services.py = aturan syarat
 │   │   ├── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
 │   │   └── schools/         # Sekolah (multi-sekolah yayasan); context.py = sekolah aktif (header X-School)
 │   └── media/               # File upload (tidak di-commit, TIDAK disajikan publik)
@@ -348,6 +349,15 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   triwulan ke-N (0–4; tanpa catatan = 0). Sengaja sederhana, bukan sistem keuangan. Khusus admin:
   halaman `/admin/pembayaran` (ubah per baris, simpan sekaligus) + impor Excel (dicocokkan lewat NIS).
   `services.paid_quarters()` dipakai syarat kartu ujian.
+- **Acara ujian & kartu ujian** (`apps/exams`): `ExamEvent` milik sekolah (tahun ajaran, `grades` kosong =
+  semua tingkat, tanggal ujian, periode hitung opsional, penanda tangan & catatan kartu). Batas syarat yang
+  kosong = tidak dipakai: `min_attendance` (+ `count_excused`), `min_task_rate` (tugas terbit yang tenggatnya
+  sudah lewat dalam periode), `min_average` (rata-rata laporan nilai kelas, tidak dibatasi periode),
+  `min_paid_quarter`, `require_homeroom_check`. Data yang belum ada (None) = lolos. `ExamParticipant`
+  (per siswa, hanya dibuat jika ada isian): centang wali kelas, pengecualian (KHUSUS admin, alasan wajib),
+  ruang (admin). Layak = semua syarat lolos ATAU dikecualikan. Nomor peserta = `<id acara 3 digit>-<NIS>`.
+  Aturan di `services.py` (`check_requirements` murni). Akses kelas: admin semua kelas acara, guru hanya
+  kelas yang ia walikan.
 - **Ruang obrolan:** hanya antar pengguna yang satu sekolah. Aturan di `apps/chat/rules.py` (`can_chat` & `contacts_for` harus selalu
   sejalan — ada test yang memeriksa semua pasangan). Siswa–siswa tidak boleh. Pesan baru dicek
   berkala (polling 4 detik saat percakapan terbuka), bukan WebSocket. Pemberitahuan pesan baru:
@@ -428,6 +438,10 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET    | `/api/attendance/me/`             | Siswa            |
 | GET/PUT | `/api/payments/` (GET `?classroom=`; PUT `academic_year`, `records: [{student, paid_quarter, note}]`) | Admin |
 | GET/POST | `/api/payments/import-template/`, `/api/payments/import/` | Admin |
+| CRUD   | `/api/exam-events/` | Baca: admin & guru. Tulis: admin |
+| GET    | `/api/exam-events/{id}/classrooms/` | Admin (semua kelas acara), wali kelas (kelasnya) |
+| GET/PUT | `/api/exam-events/{id}/eligibility/` (GET `?classroom=`; PUT `classroom`, `records: [{student, homeroom_checked, exempted, exemption_reason, room}]`) | Admin; wali kelas hanya `homeroom_checked` |
+| GET    | `/api/exam-events/{id}/cards/?classroom=` | Admin & wali kelas: data kartu siswa yang layak |
 | GET/POST | `/api/chat/conversations/` (`{user}` untuk memulai) | Login; hanya percakapan milik sendiri |
 | GET/POST | `/api/chat/conversations/{id}/messages/` (`?after=<id>`) | Anggota percakapan; kirim dibatasi 30/menit |
 | GET    | `/api/chat/conversations/contacts/`, `.../unread-count/` | Login |
@@ -461,6 +475,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] 9b: status pembayaran (lunas sampai triwulan ke-N, diisi admin, impor Excel)
   - [ ] 9c: acara ujian, syarat (presensi, tugas, rata-rata nilai, pembayaran, centang manual),
         pengecualian, cetak kartu (admin & wali kelas)
+    - [x] 9c-1: backend (`apps/exams`: model, aturan syarat, API, test, contoh di seed_demo)
+    - [ ] 9c-2: frontend (`/admin/ujian`, `/guru/ujian`, halaman cetak kartu)
 - [x] Fase 8: Multi-sekolah (yayasan: SD/MI, SMP/MTs, SMA/MA/SMK)
   - [x] 8a: model School + keanggotaan, migrasi data lama ke sekolah `smknj`, sekolah aktif (X-School),
         tingkat kelas per jenjang, kenaikan kelas per sekolah
