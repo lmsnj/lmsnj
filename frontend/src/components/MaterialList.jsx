@@ -1,5 +1,6 @@
-import { FileText, Link2, PlayCircle } from 'lucide-react'
+import { FileText, Link2, Lock, PlayCircle, Target } from 'lucide-react'
 import { MATERIAL_TYPES } from '../utils/constants'
+import { progressStatus } from '../utils/learningPath'
 import { formatDate } from '../utils/media'
 import Badge from './Badge'
 import EmptyState from './EmptyState'
@@ -12,8 +13,20 @@ const TYPE_ICONS = {
   link: { icon: Link2, tile: 'bg-emerald-100 text-emerald-600' },
 }
 
+// Ringkasan syarat capaian satu materi (untuk guru), mis. "3 capaian · tugas · disahkan guru".
+function requirementText(material) {
+  const parts = []
+  if (material.objectives?.length) parts.push(`${material.objectives.length} capaian`)
+  if (material.required_task) parts.push('tugas')
+  if (material.required_assessment) parts.push('asesmen')
+  if (material.require_teacher_approval) parts.push('disahkan guru')
+  return parts.join(' · ')
+}
+
 /**
  * Daftar materi. `actions(material)` opsional untuk tombol khusus guru.
+ * `numbered` menampilkan "Materi 1, 2, ..." sesuai urutan daftar (satu kelas-mapel).
+ * Untuk siswa, `material.progress` (dari API) menampilkan nomor, status capaian, dan kunci.
  * `showStatus` menampilkan label Draf/Terbit (hanya berguna untuk guru).
  * `showContext` menampilkan mapel & kelas (untuk daftar gabungan semua kelas).
  */
@@ -26,6 +39,7 @@ export default function MaterialList({
   showContext,
   emptyTitle,
   emptyMessage,
+  numbered,
 }) {
   if (loading && !materials?.length) {
     return (
@@ -40,9 +54,16 @@ export default function MaterialList({
 
   return (
     <ul className="space-y-3">
-      {materials.map((material) => {
+      {materials.map((material, index) => {
         const type = MATERIAL_TYPES[material.material_type]
-        const { icon: Icon, tile } = TYPE_ICONS[material.material_type] ?? TYPE_ICONS.link
+        const progress = material.progress
+        const status = progressStatus(progress)
+        const locked = Boolean(progress?.locked)
+        const { icon: Icon, tile } = locked
+          ? { icon: Lock, tile: 'bg-slate-100 text-slate-500' }
+          : (TYPE_ICONS[material.material_type] ?? TYPE_ICONS.link)
+        const number = progress?.order_number ?? (numbered ? index + 1 : null)
+        const requirements = !progress && requirementText(material)
         return (
           <li
             key={material.id}
@@ -60,17 +81,37 @@ export default function MaterialList({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
+                  {number && (
+                    <span className="text-xs font-bold tracking-wide text-slate-500 uppercase">
+                      Materi {number}
+                    </span>
+                  )}
                   <Badge color={type.color}>{type.label}</Badge>
+                  {status && <Badge color={status.color}>{status.label}</Badge>}
                   {showStatus && (
                     <Badge color={material.is_published ? 'green' : 'amber'}>
                       {material.is_published ? 'Terbit' : 'Draf'}
                     </Badge>
                   )}
                 </span>
-                <span className="mt-1 block font-medium text-slate-900 group-hover:text-brand-700">
+                <span
+                  className={`mt-1 block font-medium group-hover:text-brand-700 ${
+                    locked ? 'text-slate-500' : 'text-slate-900'
+                  }`}
+                >
                   {material.title}
                 </span>
-                {material.description && (
+                {locked && progress.locked_by && (
+                  <span className="mt-0.5 block text-sm text-slate-500">
+                    Selesaikan capaian &ldquo;{progress.locked_by}&rdquo; untuk membuka.
+                  </span>
+                )}
+                {requirements && (
+                  <span className="mt-1 flex items-center gap-1 text-xs text-sky-800">
+                    <Target className="size-3.5" aria-hidden="true" /> Syarat lanjut: {requirements}
+                  </span>
+                )}
+                {material.description && !locked && (
                   <span className="mt-0.5 line-clamp-2 block text-sm text-slate-600">
                     {material.description}
                   </span>

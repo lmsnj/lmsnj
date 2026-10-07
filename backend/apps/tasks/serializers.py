@@ -77,6 +77,8 @@ class TaskSerializer(serializers.ModelSerializer):
     ungraded_count = serializers.SerializerMethodField()
     student_count = serializers.SerializerMethodField()
     my_submission = serializers.SerializerMethodField()
+    # Siswa: judul materi terkunci yang menjadi prasyarat tugas ini (None = terbuka).
+    locked_by_material = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -100,6 +102,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "ungraded_count",
             "student_count",
             "my_submission",
+            "locked_by_material",
             "created_at",
             "updated_at",
         ]
@@ -129,6 +132,11 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def get_has_attachment(self, obj):
         return bool(obj.attachment)
+
+    def get_locked_by_material(self, obj):
+        from apps.materials.progress import locked_by_material
+
+        return locked_by_material(self.context.get("request"), "tasks", obj.id)
 
     def get_my_submission(self, obj):
         # Hanya terisi untuk siswa (view mem-prefetch pengumpulan miliknya ke `my_submissions`).

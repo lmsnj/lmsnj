@@ -1,3 +1,4 @@
+import { ArrowDown, ArrowUp, ListChecks } from 'lucide-react'
 import { useState } from 'react'
 import { materialsApi } from '../../api/materials'
 import Alert from '../../components/Alert'
@@ -8,7 +9,9 @@ import MaterialViewer from '../../components/MaterialViewer'
 import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
 import { getErrorMessage } from '../../utils/errors'
+import { moveItem } from '../../utils/learningPath'
 import MaterialFormModal from './MaterialFormModal'
+import MaterialProgressModal from './MaterialProgressModal'
 
 /**
  * Daftar + kelola materi guru. Dipakai di tab "Materi" halaman kelas-mapel (assignmentId tetap)
@@ -26,7 +29,7 @@ export default function MaterialsManager({
   summary,
 }) {
   const [notice, setNotice] = useState({ type: 'success', text: '' })
-  // { type: 'form' | 'view' | 'delete', material }
+  // { type: 'form' | 'view' | 'delete' | 'progress', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
   const materials = useFetch(materialsApi.list, {
     ...ALL,
@@ -36,6 +39,18 @@ export default function MaterialsManager({
   const closeDialog = () => setDialog(null)
   const all = materials.data?.results
   const shown = filter && all ? filter(all) : all
+
+  // Urutan hanya bisa diatur di halaman satu kelas-mapel (daftarnya lengkap & tidak disaring).
+  const canReorder = Boolean(assignmentId) && !filter
+  const move = async (index, delta) => {
+    const ids = moveItem(all, index, delta).map((m) => m.id)
+    try {
+      await materialsApi.reorder(assignmentId, ids)
+      materials.reload()
+    } catch (err) {
+      setNotice({ type: 'error', text: getErrorMessage(err) })
+    }
+  }
 
   const togglePublish = async (material) => {
     try {
@@ -61,6 +76,8 @@ export default function MaterialsManager({
         ) : (
           <p className="text-sm text-slate-600">
             Materi berstatus <strong>Draf</strong> tidak terlihat oleh siswa.
+            {canReorder &&
+              ' Siswa membuka materi sesuai urutan; materi berikutnya terbuka setelah capaian sebelumnya terpenuhi.'}
           </p>
         )}
         <Button onClick={() => setDialog({ type: 'form', material: null })}>+ Tambah Materi</Button>
@@ -75,6 +92,7 @@ export default function MaterialsManager({
         materials={shown}
         loading={materials.loading}
         showStatus
+        numbered={canReorder}
         showContext={showContext}
         emptyTitle={
           all?.length
@@ -85,6 +103,35 @@ export default function MaterialsManager({
         onOpen={(material) => setDialog({ type: 'view', material })}
         actions={(material) => (
           <>
+            {canReorder && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Naikkan urutan ${material.title}`}
+                  disabled={all.indexOf(material) === 0}
+                  onClick={() => move(all.indexOf(material), -1)}
+                >
+                  <ArrowUp className="size-4" aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Turunkan urutan ${material.title}`}
+                  disabled={all.indexOf(material) === all.length - 1}
+                  onClick={() => move(all.indexOf(material), 1)}
+                >
+                  <ArrowDown className="size-4" aria-hidden="true" />
+                </Button>
+              </>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDialog({ type: 'progress', material })}
+            >
+              <ListChecks className="size-4" aria-hidden="true" /> Progres
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => togglePublish(material)}>
               {material.is_published ? 'Jadikan Draf' : 'Terbitkan'}
             </Button>
@@ -117,6 +164,9 @@ export default function MaterialsManager({
             materials.reload()
           }}
         />
+      )}
+      {dialog?.type === 'progress' && (
+        <MaterialProgressModal material={dialog.material} onClose={closeDialog} />
       )}
       {dialog?.type === 'view' && (
         <MaterialViewer material={dialog.material} onClose={closeDialog} />

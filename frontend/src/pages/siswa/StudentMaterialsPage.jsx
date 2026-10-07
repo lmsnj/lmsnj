@@ -64,7 +64,14 @@ export default function StudentMaterialsPage() {
           onOpen={setViewing}
         />
       </section>
-      <MaterialViewer material={viewing} onClose={() => setViewing(null)} />
+      <MaterialViewer
+        material={viewing}
+        onClose={() => setViewing(null)}
+        onChange={(updated) => {
+          setViewing(updated)
+          materials.reload()
+        }}
+      />
     </>
   )
 }

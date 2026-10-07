@@ -124,6 +124,12 @@ export default function StudentTaskPage() {
         {notice}
       </Alert>
 
+      {t.locked_by_material && (
+        <Alert type="info" className="mb-4">
+          Tugas ini masih terkunci. Selesaikan dulu capaian materi &ldquo;{t.locked_by_material}
+          &rdquo; di menu Materi, lalu kumpulkan jawaban Anda.
+        </Alert>
+      )}
       <TaskDetails task={t} />
 
       <section className="mt-6 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">

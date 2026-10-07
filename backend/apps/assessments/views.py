@@ -140,6 +140,9 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     def start(self, request, pk=None):
         """Siswa mulai (atau melanjutkan) mengerjakan. Mengembalikan soal TANPA kunci jawaban."""
         assessment = self.get_object()
+        from apps.materials.progress import ensure_content_unlocked  # hindari impor melingkar
+
+        ensure_content_unlocked(request, "assessments", assessment.id)
         token = str(request.data.get("token", ""))
         remedial = str(request.data.get("remedial", "")).lower() in ("1", "true")
         attempt = start_attempt(assessment, request.user, token, remedial)

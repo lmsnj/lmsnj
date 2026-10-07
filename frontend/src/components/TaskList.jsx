@@ -82,6 +82,8 @@ export default function TaskList({
                       <Badge color={task.is_published ? 'green' : 'gray'}>
                         {task.is_published ? 'Terbit' : 'Draf'}
                       </Badge>
+                    ) : task.locked_by_material ? (
+                      <Badge>Terkunci</Badge>
                     ) : (
                       <Badge color={status.color}>{status.label}</Badge>
                     )}

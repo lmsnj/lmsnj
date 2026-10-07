@@ -246,7 +246,12 @@ export default function StudentAssessmentPage() {
               </span>
             </p>
           )}
-          {a.is_past_due ? (
+          {a.locked_by_material ? (
+            <Alert type="info" className="mt-4">
+              Masih terkunci. Selesaikan dulu capaian materi &ldquo;{a.locked_by_material}&rdquo; di
+              menu Materi.
+            </Alert>
+          ) : a.is_past_due ? (
             <Alert type="error" className="mt-4">
               Tenggat sudah lewat, asesmen ini tidak bisa dikerjakan lagi.
             </Alert>

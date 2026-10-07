@@ -1,14 +1,26 @@
 import TemplatePicker from '../../components/TemplatePicker'
 import { MATERIAL_TEMPLATES } from '../../utils/formTemplates'
 import { useState } from 'react'
+import { assessmentsApi } from '../../api/assessments'
 import { materialsApi } from '../../api/materials'
+import { tasksApi } from '../../api/tasks'
 import AssignmentSelect from '../../components/AssignmentSelect'
 import FileInput, { UploadProgress } from '../../components/FileInput'
 import FormModal from '../../components/FormModal'
+import SelectField from '../../components/SelectField'
 import TextAreaField from '../../components/TextAreaField'
 import TextField from '../../components/TextField'
+import useFetch from '../../hooks/useFetch'
 import useFormSubmit from '../../hooks/useFormSubmit'
+import { ALL, toOptions } from '../../utils/academic'
 import { MATERIAL_TYPES } from '../../utils/constants'
+import { parseObjectives } from '../../utils/learningPath'
+
+// Daftar tugas/asesmen satu kelas-mapel untuk pilihan syarat (kosong jika kelas-mapel belum dipilih).
+const listFor = (api) => (params) =>
+  params.teaching_assignment ? api.list(params) : Promise.resolve({ results: [] })
+const listTasks = listFor(tasksApi)
+const listAssessments = listFor(assessmentsApi)
 
 const URL_HINTS = {
   video: 'Tempel link YouTube (akan diputar langsung) atau link video lain.',
@@ -23,14 +35,31 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
     material_type: material?.material_type ?? 'pdf',
     url: material?.url ?? '',
     is_published: material?.is_published ?? false,
+    objectives: (material?.objectives ?? []).join('\n'),
+    required_task: material?.required_task ? String(material.required_task) : '',
+    min_task_score: material?.min_task_score ?? '',
+    required_assessment: material?.required_assessment ? String(material.required_assessment) : '',
+    require_teacher_approval: material?.require_teacher_approval ?? false,
   })
   const [file, setFile] = useState(null)
   const [progress, setProgress] = useState(null)
   // Dari halaman kelas-mapel `assignmentId` sudah pasti; dari halaman gabungan guru memilih sendiri.
   const [chosenAssignment, setChosenAssignment] = useState('')
+  const assignment = material?.teaching_assignment ?? (assignmentId || chosenAssignment)
+  const contentParams = { ...ALL, teaching_assignment: assignment || null }
+  const tasks = useFetch(listTasks, contentParams)
+  const assessments = useFetch(listAssessments, contentParams)
 
   const { submit, submitting, errors, generalError } = useFormSubmit(async () => {
-    const data = { ...form }
+    const data = {
+      ...form,
+      // Dikirim sebagai teks JSON agar tetap terbaca saat form berisi file (multipart).
+      objectives: JSON.stringify(parseObjectives(form.objectives)),
+      required_task: form.required_task ? Number(form.required_task) : null,
+      min_task_score:
+        form.required_task && form.min_task_score !== '' ? Number(form.min_task_score) : null,
+      required_assessment: form.required_assessment ? Number(form.required_assessment) : null,
+    }
     if (file) data.file = file
     if (!isEdit) data.teaching_assignment = assignmentId || chosenAssignment
     setProgress(file ? 0 : null)
@@ -142,6 +171,76 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
           required
         />
       )}
+
+      <fieldset className="space-y-3 rounded-lg bg-sky-50 p-3 ring-1 ring-sky-200">
+        <legend className="px-1 text-sm font-semibold text-sky-900">
+          Capaian & syarat lanjut ke materi berikutnya
+        </legend>
+        <p className="text-xs text-sky-900">
+          Siswa baru bisa membuka materi berikutnya setelah semua syarat di bawah terpenuhi. Tanpa
+          syarat apa pun, cukup materi ini dibuka siswa.
+        </p>
+        <TextAreaField
+          label="Capaian (satu per baris, dicentang siswa)"
+          name="objectives"
+          value={form.objectives}
+          onChange={handleChange}
+          error={errors.objectives}
+          rows={3}
+          placeholder={
+            'Saya bisa menyebutkan 5 tag HTML dasar\nSaya bisa membuat halaman web sederhana'
+          }
+        />
+        <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">
+          <SelectField
+            label="Syarat tugas"
+            name="required_task"
+            value={form.required_task}
+            onChange={handleChange}
+            options={toOptions(tasks.data?.results, (t) => t.title, '- Tanpa syarat tugas -')}
+            error={errors.required_task}
+            disabled={!assignment}
+          />
+          <TextField
+            label="Nilai minimal"
+            name="min_task_score"
+            type="number"
+            min={0}
+            max={100}
+            value={form.min_task_score}
+            onChange={handleChange}
+            error={errors.min_task_score}
+            placeholder="cukup kumpul"
+            disabled={!form.required_task}
+          />
+        </div>
+        <SelectField
+          label="Syarat asesmen (harus tuntas KKM)"
+          name="required_assessment"
+          value={form.required_assessment}
+          onChange={handleChange}
+          options={toOptions(
+            assessments.data?.results,
+            (a) => (a.passing_score !== null ? `${a.title} (KKM ${a.passing_score})` : a.title),
+            '- Tanpa syarat asesmen -',
+          )}
+          error={errors.required_assessment}
+          disabled={!assignment}
+        />
+        <label className="flex items-start gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            name="require_teacher_approval"
+            checked={form.require_teacher_approval}
+            onChange={handleChange}
+            className="mt-0.5 size-4 rounded border-slate-300"
+          />
+          <span>
+            Perlu disahkan guru (mis. setelah praktik di kelas). Sahkan lewat tombol
+            &ldquo;Progres&rdquo; di daftar materi.
+          </span>
+        </label>
+      </fieldset>
 
       <label className="flex items-center gap-2 text-sm text-slate-700">
         <input

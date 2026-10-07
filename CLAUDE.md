@@ -127,6 +127,16 @@ Pola yang wajib dipakai ulang:
   pilihan "Biro Pendidikan" (`selectSchool(null)`) kembali ke mode yayasan.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan.
 - **Material** (materi): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `description`, `material_type` (`pdf`/`video`/`link`), `file` + `original_filename` (khusus PDF, maks. 10 MB), `url` (video/link), `is_published` (draf tidak terlihat siswa), `created_by`.
+- **Capaian & urutan materi** (`apps/materials/progress.py`): `Material.order` (urutan per kelas-mapel, materi
+  baru = terakhir, ubah lewat `reorder`), `objectives` (daftar capaian, dicentang siswa; multipart dikirim
+  sebagai teks JSON), `required_task` (+ `min_task_score` skala 100, kosong = cukup kumpul),
+  `required_assessment` (harus `passed`/`graded` di `results.py`), `require_teacher_approval`. Syarat
+  "dibuka" selalu ada. `MaterialProgress` per siswa: `opened_at`, `checked_objectives`, `teacher_approved`,
+  `unlocked` (guru menandai tercapai + `note`). Materi ke-N terbuka jika SEMUA materi terbit sebelumnya
+  tercapai (`chain_locks`); materi terkunci: `url`/file disembunyikan, download & open 403. Tugas/asesmen
+  syarat materi terkunci ikut terkunci (`locked_by_material` di serializer; `ensure_content_unlocked` di
+  my-submission PUT & start). Frontend: `utils/learningPath.js`, `MaterialViewer` (panel capaian),
+  `MaterialProgressModal` (guru), tombol urutan di `MaterialsManager` (halaman satu kelas-mapel).
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
 - **Submission** (pengumpulan): `task` (PROTECT), `student` (PROTECT), `text_answer`, `file` + `original_filename`, `is_late` (disimpan saat mengumpulkan), `submitted_at`. Satu per (tugas, siswa).
   - Aturan (`apps/tasks/services.py`): sebelum tenggat siswa boleh kumpul/ganti/batal; setelah tenggat pengumpulan pertama diterima dan ditandai terlambat jika `allow_late`, pengumpulan yang sudah ada terkunci. Minimal ada teks atau file.
@@ -439,6 +449,9 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | CRUD   | `/api/teaching-assignments/` (filter `teacher`, `subject`, `classroom`) | Tulis: admin. Baca: admin semua, guru miliknya, siswa di kelasnya |
 | CRUD   | `/api/materials/` (multipart; filter `teaching_assignment`, `material_type`, `is_published`) | Tambah/ubah: guru pengampu. Hapus: guru pengampu/admin. Baca: admin semua, guru miliknya, siswa hanya yang terbit di kelasnya |
 | GET    | `/api/materials/{id}/download/`   | Sama dengan hak baca materi |
+| POST   | `/api/materials/{id}/open/`, `.../objectives/` (`checked`) | Siswa (materi tidak terkunci) |
+| GET/PUT | `/api/materials/{id}/progress/` (PUT `records: [{student, teacher_approved, unlocked, note}]`) | GET guru pengampu/admin, PUT guru pengampu |
+| POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu |
 | CRUD   | `/api/tasks/` (multipart; filter `teaching_assignment`, `is_published`, `due_at__gte`, `due_at__lte`) | Sama dengan materi. Untuk siswa ada `my_submission`; untuk guru `ungraded_count` |
 | GET    | `/api/tasks/{id}/attachment/`     | Sama dengan hak baca tugas |
 | GET/PUT/DELETE | `/api/tasks/{id}/my-submission/` | Siswa: lihat, kumpulkan/ganti (multipart `text_answer`, `file`), batalkan |

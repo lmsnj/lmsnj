@@ -62,6 +62,8 @@ export default function AssessmentCard({ assessment: a, to, forTeacher, showCont
               <Badge color={a.is_published ? 'green' : 'gray'}>
                 {a.is_published ? 'Terbit' : 'Draf'}
               </Badge>
+            ) : a.locked_by_material ? (
+              <Badge>Terkunci</Badge>
             ) : (
               <Badge color={status.color}>{status.label}</Badge>
             )}

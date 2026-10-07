@@ -8,11 +8,13 @@ import ClassHero, { Avatar } from '../../components/ClassHero'
 import ClassOverview from '../../components/ClassOverview'
 import MaterialList from '../../components/MaterialList'
 import MaterialViewer from '../../components/MaterialViewer'
+import ProgressBar from '../../components/ProgressBar'
 import Spinner from '../../components/Spinner'
 import TaskList from '../../components/TaskList'
 import useFetch from '../../hooks/useFetch'
 import { useTabs } from '../../hooks/useTabs'
 import { ALL } from '../../utils/academic'
+import { pathSummary } from '../../utils/learningPath'
 
 const TABS = [
   { id: 'ringkasan', label: 'Ringkasan' },
@@ -24,16 +26,40 @@ const TABS = [
 function MaterialsTab({ assignmentId }) {
   const [viewing, setViewing] = useState(null)
   const materials = useFetch(materialsApi.list, { ...ALL, teaching_assignment: assignmentId })
+  const summary = pathSummary(materials.data?.results)
   return (
     <>
       <Alert type="error">{materials.error}</Alert>
+      {summary.total > 0 && (
+        <section className="mb-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <ProgressBar
+            value={summary.completed}
+            max={summary.total}
+            label={`${summary.completed} dari ${summary.total} materi tercapai`}
+          />
+          <p className="mt-2 text-sm text-slate-600">
+            {summary.next
+              ? `Lanjutkan: ${summary.next.title}. Materi berikutnya terbuka setelah capaiannya terpenuhi.`
+              : summary.completed === summary.total
+                ? 'Semua capaian materi mapel ini sudah terpenuhi. Hebat!'
+                : 'Tunggu guru mengesahkan capaian Anda.'}
+          </p>
+        </section>
+      )}
       <MaterialList
         materials={materials.data?.results}
         loading={materials.loading}
         emptyTitle="Guru belum membagikan materi untuk mapel ini."
         onOpen={setViewing}
       />
-      <MaterialViewer material={viewing} onClose={() => setViewing(null)} />
+      <MaterialViewer
+        material={viewing}
+        onClose={() => setViewing(null)}
+        onChange={(updated) => {
+          setViewing(updated)
+          materials.reload()
+        }}
+      />
     </>
   )
 }

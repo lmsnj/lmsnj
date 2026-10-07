@@ -77,6 +77,11 @@ class TaskViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     def my_submission(self, request, pk=None):
         """Pengumpulan milik siswa yang login: lihat (GET), kumpulkan/ganti (PUT), batalkan (DELETE)."""
         task = self.get_object()
+        # Impor di sini: modul materi juga mengimpor model tugas.
+        from apps.materials.progress import ensure_content_unlocked
+
+        if request.method == "PUT":
+            ensure_content_unlocked(request, "tasks", task.id)
         if request.method == "DELETE":
             cancel_submission(task, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)

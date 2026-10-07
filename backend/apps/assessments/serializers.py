@@ -207,6 +207,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
     locked = serializers.SerializerMethodField()
     my_attempt = serializers.SerializerMethodField()
     my_result = serializers.SerializerMethodField()
+    locked_by_material = serializers.SerializerMethodField()
     exam_event = serializers.PrimaryKeyRelatedField(
         queryset=ExamEvent.objects.all(), allow_null=True, required=False
     )
@@ -241,6 +242,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
             "locked",
             "my_attempt",
             "my_result",
+            "locked_by_material",
             "created_at",
         ]
 
@@ -260,6 +262,11 @@ class AssessmentSerializer(serializers.ModelSerializer):
         # my_attempts diurutkan dari percobaan terbaru (lihat AssessmentViewSet.get_queryset).
         mine = getattr(obj, "my_attempts", None)
         return attempt_summary(mine[0]) if mine else None
+
+    def get_locked_by_material(self, obj):
+        from apps.materials.progress import locked_by_material
+
+        return locked_by_material(self.context.get("request"), "assessments", obj.id)
 
     def get_my_result(self, obj):
         mine = getattr(obj, "my_attempts", None)
