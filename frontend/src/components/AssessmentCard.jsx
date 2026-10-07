@@ -1,4 +1,12 @@
-import { ArrowRight, Award, CalendarClock, ClipboardPen, ListChecks, Timer } from 'lucide-react'
+import {
+  ArrowRight,
+  Award,
+  CalendarClock,
+  ClipboardPen,
+  IdCard,
+  ListChecks,
+  Timer,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { studentAssessmentStatus } from '../utils/assessments'
 import { formatDate } from '../utils/media'
@@ -41,6 +49,11 @@ export default function AssessmentCard({ assessment: a, to, forTeacher, showCont
         <span className="flex flex-wrap items-start justify-between gap-2">
           <span className="font-semibold text-slate-900 group-hover:text-brand-700">{a.title}</span>
           <span className="flex flex-wrap gap-1">
+            {a.exam_event && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">
+                <IdCard className="size-3.5" aria-hidden="true" /> Wajib kartu ujian
+              </span>
+            )}
             {forTeacher && a.needs_grading_count > 0 && (
               <Badge color="amber">{a.needs_grading_count} perlu dinilai</Badge>
             )}

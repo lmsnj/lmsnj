@@ -1,3 +1,4 @@
+import { IdCard } from 'lucide-react'
 import { useState } from 'react'
 import { assessmentsApi } from '../../api/assessments'
 import { examsApi } from '../../api/exams'
@@ -116,6 +117,35 @@ export default function AssessmentFormModal({ assessment, assignmentId, onClose,
         Tampilkan kunci jawaban ke siswa setelah tenggat lewat
       </label>
 
+      <fieldset className="space-y-2 rounded-lg bg-sky-50 p-3 ring-1 ring-sky-200">
+        <legend className="flex items-center gap-1.5 px-1 text-sm font-semibold text-sky-900">
+          <IdCard className="size-4" aria-hidden="true" /> Kartu peserta ujian (token)
+        </legend>
+        <p className="text-xs text-sky-900">
+          Untuk ujian (PTS/PAS): pilih acara ujiannya. Siswa wajib memasukkan token dari kartu
+          pesertanya sebelum mengerjakan, dan hanya siswa yang memenuhi syarat kartu yang bisa
+          mulai. Untuk kuis harian biarkan "Tanpa kartu".
+        </p>
+        <SelectField
+          label="Acara ujian"
+          name="exam_event"
+          value={form.exam_event}
+          onChange={handleChange}
+          options={toOptions(
+            events.data?.results,
+            (e) => e.name,
+            '- Tanpa kartu (siswa langsung bisa mengerjakan) -',
+          )}
+          error={errors.exam_event}
+          disabled={assessment?.locked}
+        />
+        {assessment?.locked && (
+          <p className="text-xs text-slate-500">
+            Tidak bisa diubah karena sudah ada siswa yang mengerjakan.
+          </p>
+        )}
+      </fieldset>
+
       <fieldset className="space-y-3 rounded-lg p-3 ring-1 ring-slate-200">
         <legend className="px-1 text-sm font-semibold text-slate-800">Pengawasan ujian</legend>
         <p className="text-xs text-slate-500">
@@ -147,19 +177,6 @@ export default function AssessmentFormModal({ assessment, assignmentId, onClose,
             berlaku di iPhone yang tidak mendukung layar penuh.
           </span>
         </label>
-        <SelectField
-          label="Syarat kartu peserta ujian"
-          name="exam_event"
-          value={form.exam_event}
-          onChange={handleChange}
-          options={toOptions(events.data?.results, (e) => e.name, '- Tidak perlu kartu -')}
-          error={errors.exam_event}
-          disabled={assessment?.locked}
-        />
-        <p className="-mt-2 text-xs text-slate-500">
-          Jika dipilih, hanya siswa yang memenuhi syarat kartu ujian acara itu yang bisa
-          mengerjakan, dengan memasukkan token yang tercetak di kartunya.
-        </p>
       </fieldset>
       {isEdit || (
         <p className="text-xs text-slate-500">
