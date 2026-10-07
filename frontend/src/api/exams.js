@@ -16,6 +16,9 @@ export const examsApi = {
   // Wali kelas hanya boleh mengirim homeroom_checked.
   saveEligibility: (id, classroom, records) =>
     api.put(`/exam-events/${id}/eligibility/`, { classroom, records }).then((res) => res.data),
+  // Admin: token baru untuk kartu yang hilang (kartu lama tidak berlaku).
+  resetToken: (id, classroom, student) =>
+    api.post(`/exam-events/${id}/reset-token/`, { classroom, student }).then((res) => res.data),
   // Data kartu siswa yang layak (memenuhi syarat atau dikecualikan).
   cards: ({ id, classroom }) =>
     api.get(`/exam-events/${id}/cards/`, { params: { classroom } }).then((res) => res.data),

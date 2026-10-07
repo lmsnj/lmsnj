@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.academics.models import TeachingAssignment
+from apps.exams.models import ExamEvent
 
 from .images import images_data
 from .models import Assessment, ImageSlot, Question, QuestionKind, ViolationKind
@@ -203,6 +204,10 @@ class AssessmentSerializer(serializers.ModelSerializer):
     student_count = serializers.IntegerField(read_only=True, default=0)
     locked = serializers.SerializerMethodField()
     my_attempt = serializers.SerializerMethodField()
+    exam_event = serializers.PrimaryKeyRelatedField(
+        queryset=ExamEvent.objects.all(), allow_null=True, required=False
+    )
+    exam_event_name = serializers.CharField(source="exam_event.name", read_only=True, default=None)
 
     class Meta:
         model = Assessment
@@ -218,6 +223,8 @@ class AssessmentSerializer(serializers.ModelSerializer):
             "show_answers",
             "max_violations",
             "require_fullscreen",
+            "exam_event",
+            "exam_event_name",
             "is_published",
             "is_past_due",
             "question_count",
@@ -246,6 +253,26 @@ class AssessmentSerializer(serializers.ModelSerializer):
         mine = getattr(obj, "my_attempts", None)
         return attempt_summary(mine[0]) if mine else None
 
+    def check_exam_event(self, event, assignment):
+        """Acara ujian harus milik sekolah, tahun ajaran, dan tingkat kelas asesmen ini."""
+        if self.instance:
+            assignment = self.instance.teaching_assignment
+            if event != self.instance.exam_event and self.instance.attempts.exists():
+                raise serializers.ValidationError(
+                    {"exam_event": "Syarat kartu ujian tidak bisa diubah setelah ada siswa yang mengerjakan."}
+                )
+        if event is None or assignment is None:
+            return
+        classroom = assignment.classroom
+        if (
+            event.school_id != classroom.school_id
+            or event.academic_year != classroom.academic_year
+            or (event.grades and classroom.grade not in event.grades)
+        ):
+            raise serializers.ValidationError(
+                {"exam_event": f"Kelas {classroom.name} tidak ikut acara ujian ini."}
+            )
+
     def validate_teaching_assignment(self, value):
         if self.instance and value != self.instance.teaching_assignment:
             raise serializers.ValidationError("Asesmen tidak bisa dipindah ke kelas-mapel lain.")
@@ -257,6 +284,8 @@ class AssessmentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        if "exam_event" in attrs:
+            self.check_exam_event(attrs["exam_event"], attrs.get("teaching_assignment"))
         if attrs.get("is_published"):
             if self.instance is None:
                 raise serializers.ValidationError(

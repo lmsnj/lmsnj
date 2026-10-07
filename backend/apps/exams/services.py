@@ -7,6 +7,8 @@ belum ada nilai) dianggap terpenuhi, agar siswa tidak dirugikan oleh data yang b
 Siswa yang dikecualikan admin tetap mendapat kartu walau ada syarat yang belum terpenuhi.
 """
 
+import secrets
+
 from django.db import transaction
 from django.db.models import Count
 from django.utils import timezone
@@ -27,6 +29,9 @@ AUTO_REQUIREMENTS = [
     ("average", "Rata-rata nilai", "min_average"),
     ("paid_quarter", "Lunas sampai triwulan", "min_paid_quarter"),
 ]
+# Token kartu: tanpa 0/O dan 1/I agar tidak salah baca saat diketik siswa.
+TOKEN_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+TOKEN_LENGTH = 6
 # Field yang hanya boleh diubah admin (wali kelas hanya mencentang persetujuan).
 ADMIN_ONLY_FIELDS = ("exempted", "exemption_reason", "room")
 
@@ -144,6 +149,7 @@ def evaluate_classroom(event, classroom):
                 "exempted": bool(participant and participant.exempted),
                 "exemption_reason": participant.exemption_reason if participant else "",
                 "room": participant.room if participant else "",
+                "token": participant.token if participant else "",
                 **check_requirements(event, values[student.id], participant),
             }
         )
@@ -176,3 +182,66 @@ def save_participants(event, classroom, records, user):
         participant.updated_by = user
         participant.save()
     return len(records)
+
+
+# ---------------------------------------------------------------- token kartu
+
+
+def new_token(event):
+    used = set(event.participants.exclude(token="").values_list("token", flat=True))
+    while True:
+        token = "".join(secrets.choice(TOKEN_CHARS) for _ in range(TOKEN_LENGTH))
+        if token not in used:
+            return token
+
+
+def ensure_tokens(event, student_ids):
+    """Pastikan setiap siswa punya token kartu (dibuat saat kartu dicetak). Mengembalikan {student_id: token}."""
+    tokens = {}
+    for student_id in student_ids:
+        participant, _ = ExamParticipant.objects.get_or_create(event=event, student_id=student_id)
+        if not participant.token:
+            participant.token = new_token(event)
+            participant.save(update_fields=["token"])
+        tokens[student_id] = participant.token
+    return tokens
+
+
+def reset_token(event, student, user):
+    """Token baru untuk kartu yang hilang. Kartu lama tidak berlaku lagi."""
+    participant, _ = ExamParticipant.objects.get_or_create(event=event, student=student)
+    participant.token = new_token(event)
+    participant.updated_by = user
+    participant.save()
+    return participant.token
+
+
+def normalize_token(value):
+    return "".join((value or "").split()).upper()
+
+
+def student_eligibility(event, student):
+    """Baris kelayakan satu siswa (lihat evaluate_classroom), atau None jika kelasnya tidak ikut acara."""
+    classroom = student.classroom
+    if classroom is None or not event_classrooms(event).filter(pk=classroom.pk).exists():
+        return None
+    return next((row for row in evaluate_classroom(event, classroom) if row["student"] == student.id), None)
+
+
+def verify_card(event, student, token):
+    """Syarat mulai asesmen yang ditautkan ke acara ujian: masih layak DAN token sama dengan kartu."""
+    row = student_eligibility(event, student)
+    if row is None:
+        raise ValidationError({"token": f"Kelas Anda tidak terdaftar di {event.name}."})
+    if not row["eligible"]:
+        raise ValidationError(
+            {
+                "token": "Anda belum memenuhi syarat kartu ujian, jadi belum boleh mengerjakan. Hubungi wali kelas."
+            }
+        )
+    if not row["token"]:
+        raise ValidationError({"token": "Kartu ujian Anda belum dicetak. Hubungi wali kelas."})
+    if not normalize_token(token):
+        raise ValidationError({"token": "Masukkan token dari kartu peserta ujian Anda."})
+    if normalize_token(token) != row["token"]:
+        raise ValidationError({"token": "Token salah. Periksa kembali token di kartu peserta ujian Anda."})

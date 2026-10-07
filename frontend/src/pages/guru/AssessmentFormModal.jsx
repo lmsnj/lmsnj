@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { assessmentsApi } from '../../api/assessments'
+import { examsApi } from '../../api/exams'
 import AssignmentSelect from '../../components/AssignmentSelect'
 import FormModal from '../../components/FormModal'
+import SelectField from '../../components/SelectField'
 import TextAreaField from '../../components/TextAreaField'
 import TextField from '../../components/TextField'
+import useFetch from '../../hooks/useFetch'
 import useFormSubmit from '../../hooks/useFormSubmit'
+import { ALL, toOptions } from '../../utils/academic'
 import { defaultDueAt, fromDatetimeLocal, toDatetimeLocal } from '../../utils/tasks'
 
 // Info lembar asesmen (judul, tenggat, durasi). Soal ditambahkan di halaman editor.
@@ -19,7 +23,9 @@ export default function AssessmentFormModal({ assessment, assignmentId, onClose,
     show_answers: assessment?.show_answers ?? true,
     max_violations: assessment?.max_violations ?? 3,
     require_fullscreen: assessment?.require_fullscreen ?? false,
+    exam_event: assessment?.exam_event ? String(assessment.exam_event) : '',
   })
+  const events = useFetch(examsApi.list, ALL)
 
   const { submit, submitting, errors, generalError } = useFormSubmit(async () => {
     const data = {
@@ -27,6 +33,7 @@ export default function AssessmentFormModal({ assessment, assignmentId, onClose,
       due_at: fromDatetimeLocal(form.due_at),
       duration_minutes: form.duration_minutes === '' ? null : Number(form.duration_minutes),
       max_violations: Number(form.max_violations) || 0,
+      exam_event: form.exam_event ? Number(form.exam_event) : null,
     }
     if (isEdit) delete data.teaching_assignment
     const saved = isEdit
@@ -140,6 +147,19 @@ export default function AssessmentFormModal({ assessment, assignmentId, onClose,
             berlaku di iPhone yang tidak mendukung layar penuh.
           </span>
         </label>
+        <SelectField
+          label="Syarat kartu peserta ujian"
+          name="exam_event"
+          value={form.exam_event}
+          onChange={handleChange}
+          options={toOptions(events.data?.results, (e) => e.name, '- Tidak perlu kartu -')}
+          error={errors.exam_event}
+          disabled={assessment?.locked}
+        />
+        <p className="-mt-2 text-xs text-slate-500">
+          Jika dipilih, hanya siswa yang memenuhi syarat kartu ujian acara itu yang bisa
+          mengerjakan, dengan memasukkan token yang tercetak di kartunya.
+        </p>
       </fieldset>
       {isEdit || (
         <p className="text-xs text-slate-500">

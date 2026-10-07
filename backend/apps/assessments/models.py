@@ -32,6 +32,15 @@ class Assessment(models.Model):
         "batas keluar halaman", default=0, validators=[MaxValueValidator(20)]
     )
     require_fullscreen = models.BooleanField("wajib layar penuh (laptop/PC)", default=False)
+    # Diisi = siswa wajib memenuhi syarat kartu ujian acara ini dan memasukkan token kartunya saat mulai.
+    exam_event = models.ForeignKey(
+        "exams.ExamEvent",
+        verbose_name="acara ujian (syarat kartu)",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="assessments",
+    )
     is_published = models.BooleanField("terbit", default=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

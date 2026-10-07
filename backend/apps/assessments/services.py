@@ -2,7 +2,8 @@
 
 - Soal hanya bisa diubah selama BELUM ada siswa yang mulai mengerjakan (agar penilaian adil).
 - Terbit hanya jika ada minimal 1 soal dan setiap soal yang dinilai otomatis punya kunci jawaban.
-- Siswa mulai mengerjakan sebelum tenggat, satu kali. Batas waktu = mulai + durasi (maks. tenggat).
+- Siswa mulai mengerjakan sebelum tenggat, satu kali. Asesmen yang ditautkan ke acara ujian hanya bisa
+  dimulai siswa yang layak mendapat kartu ujian, dengan token dari kartunya (apps/exams/services.py). Batas waktu = mulai + durasi (maks. tenggat).
 - Jawaban yang dikirim lewat batas waktu tetap disimpan tetapi ditandai terlambat.
 - Pilihan ganda, PG kompleks, dan kategori dinilai otomatis. PG kompleks & kategori: poin penuh
   hanya jika SEMUA benar (semua pilihan benar dicentang tanpa pilihan salah / semua pernyataan
@@ -19,6 +20,8 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
+
+from apps.exams.services import verify_card
 
 from .models import AUTO_GRADED_KINDS, Answer, Attempt, AttemptEvent, QuestionKind
 
@@ -42,12 +45,15 @@ def ensure_publishable(assessment):
         raise ValidationError({"is_published": f"Soal nomor {', '.join(missing)} belum punya kunci jawaban."})
 
 
-def start_attempt(assessment, student):
+def start_attempt(assessment, student, token=""):
+    """Mulai mengerjakan. Melanjutkan pengerjaan yang sudah ada tidak perlu token lagi."""
     attempt = Attempt.objects.filter(assessment=assessment, student=student).first()
     if attempt:
         return attempt
     if timezone.now() > assessment.due_at:
         raise ValidationError({"detail": "Tenggat sudah lewat, asesmen ini tidak bisa dikerjakan lagi."})
+    if assessment.exam_event_id:
+        verify_card(assessment.exam_event, student, token)
     return Attempt.objects.create(assessment=assessment, student=student)
 
 

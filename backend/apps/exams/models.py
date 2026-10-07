@@ -82,6 +82,9 @@ class ExamParticipant(models.Model):
     exempted = models.BooleanField("dikecualikan", default=False)
     exemption_reason = models.CharField("alasan pengecualian", max_length=200, blank=True)
     room = models.CharField("ruang", max_length=50, blank=True)
+    # Token di kartu peserta; dibuat saat kartu pertama kali dicetak. Dipakai untuk mulai mengerjakan
+    # asesmen yang ditautkan ke acara ini (lihat services.verify_card).
+    token = models.CharField("token kartu", max_length=8, blank=True)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="diubah oleh",

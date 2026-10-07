@@ -16,7 +16,8 @@ export const assessmentsApi = {
   results: (id) => get(`/assessments/${id}/results/`),
 
   // Siswa: mulai/lanjutkan, kumpulkan, lihat hasil.
-  start: (id) => post(`/assessments/${id}/start/`),
+  // token: dari kartu peserta ujian, wajib jika asesmen ditautkan ke acara ujian (exam_event).
+  start: (id, token) => post(`/assessments/${id}/start/`, token ? { token } : {}),
   submit: (id, answers) => post(`/assessments/${id}/submit/`, { answers }),
   myAttempt: (id) => get(`/assessments/${id}/my-attempt/`),
   // Pengawasan: simpan jawaban sementara & catat keluar dari halaman ujian.

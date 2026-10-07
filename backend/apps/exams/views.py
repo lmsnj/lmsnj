@@ -1,11 +1,13 @@
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from apps.accounts.permissions import IsAdminOrTeacher
+from apps.accounts.models import Role, User
+from apps.accounts.permissions import IsAdmin, IsAdminOrTeacher
+from apps.common.mixins import ProtectedDeleteMixin
 from apps.schools.context import active_school
 
 from . import services
@@ -14,13 +16,21 @@ from .permissions import ExamEventPermission
 from .serializers import ExamEventSerializer, ParticipantUpdateSerializer
 
 
-class ExamEventViewSet(viewsets.ModelViewSet):
+class ResetTokenSerializer(serializers.Serializer):
+    student = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(role=Role.STUDENT))
+    classroom = serializers.IntegerField()
+
+
+class ExamEventViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     """Acara ujian sekolah aktif. Admin mengatur acara, syarat, pengecualian, dan ruang;
     wali kelas melihat kelayakan & kartu kelasnya serta mencentang persetujuan wali kelas."""
 
     serializer_class = ExamEventSerializer
     permission_classes = [ExamEventPermission]
     search_fields = ["name"]
+    protected_message = (
+        "Acara ini masih dipakai sebagai syarat lembar asesmen. Lepaskan dulu dari asesmennya."
+    )
 
     def get_queryset(self):
         return ExamEvent.objects.filter(school=active_school(self.request)).select_related("school")
@@ -93,10 +103,12 @@ class ExamEventViewSet(viewsets.ModelViewSet):
 
     @action(detail=True)
     def cards(self, request, pk=None):
-        """GET ?classroom=<id>: data kartu ujian siswa yang memenuhi syarat (atau dikecualikan)."""
+        """GET ?classroom=<id>: data kartu ujian siswa yang memenuhi syarat (atau dikecualikan).
+        Token kartu dibuat di sini saat kartu pertama kali dibuka/dicetak (sesudahnya tetap sama)."""
         event = self.get_object()
         classroom = self.get_classroom(event, request.query_params.get("classroom", ""))
         rows = services.evaluate_classroom(event, classroom)
+        tokens = services.ensure_tokens(event, [row["student"] for row in rows if row["eligible"]])
         return Response(
             {
                 "event": ExamEventSerializer(event, context=self.get_serializer_context()).data,
@@ -114,9 +126,28 @@ class ExamEventViewSet(viewsets.ModelViewSet):
                         "nis": row["nis"],
                         "exam_number": row["exam_number"],
                         "room": row["room"],
+                        "token": tokens[row["student"]],
                     }
                     for row in rows
                     if row["eligible"]
                 ],
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="reset-token", permission_classes=[IsAdmin])
+    def reset_token(self, request, pk=None):
+        """{student, classroom}: buat token baru (kartu hilang). Kartu lama tidak berlaku, cetak ulang."""
+        event = self.get_object()
+        serializer = ResetTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        classroom = self.get_classroom(event, serializer.validated_data["classroom"])
+        student = serializer.validated_data["student"]
+        if student.classroom_id != classroom.id:
+            raise ValidationError({"student": f"Bukan siswa kelas {classroom.name}."})
+        token = services.reset_token(event, student, request.user)
+        return Response(
+            {
+                "detail": f"Token baru untuk {student.full_name}: {token}. Cetak ulang kartunya.",
+                "token": token,
             }
         )

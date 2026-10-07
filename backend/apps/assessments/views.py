@@ -83,7 +83,7 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         submitted = Attempt.objects.filter(submitted_at__isnull=False)
         queryset = (
             assessments_for(user, active_school(self.request))
-            .select_related("teaching_assignment__subject", "teaching_assignment__classroom")
+            .select_related("teaching_assignment__subject", "teaching_assignment__classroom", "exam_event")
             .annotate(
                 question_count=_subquery(Question.objects.all(), Count("pk")),
                 max_score=_subquery(Question.objects.all(), Sum("points")),
@@ -138,7 +138,7 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     def start(self, request, pk=None):
         """Siswa mulai (atau melanjutkan) mengerjakan. Mengembalikan soal TANPA kunci jawaban."""
         assessment = self.get_object()
-        attempt = start_attempt(assessment, request.user)
+        attempt = start_attempt(assessment, request.user, str(request.data.get("token", "")))
         if attempt.submitted_at:
             return self._my_attempt_response(attempt)
         return Response(

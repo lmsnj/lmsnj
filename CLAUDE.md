@@ -361,6 +361,11 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   `pages/ExamEventPage.jsx` (tabel kelayakan per kelas, simpan sekaligus), form `ExamEventFormModal`,
   fungsi murni `utils/exams.js`. Cetak kartu: `/cetak/kartu-ujian/:id?kelas=` (`ExamCardsPrintPage`, DI LUAR
   `DashboardLayout` agar header/menu tidak ikut tercetak; 8 kartu per A4, `@page` di `index.css`).
+  **Token kartu:** `ExamParticipant.token` (6 karakter tanpa 0/O/1/I, unik per acara) dibuat saat endpoint
+  `cards` pertama kali dibuka untuk siswa yang layak, lalu tetap; admin bisa membuat ulang (`reset-token`,
+  kartu lama tidak berlaku). `Assessment.exam_event` (opsional, PROTECT, dipilih guru di form asesmen;
+  harus acara yang mencakup kelasnya): siswa hanya bisa MULAI jika masih layak dan token cocok
+  (`exams.services.verify_card`, huruf kecil/spasi diabaikan); melanjutkan pengerjaan tidak perlu token.
 - **Ruang obrolan:** hanya antar pengguna yang satu sekolah. Aturan di `apps/chat/rules.py` (`can_chat` & `contacts_for` harus selalu
   sejalan — ada test yang memeriksa semua pasangan). Siswa–siswa tidak boleh. Pesan baru dicek
   berkala (polling 4 detik saat percakapan terbuka), bukan WebSocket. Pemberitahuan pesan baru:
@@ -444,13 +449,14 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | CRUD   | `/api/exam-events/` | Baca: admin & guru. Tulis: admin |
 | GET    | `/api/exam-events/{id}/classrooms/` | Admin (semua kelas acara), wali kelas (kelasnya) |
 | GET/PUT | `/api/exam-events/{id}/eligibility/` (GET `?classroom=`; PUT `classroom`, `records: [{student, homeroom_checked, exempted, exemption_reason, room}]`) | Admin; wali kelas hanya `homeroom_checked` |
-| GET    | `/api/exam-events/{id}/cards/?classroom=` | Admin & wali kelas: data kartu siswa yang layak |
+| GET    | `/api/exam-events/{id}/cards/?classroom=` | Admin & wali kelas: data kartu siswa yang layak (+ token) |
+| POST   | `/api/exam-events/{id}/reset-token/` (`classroom`, `student`) | Admin: token kartu baru |
 | GET/POST | `/api/chat/conversations/` (`{user}` untuk memulai) | Login; hanya percakapan milik sendiri |
 | GET/POST | `/api/chat/conversations/{id}/messages/` (`?after=<id>`) | Anggota percakapan; kirim dibatasi 30/menit |
 | GET    | `/api/chat/conversations/contacts/`, `.../unread-count/` | Login |
 | CRUD   | `/api/assessments/` | Seperti tugas; untuk siswa ada `my_attempt` |
 | GET    | `/api/assessments/{id}/questions/`, `.../results/` | Guru pengampu/admin |
-| POST/GET | `/api/assessments/{id}/start/`, `.../submit/`, `.../my-attempt/`, `.../draft/`, `.../violation/` | Siswa |
+| POST/GET | `/api/assessments/{id}/start/` (`token` jika ada `exam_event`), `.../submit/`, `.../my-attempt/`, `.../draft/`, `.../violation/` | Siswa |
 | CRUD   | `/api/assessment-questions/` | Guru pengampu (terkunci setelah ada pengerjaan) |
 | POST/DELETE | `/api/assessment-questions/{id}/images/` (`slot`, `index`, `file`) | Guru pengampu |
 | GET    | `/api/assessment-images/{id}/` | Guru pengampu/admin; siswa setelah mulai mengerjakan |

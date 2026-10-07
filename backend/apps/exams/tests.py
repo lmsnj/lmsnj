@@ -239,3 +239,94 @@ class ExamEventTests(APITestCase):
         self.client.force_authenticate(self.teacher)
         res = self.client.get(self.url("cards"), {"classroom": self.rpl.id})
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class CardTokenTests(ExamEventTests):
+    """Kartu peserta sebagai syarat mengerjakan asesmen yang ditautkan ke acara ujian."""
+
+    def make_assessment(self, **extra):
+        from apps.assessments.models import Assessment, Question
+
+        assessment = Assessment.objects.create(
+            teaching_assignment=self.web, title="PAS Pemrograman Web", is_published=True,
+            due_at=timezone.now() + timedelta(days=2), exam_event=self.event, **extra,
+        )  # fmt: skip
+        Question.objects.create(
+            assessment=assessment, order=0, kind="choice", text="Tag judul?", points=2,
+            choices=["<p>", "<h1>"], correct_choice=1,
+        )  # fmt: skip
+        return assessment
+
+    def start(self, assessment, user, token=None):
+        self.client.force_authenticate(user)
+        data = {} if token is None else {"token": token}
+        return self.client.post(reverse("assessment-start", args=[assessment.id]), data, format="json")
+
+    def ani_token(self):
+        self.client.force_authenticate(self.homeroom)
+        cards = self.client.get(self.url("cards"), {"classroom": self.rpl.id}).data["cards"]
+        return cards[0]["token"]
+
+    def test_tokens_are_stable_and_reset_by_admin(self):
+        self.make_data()
+        token = self.ani_token()
+        self.assertEqual(len(token), services.TOKEN_LENGTH)
+        self.assertEqual(self.ani_token(), token)
+        # Budi tidak layak -> tidak mendapat token.
+        self.assertEqual(ExamParticipant.objects.filter(student=self.budi).exclude(token="").count(), 0)
+
+        url = self.url("reset-token")
+        res = self.client.post(url, {"student": self.ani.id, "classroom": self.rpl.id}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.client.force_authenticate(self.admin)
+        res = self.client.post(url, {"student": self.ani.id, "classroom": self.rpl.id}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertNotEqual(res.data["token"], token)
+
+    def test_start_requires_eligibility_and_card_token(self):
+        self.make_data()
+        assessment = self.make_assessment()
+        # Kartu belum dicetak -> belum ada token.
+        res = self.start(assessment, self.ani, "ABCDEF")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("belum dicetak", str(res.data["token"]))
+
+        token = self.ani_token()
+        self.assertEqual(self.start(assessment, self.ani).status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.start(assessment, self.ani, "ZZZZZZ").status_code, status.HTTP_400_BAD_REQUEST)
+        # Huruf kecil & spasi tetap diterima.
+        res = self.start(assessment, self.ani, f" {token.lower()} ")
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        # Melanjutkan pengerjaan tidak perlu token lagi.
+        self.assertEqual(self.start(assessment, self.ani).status_code, status.HTTP_200_OK)
+
+        # Budi belum memenuhi syarat: tidak bisa mulai walau menebak token Ani.
+        res = self.start(assessment, self.budi, token)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("belum memenuhi", str(res.data["token"]))
+
+    def test_teacher_links_assessment_to_matching_event_only(self):
+        self.client.force_authenticate(self.teacher)
+        data = {
+            "teaching_assignment": self.web.id, "title": "PAS", "exam_event": self.event.id,
+            "due_at": (timezone.now() + timedelta(days=3)).isoformat(),
+        }  # fmt: skip
+        res = self.client.post(reverse("assessment-list"), data, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        self.assertEqual(res.data["exam_event_name"], "PAS Ganjil")
+
+        other = ExamEvent.objects.create(
+            school=default_school(),
+            name="PAS Kelas X",
+            academic_year=YEAR,
+            grades=["X"],
+            exam_start=date(2026, 12, 1),
+        )
+        res = self.client.post(reverse("assessment-list"), {**data, "exam_event": other.id}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("exam_event", res.data)
+
+        # Acara yang dipakai asesmen tidak bisa dihapus.
+        self.client.force_authenticate(self.admin)
+        res = self.client.delete(reverse("exam-event-detail", args=[self.event.id]))
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

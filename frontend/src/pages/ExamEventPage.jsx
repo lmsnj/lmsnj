@@ -1,4 +1,4 @@
-import { CircleCheck, CircleX, Printer, Save } from 'lucide-react'
+import { CircleCheck, CircleX, KeyRound, Printer, Save } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { examsApi } from '../api/exams'
@@ -17,6 +17,7 @@ import useFetch from '../hooks/useFetch'
 import useFormSubmit from '../hooks/useFormSubmit'
 import { toOptions } from '../utils/academic'
 import { isAdminRole } from '../utils/constants'
+import { getErrorMessage } from '../utils/errors'
 import {
   countEligibility,
   eligibilityStatus,
@@ -69,6 +70,21 @@ function ClassEligibility({ event, classroomId, isAdmin, onSaved }) {
   })
   const change = (row, field, value) =>
     setChanges({ ...changes, [row.student]: { ...changes[row.student], [field]: value } })
+  const [resetting, setResetting] = useState(null)
+  const resetToken = async (row) => {
+    const question = `Buat token baru untuk ${row.student_name}? Kartu lama tidak berlaku lagi dan harus dicetak ulang.`
+    if (!window.confirm(question)) return
+    setResetting(row.student)
+    try {
+      const res = await examsApi.resetToken(event.id, classroomId, row.student)
+      onSaved(res.detail)
+      result.reload()
+    } catch (err) {
+      window.alert(getErrorMessage(err))
+    } finally {
+      setResetting(null)
+    }
+  }
 
   if (result.error) return <Alert type="error">{result.error}</Alert>
   if (!result.data) return <LoadingBlock />
@@ -158,6 +174,31 @@ function ClassEligibility({ event, classroomId, isAdmin, onSaved }) {
       cell: (row) => (row.exempted ? row.exemption_reason : '-'),
     })
   }
+  columns.push({
+    header: 'Token kartu',
+    cell: (row) =>
+      row.token ? (
+        <div className="flex items-center gap-1 whitespace-nowrap">
+          <span className="font-mono font-semibold tracking-widest text-slate-900">
+            {row.token}
+          </span>
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="sm"
+              loading={resetting === row.student}
+              onClick={() => resetToken(row)}
+              title="Buat token baru (kartu hilang)"
+            >
+              <KeyRound className="size-4" aria-hidden="true" />
+              <span className="sr-only">Ganti token {row.student_name}</span>
+            </Button>
+          )}
+        </div>
+      ) : (
+        <span className="text-xs text-slate-400">Dibuat saat kartu dicetak</span>
+      ),
+  })
   columns.push({
     header: 'Status',
     cell: (row) => {

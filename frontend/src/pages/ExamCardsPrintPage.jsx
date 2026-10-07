@@ -13,7 +13,7 @@ import { formatDateRange, paginate } from '../utils/exams'
 
 function Field({ label, value }) {
   return (
-    <div className="grid grid-cols-[6.5rem_0.5rem_1fr] text-[11pt] leading-snug">
+    <div className="grid grid-cols-[6rem_0.5rem_1fr] text-[10pt] leading-snug">
       <span className="text-slate-600">{label}</span>
       <span>:</span>
       <span className="font-semibold break-words text-slate-900">{value || '-'}</span>
@@ -43,6 +43,10 @@ function ExamCard({ card, data }) {
         <Field label="No. Peserta" value={card.exam_number} />
         <Field label="Ruang" value={card.room} />
       </div>
+      <div className="mt-2 flex items-center justify-between gap-2 rounded border border-slate-400 px-2 py-1">
+        <span className="text-[8pt] font-semibold text-slate-600">TOKEN UJIAN ONLINE</span>
+        <span className="font-mono text-[14pt] font-bold tracking-[0.25em]">{card.token}</span>
+      </div>
       <footer className="mt-auto flex items-end justify-between gap-3 pt-2">
         <p className="min-w-0 text-[8pt] leading-snug text-slate-600">
           {formatDateRange(event.exam_start, event.exam_end)}
@@ -51,7 +55,7 @@ function ExamCard({ card, data }) {
         {(event.signer_title || event.signer_name) && (
           <div className="w-36 shrink-0 text-center text-[8pt]">
             <p>{event.signer_title}</p>
-            <div className="h-9" />
+            <div className="h-7" />
             <p className="border-t border-slate-500 pt-0.5 font-semibold">
               {event.signer_name || ' '}
             </p>

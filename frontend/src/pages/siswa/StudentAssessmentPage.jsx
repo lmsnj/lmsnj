@@ -1,4 +1,4 @@
-import { ShieldAlert } from 'lucide-react'
+import { IdCard, ShieldAlert } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { assessmentsApi } from '../../api/assessments'
@@ -10,10 +10,11 @@ import Button from '../../components/Button'
 import Modal from '../../components/Modal'
 import PageHeader from '../../components/PageHeader'
 import Spinner from '../../components/Spinner'
+import TextField from '../../components/TextField'
 import { enterFullscreen, fullscreenSupported } from '../../hooks/useExamGuard'
 import useFetch from '../../hooks/useFetch'
 import { studentAssessmentStatus } from '../../utils/assessments'
-import { getErrorMessage } from '../../utils/errors'
+import { getErrorMessage, getFieldErrors } from '../../utils/errors'
 import { sharedStimuli } from '../../utils/exam'
 import { formatDate } from '../../utils/media'
 import { formatScore } from '../../utils/tasks'
@@ -114,6 +115,8 @@ export default function StudentAssessmentPage() {
   const [starting, setStarting] = useState(false)
   const [confirmStart, setConfirmStart] = useState(false)
   const [error, setError] = useState('')
+  const [token, setToken] = useState('')
+  const [tokenError, setTokenError] = useState('')
 
   // Lanjutkan pengerjaan yang sudah dimulai / tampilkan hasil yang sudah dikumpulkan.
   const status = assessment.data?.my_attempt?.status
@@ -133,12 +136,19 @@ export default function StudentAssessmentPage() {
     if (assessment.data?.require_fullscreen) enterFullscreen()
     setStarting(true)
     setError('')
+    setTokenError('')
     try {
-      setSession(await assessmentsApi.start(id))
+      setSession(await assessmentsApi.start(id, token))
       setConfirmStart(false)
     } catch (err) {
-      setError(getErrorMessage(err))
-      setConfirmStart(false)
+      // Token salah: tetap di dialog agar siswa bisa mengetik ulang.
+      const fieldError = getFieldErrors(err).token
+      if (fieldError) {
+        setTokenError(fieldError)
+      } else {
+        setError(getErrorMessage(err))
+        setConfirmStart(false)
+      }
     } finally {
       setStarting(false)
     }
@@ -220,6 +230,15 @@ export default function StudentAssessmentPage() {
               <dd className="font-medium text-slate-900">{formatDate(a.due_at)}</dd>
             </div>
           </dl>
+          {a.exam_event && (
+            <p className="mt-4 flex items-start gap-2 rounded-lg bg-sky-50 p-3 text-sm text-sky-900 ring-1 ring-sky-200">
+              <IdCard className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span>
+                Asesmen ini bagian dari <strong>{a.exam_event_name}</strong>. Siapkan kartu peserta
+                ujian Anda: token di kartu diminta saat mulai mengerjakan.
+              </span>
+            </p>
+          )}
           {a.is_past_due ? (
             <Alert type="error" className="mt-4">
               Tenggat sudah lewat, asesmen ini tidak bisa dikerjakan lagi.
@@ -241,13 +260,27 @@ export default function StudentAssessmentPage() {
             <Button variant="secondary" onClick={() => setConfirmStart(false)}>
               Nanti Saja
             </Button>
-            <Button loading={starting} onClick={start}>
+            <Button loading={starting} onClick={start} disabled={a.exam_event && !token.trim()}>
               Mulai Sekarang
             </Button>
           </>
         }
       >
         <div className="space-y-3 text-sm text-slate-600">
+          {a.exam_event && (
+            <TextField
+              label="Token kartu peserta ujian"
+              value={token}
+              onChange={(event) => setToken(event.target.value.toUpperCase())}
+              error={tokenError}
+              hint="Lihat kotak TOKEN di kartu peserta ujian Anda."
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              maxLength={10}
+              className="font-mono tracking-widest"
+            />
+          )}
           <p>
             {a.duration_minutes
               ? `Waktu ${a.duration_minutes} menit langsung berjalan dan tidak bisa dijeda. `
