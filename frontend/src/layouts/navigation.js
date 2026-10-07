@@ -16,6 +16,7 @@ import {
   Trophy,
   UserCheck,
   UserRound,
+  Wallet,
   Users,
 } from 'lucide-react'
 import { ROLES } from '../utils/constants'
@@ -45,6 +46,7 @@ const ADMIN_MAIN = [
 const ADMIN_MORE = [
   { label: 'Laporan Nilai', icon: ChartColumn, to: '/admin/laporan' },
   { label: 'Rekap Presensi', icon: UserCheck, to: '/admin/presensi' },
+  { label: 'Status Pembayaran', icon: Wallet, to: '/admin/pembayaran' },
   { ...ANNOUNCEMENTS, label: 'Pengumuman Sekolah' },
   { label: 'Tahun Ajaran Baru', icon: CalendarSync, to: '/admin/tahun-ajaran' },
 ]

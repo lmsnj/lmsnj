@@ -22,6 +22,7 @@ from apps.attendance.models import Attendance
 from apps.assessments.models import Assessment, Question
 from apps.chat.models import Conversation, Message
 from apps.materials.models import Material, MaterialType
+from apps.payments.models import PaymentStatus
 from apps.schedule.models import TeachingSession
 from apps.schools.models import Level, School
 from apps.tasks.models import Submission, Task
@@ -459,6 +460,7 @@ class Command(BaseCommand):
 
         self.seed_demo_exam(web)
         self.seed_attendance(web)
+        self.seed_payments(web.classroom)
 
         student = User.objects.filter(username="rizki").first()
         if student:
@@ -503,6 +505,17 @@ class Command(BaseCommand):
                 Attendance.objects.create(
                     session=session, student=student, status=status, recorded_by=assignment.teacher
                 )
+
+    def seed_payments(self, classroom):
+        """Status pembayaran contoh: kebanyakan lunas s.d. triwulan 2, beberapa siswa tertinggal."""
+        behind = {"fauzan": 0, "nabila": 1}
+        for student in classroom.students.all():
+            _, created = PaymentStatus.objects.get_or_create(
+                student=student,
+                academic_year=classroom.academic_year,
+                defaults={"paid_quarter": behind.get(student.username, 2)},
+            )
+            self.count("status pembayaran", created)
 
     def seed_demo_exam(self, web):
         """Ujian contoh bergaya simulasi TKA (lihat _demo_exam.py) untuk mencoba mode ujian siswa."""

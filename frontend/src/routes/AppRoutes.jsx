@@ -14,6 +14,7 @@ const FoundationDashboard = lazy(() => import('../pages/admin/FoundationDashboar
 const AssignmentsPage = lazy(() => import('../pages/admin/AssignmentsPage'))
 const BrandingPage = lazy(() => import('../pages/admin/BrandingPage'))
 const PromotionPage = lazy(() => import('../pages/admin/PromotionPage'))
+const PaymentsPage = lazy(() => import('../pages/admin/PaymentsPage'))
 const SchoolsPage = lazy(() => import('../pages/admin/SchoolsPage'))
 const ClassroomDetailPage = lazy(() => import('../pages/admin/ClassroomDetailPage'))
 const ClassroomsPage = lazy(() => import('../pages/admin/ClassroomsPage'))
@@ -85,6 +86,7 @@ export default function AppRoutes() {
                 <Route path="pengampu" element={<AssignmentsPage />} />
                 <Route path="laporan" element={<ReportPage />} />
                 <Route path="presensi" element={<AttendanceReportPage />} />
+                <Route path="pembayaran" element={<PaymentsPage />} />
                 <Route path="tahun-ajaran" element={<PromotionPage />} />
               </Route>
               <Route element={<ProtectedRoute roles={[ROLES.FOUNDATION]} />}>

@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "apps.announcements",
     "apps.schedule",
     "apps.attendance",
+    "apps.payments",
     "apps.chat",
     "apps.assessments",
     "apps.branding",

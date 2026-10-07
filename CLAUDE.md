@@ -344,6 +344,10 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   Frontend: tab "Presensi" di kelas guru (tombol "Pertemuan Hari Ini" membuat sesi lalu membuka lembar
   presensi), `AttendanceSheetModal`, `AttendanceSummaryTable`, `/admin/presensi`, `/guru/presensi`,
   `/siswa/presensi`.
+- **Status pembayaran** (`apps/payments`): `PaymentStatus` per siswa per tahun ajaran = lunas sampai
+  triwulan ke-N (0–4; tanpa catatan = 0). Sengaja sederhana, bukan sistem keuangan. Khusus admin:
+  halaman `/admin/pembayaran` (ubah per baris, simpan sekaligus) + impor Excel (dicocokkan lewat NIS).
+  `services.paid_quarters()` dipakai syarat kartu ujian.
 - **Ruang obrolan:** hanya antar pengguna yang satu sekolah. Aturan di `apps/chat/rules.py` (`can_chat` & `contacts_for` harus selalu
   sejalan — ada test yang memeriksa semua pasangan). Siswa–siswa tidak boleh. Pesan baru dicek
   berkala (polling 4 detik saat percakapan terbuka), bukan WebSocket. Pemberitahuan pesan baru:
@@ -422,6 +426,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET/PUT | `/api/sessions/{id}/attendance/` (PUT `records: [{student, status, note}]`) | Guru pengampu/admin |
 | GET    | `/api/attendance/summary/` (`classroom` ATAU `teaching_assignment`, `date_from`, `date_to`) | Lihat aturan presensi |
 | GET    | `/api/attendance/me/`             | Siswa            |
+| GET/PUT | `/api/payments/` (GET `?classroom=`; PUT `academic_year`, `records: [{student, paid_quarter, note}]`) | Admin |
+| GET/POST | `/api/payments/import-template/`, `/api/payments/import/` | Admin |
 | GET/POST | `/api/chat/conversations/` (`{user}` untuk memulai) | Login; hanya percakapan milik sendiri |
 | GET/POST | `/api/chat/conversations/{id}/messages/` (`?after=<id>`) | Anggota percakapan; kirim dibatasi 30/menit |
 | GET    | `/api/chat/conversations/contacts/`, `.../unread-count/` | Login |
@@ -452,7 +458,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - [x] Fase 7: Pemantapan
 - [ ] Fase 9: Ujian & kartu ujian
   - [x] 9a: presensi per pertemuan (sesi mengajar) + rekap
-  - [ ] 9b: status pembayaran (lunas sampai triwulan ke-N, diisi admin, impor Excel)
+  - [x] 9b: status pembayaran (lunas sampai triwulan ke-N, diisi admin, impor Excel)
   - [ ] 9c: acara ujian, syarat (presensi, tugas, rata-rata nilai, pembayaran, centang manual),
         pengecualian, cetak kartu (admin & wali kelas)
 - [x] Fase 8: Multi-sekolah (yayasan: SD/MI, SMP/MTs, SMA/MA/SMK)
