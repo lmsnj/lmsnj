@@ -379,6 +379,14 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   `show_answers` (`key_revealed`). Batas waktu = mulai + durasi (maks. tenggat); lewat batas tetap
   disimpan tapi `is_late`. Esai kosong = 0, esai berisi dinilai guru; `Attempt.score` terisi setelah
   semua jawaban dinilai.
+- **KKM & remedial** (`apps/assessments/results.py`, fungsi murni `final_result`): `passing_score` (KKM skala
+  100, kosong = tanpa status), `remedial_attempts` (0-3), `remedial_due_at` (kosong = tenggat utama).
+  `Attempt.number` 1 = utama, 2 dst. = remedial (unik per asesmen-siswa-nomor; selalu pakai percobaan
+  TERBARU). Status: pending (esai belum dinilai) / passed / remedial / failed / graded (tanpa KKM).
+  Lulus remedial = nilai akhir KKM (nilai asli tetap terlihat). Remedial dimulai lewat `start` dengan
+  `remedial: true` (token kartu diminta lagi jika ada `exam_event`). Kunci jawaban baru dibuka setelah
+  `last_due_at` (tenggat remedial). Siswa melihat popup hasil (`pages/siswa/AssessmentResult.jsx`)
+  langsung setelah mengumpulkan; tampilan status di `utils/assessments.js::resultDisplay`.
 - **Jenis soal** (`QuestionKind`): `choice` (PG, `correct_choice`), `multiple` (PG kompleks/MCMA,
   `correct_choices` minimal 2), `category` (pilihan = pernyataan, `category_labels` 2 label mis.
   Benar/Salah, `correct_choices` = indeks label per pernyataan), `essay`. Jawaban PG kompleks &
@@ -456,7 +464,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET    | `/api/chat/conversations/contacts/`, `.../unread-count/` | Login |
 | CRUD   | `/api/assessments/` | Seperti tugas; untuk siswa ada `my_attempt` |
 | GET    | `/api/assessments/{id}/questions/`, `.../results/` | Guru pengampu/admin |
-| POST/GET | `/api/assessments/{id}/start/` (`token` jika ada `exam_event`), `.../submit/`, `.../my-attempt/`, `.../draft/`, `.../violation/` | Siswa |
+| POST/GET | `/api/assessments/{id}/start/` (`token` jika ada `exam_event`, `remedial`), `.../submit/`, `.../my-attempt/`, `.../draft/`, `.../violation/` | Siswa |
 | CRUD   | `/api/assessment-questions/` | Guru pengampu (terkunci setelah ada pengerjaan) |
 | POST/DELETE | `/api/assessment-questions/{id}/images/` (`slot`, `index`, `file`) | Guru pengampu |
 | GET    | `/api/assessment-images/{id}/` | Guru pengampu/admin; siswa setelah mulai mengerjakan |

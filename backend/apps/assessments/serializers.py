@@ -8,6 +8,7 @@ from apps.exams.models import ExamEvent
 
 from .images import images_data
 from .models import Assessment, ImageSlot, Question, QuestionKind, ViolationKind
+from .results import final_result, max_score_of
 from .services import ensure_editable, ensure_publishable
 
 MAX_CHOICES = 6
@@ -49,6 +50,7 @@ def attempt_summary(attempt):
         status = "in_progress"
     return {
         "id": attempt.id,
+        "number": attempt.number,
         "status": status,
         "started_at": attempt.started_at,
         "deadline": attempt.deadline,
@@ -204,6 +206,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
     student_count = serializers.IntegerField(read_only=True, default=0)
     locked = serializers.SerializerMethodField()
     my_attempt = serializers.SerializerMethodField()
+    my_result = serializers.SerializerMethodField()
     exam_event = serializers.PrimaryKeyRelatedField(
         queryset=ExamEvent.objects.all(), allow_null=True, required=False
     )
@@ -223,6 +226,9 @@ class AssessmentSerializer(serializers.ModelSerializer):
             "show_answers",
             "max_violations",
             "require_fullscreen",
+            "passing_score",
+            "remedial_attempts",
+            "remedial_due_at",
             "exam_event",
             "exam_event_name",
             "is_published",
@@ -234,6 +240,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
             "student_count",
             "locked",
             "my_attempt",
+            "my_result",
             "created_at",
         ]
 
@@ -250,8 +257,13 @@ class AssessmentSerializer(serializers.ModelSerializer):
         return bool(getattr(obj, "attempt_count", 0))
 
     def get_my_attempt(self, obj):
+        # my_attempts diurutkan dari percobaan terbaru (lihat AssessmentViewSet.get_queryset).
         mine = getattr(obj, "my_attempts", None)
         return attempt_summary(mine[0]) if mine else None
+
+    def get_my_result(self, obj):
+        mine = getattr(obj, "my_attempts", None)
+        return final_result(obj, mine, max_score_of(obj)) if mine is not None else None
 
     def check_exam_event(self, event, assignment):
         """Acara ujian harus milik sekolah, tahun ajaran, dan tingkat kelas asesmen ini."""
@@ -284,6 +296,15 @@ class AssessmentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        def value(field):
+            return attrs.get(field, getattr(self.instance, field, None))
+
+        if value("remedial_attempts") and value("passing_score") is None:
+            raise serializers.ValidationError({"passing_score": "Isi KKM agar remedial bisa dipakai."})
+        if value("remedial_due_at") and value("due_at") and value("remedial_due_at") < value("due_at"):
+            raise serializers.ValidationError(
+                {"remedial_due_at": "Tenggat remedial harus setelah tenggat utama."}
+            )
         if "exam_event" in attrs:
             self.check_exam_event(attrs["exam_event"], attrs.get("teaching_assignment"))
         if attrs.get("is_published"):

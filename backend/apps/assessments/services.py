@@ -2,7 +2,7 @@
 
 - Soal hanya bisa diubah selama BELUM ada siswa yang mulai mengerjakan (agar penilaian adil).
 - Terbit hanya jika ada minimal 1 soal dan setiap soal yang dinilai otomatis punya kunci jawaban.
-- Siswa mulai mengerjakan sebelum tenggat, satu kali. Asesmen yang ditautkan ke acara ujian hanya bisa
+- Siswa mulai mengerjakan sebelum tenggat, satu kali; di bawah KKM boleh remedial (results.py). Asesmen yang ditautkan ke acara ujian hanya bisa
   dimulai siswa yang layak mendapat kartu ujian, dengan token dari kartunya (apps/exams/services.py). Batas waktu = mulai + durasi (maks. tenggat).
 - Jawaban yang dikirim lewat batas waktu tetap disimpan tetapi ditandai terlambat.
 - Pilihan ganda, PG kompleks, dan kategori dinilai otomatis. PG kompleks & kategori: poin penuh
@@ -16,7 +16,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -24,6 +24,7 @@ from rest_framework.exceptions import ValidationError
 from apps.exams.services import verify_card
 
 from .models import AUTO_GRADED_KINDS, Answer, Attempt, AttemptEvent, QuestionKind
+from .results import REMEDIAL, final_result, max_score_of
 
 # Toleransi keterlambatan jaringan saat mengumpulkan tepat di akhir waktu.
 SUBMIT_GRACE = timedelta(seconds=60)
@@ -45,16 +46,36 @@ def ensure_publishable(assessment):
         raise ValidationError({"is_published": f"Soal nomor {', '.join(missing)} belum punya kunci jawaban."})
 
 
-def start_attempt(assessment, student, token=""):
-    """Mulai mengerjakan. Melanjutkan pengerjaan yang sudah ada tidak perlu token lagi."""
-    attempt = Attempt.objects.filter(assessment=assessment, student=student).first()
-    if attempt:
-        return attempt
-    if timezone.now() > assessment.due_at:
-        raise ValidationError({"detail": "Tenggat sudah lewat, asesmen ini tidak bisa dikerjakan lagi."})
+def latest_attempt(assessment, student):
+    return Attempt.objects.filter(assessment=assessment, student=student).order_by("-number").first()
+
+
+def start_attempt(assessment, student, token="", remedial=False):
+    """Mulai mengerjakan, atau melanjutkan pengerjaan yang belum dikumpulkan (tanpa token lagi).
+
+    `remedial=True`: mulai percobaan baru jika hasil siswa berstatus remedial (lihat results.py).
+    Tanpa itu, pengerjaan yang sudah dikumpulkan dikembalikan apa adanya (untuk melihat hasil)."""
+    attempts = list(Attempt.objects.filter(assessment=assessment, student=student))
+    latest = max(attempts, key=lambda a: a.number, default=None)
+    if latest and (not latest.submitted_at or not remedial):
+        return latest
+    if latest is None:
+        if timezone.now() > assessment.due_at:
+            raise ValidationError({"detail": "Tenggat sudah lewat, asesmen ini tidak bisa dikerjakan lagi."})
+        number = 1
+    else:
+        result = final_result(assessment, attempts, max_score_of(assessment))
+        if result["status"] != REMEDIAL:
+            raise ValidationError({"detail": "Kesempatan remedial tidak tersedia untuk asesmen ini."})
+        number = latest.number + 1
     if assessment.exam_event_id:
         verify_card(assessment.exam_event, student, token)
-    return Attempt.objects.create(assessment=assessment, student=student)
+    try:
+        with transaction.atomic():
+            return Attempt.objects.create(assessment=assessment, student=student, number=number)
+    except IntegrityError:
+        # Tombol mulai ditekan dua kali bersamaan: pakai pengerjaan yang sudah terbuat.
+        return latest_attempt(assessment, student)
 
 
 def recompute_score(attempt):

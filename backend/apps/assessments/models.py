@@ -32,6 +32,16 @@ class Assessment(models.Model):
         "batas keluar halaman", default=0, validators=[MaxValueValidator(20)]
     )
     require_fullscreen = models.BooleanField("wajib layar penuh (laptop/PC)", default=False)
+    # KKM dalam skala 100 (nilai / nilai maksimal x 100). Kosong = tanpa KKM (tanpa status tuntas/remedial).
+    passing_score = models.PositiveSmallIntegerField(
+        "KKM", null=True, blank=True, validators=[MaxValueValidator(100)]
+    )
+    # Siswa di bawah KKM boleh mengerjakan ulang soal yang sama sebanyak ini (0 = tanpa remedial).
+    remedial_attempts = models.PositiveSmallIntegerField(
+        "kesempatan remedial", default=0, validators=[MaxValueValidator(3)]
+    )
+    # Kosong = remedial harus selesai sebelum tenggat utama.
+    remedial_due_at = models.DateTimeField("tenggat remedial", null=True, blank=True)
     # Diisi = siswa wajib memenuhi syarat kartu ujian acara ini dan memasukkan token kartunya saat mulai.
     exam_event = models.ForeignKey(
         "exams.ExamEvent",
@@ -63,6 +73,13 @@ class Assessment(models.Model):
     @property
     def is_past_due(self):
         return timezone.now() > self.due_at
+
+    @property
+    def last_due_at(self):
+        """Batas terakhir mengerjakan (termasuk remedial). Kunci jawaban baru dibuka setelah ini."""
+        if self.remedial_attempts and self.remedial_due_at and self.remedial_due_at > self.due_at:
+            return self.remedial_due_at
+        return self.due_at
 
 
 class QuestionKind(models.TextChoices):
@@ -133,10 +150,11 @@ class Question(models.Model):
 
 
 class Attempt(models.Model):
-    """Pengerjaan satu siswa. Setiap siswa hanya boleh mengerjakan satu kali."""
+    """Satu pengerjaan siswa. `number` 1 = pengerjaan utama, 2 dst. = remedial (lihat results.py)."""
 
     assessment = models.ForeignKey(Assessment, on_delete=models.PROTECT, related_name="attempts")
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="attempts")
+    number = models.PositiveSmallIntegerField("percobaan ke", default=1)
     started_at = models.DateTimeField("mulai", auto_now_add=True)
     submitted_at = models.DateTimeField("dikumpulkan", null=True, blank=True)
     is_late = models.BooleanField("terlambat", default=False)
@@ -152,7 +170,7 @@ class Attempt(models.Model):
         verbose_name_plural = "pengerjaan"
         ordering = ["-started_at"]
         constraints = [
-            models.UniqueConstraint(fields=["assessment", "student"], name="unique_attempt_per_student")
+            models.UniqueConstraint(fields=["assessment", "student", "number"], name="unique_attempt_number")
         ]
 
     def __str__(self):
@@ -160,12 +178,11 @@ class Attempt(models.Model):
 
     @property
     def deadline(self):
-        """Batas waktu mengerjakan: mulai + durasi, tetapi tidak melewati tenggat."""
+        """Batas waktu mengerjakan: mulai + durasi, tetapi tidak melewati tenggat (remedial: tenggat remedial)."""
+        due = self.assessment.due_at if self.number == 1 else self.assessment.last_due_at
         if self.assessment.duration_minutes:
-            return min(
-                self.started_at + timedelta(minutes=self.assessment.duration_minutes), self.assessment.due_at
-            )
-        return self.assessment.due_at
+            return min(self.started_at + timedelta(minutes=self.assessment.duration_minutes), due)
+        return due
 
 
 class Answer(models.Model):

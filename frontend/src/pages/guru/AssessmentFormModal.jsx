@@ -25,6 +25,9 @@ export default function AssessmentFormModal({ assessment, assignmentId, onClose,
     max_violations: assessment?.max_violations ?? 3,
     require_fullscreen: assessment?.require_fullscreen ?? false,
     exam_event: assessment?.exam_event ? String(assessment.exam_event) : '',
+    passing_score: assessment?.passing_score ?? '',
+    remedial_attempts: assessment?.remedial_attempts ?? 0,
+    remedial_due_at: assessment?.remedial_due_at ? toDatetimeLocal(assessment.remedial_due_at) : '',
   })
   const events = useFetch(examsApi.list, ALL)
 
@@ -35,6 +38,12 @@ export default function AssessmentFormModal({ assessment, assignmentId, onClose,
       duration_minutes: form.duration_minutes === '' ? null : Number(form.duration_minutes),
       max_violations: Number(form.max_violations) || 0,
       exam_event: form.exam_event ? Number(form.exam_event) : null,
+      passing_score: form.passing_score === '' ? null : Number(form.passing_score),
+      remedial_attempts: Number(form.remedial_attempts) || 0,
+      remedial_due_at:
+        Number(form.remedial_attempts) && form.remedial_due_at
+          ? fromDatetimeLocal(form.remedial_due_at)
+          : null,
     }
     if (isEdit) delete data.teaching_assignment
     const saved = isEdit
@@ -116,6 +125,53 @@ export default function AssessmentFormModal({ assessment, assignmentId, onClose,
         />
         Tampilkan kunci jawaban ke siswa setelah tenggat lewat
       </label>
+
+      <fieldset className="space-y-3 rounded-lg p-3 ring-1 ring-slate-200">
+        <legend className="px-1 text-sm font-semibold text-slate-800">KKM & remedial</legend>
+        <p className="text-xs text-slate-500">
+          Setelah mengumpulkan, siswa langsung melihat nilai akhir (skala 100) dan statusnya:
+          Tuntas, Remedial, atau Belum Tuntas. Kosongkan KKM jika tidak perlu status.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            label="KKM (skala 100)"
+            name="passing_score"
+            type="number"
+            min={0}
+            max={100}
+            value={form.passing_score}
+            onChange={handleChange}
+            error={errors.passing_score}
+            placeholder="mis. 75"
+          />
+          <SelectField
+            label="Kesempatan remedial"
+            name="remedial_attempts"
+            value={form.remedial_attempts}
+            onChange={handleChange}
+            options={[0, 1, 2, 3].map((n) => ({
+              value: n,
+              label: n ? `${n} kali` : 'Tanpa remedial',
+            }))}
+            error={errors.remedial_attempts}
+          />
+        </div>
+        {Number(form.remedial_attempts) > 0 && (
+          <TextField
+            label="Tenggat remedial (opsional)"
+            name="remedial_due_at"
+            type="datetime-local"
+            value={form.remedial_due_at}
+            onChange={handleChange}
+            error={errors.remedial_due_at}
+            hint="Kosong = remedial harus selesai sebelum tenggat utama. Kunci jawaban baru dibuka setelah tenggat remedial."
+          />
+        )}
+        <p className="text-xs text-slate-500">
+          Remedial = mengerjakan ulang soal yang sama. Nilai remedial yang mencapai KKM dicatat
+          sebesar KKM; nilai aslinya tetap terlihat di tab Hasil.
+        </p>
+      </fieldset>
 
       <fieldset className="space-y-2 rounded-lg bg-sky-50 p-3 ring-1 ring-sky-200">
         <legend className="flex items-center gap-1.5 px-1 text-sm font-semibold text-sky-900">

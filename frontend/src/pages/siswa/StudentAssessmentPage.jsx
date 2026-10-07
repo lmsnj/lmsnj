@@ -18,9 +18,10 @@ import { getErrorMessage, getFieldErrors } from '../../utils/errors'
 import { sharedStimuli } from '../../utils/exam'
 import { formatDate } from '../../utils/media'
 import { formatScore } from '../../utils/tasks'
+import { ResultDialog, ResultSummary } from './AssessmentResult'
 import TakeAssessment from './TakeAssessment'
 
-function ResultView({ assessment, data }) {
+function ResultView({ assessment, data, onRemedial }) {
   const attempt = data.attempt
   return (
     <>
@@ -30,26 +31,22 @@ function ResultView({ assessment, data }) {
           {attempt.violation_count} kali.
         </Alert>
       )}
-      <section className="mb-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        {attempt.score !== null ? (
-          <>
-            <p className="text-xs font-medium text-brand-800 uppercase">Nilai</p>
-            <p className="text-4xl font-bold text-brand-700">
-              {formatScore(attempt.score)}
-              <span className="text-lg font-normal text-slate-500">/{assessment.max_score}</span>
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="font-medium text-slate-900">Jawaban sudah dikumpulkan.</p>
-            <p className="text-sm text-slate-600">
-              Nilai soal otomatis (pilihan ganda, PG kompleks, kategori):{' '}
-              <strong>{formatScore(attempt.auto_score)}</strong>. Nilai akhir muncul setelah guru
-              menilai {attempt.ungraded} jawaban esai.
-            </p>
-          </>
+      <ResultSummary
+        result={data.result}
+        attempt={attempt}
+        maxScore={assessment.max_score}
+        onRemedial={onRemedial}
+      />
+      <section className="mb-4 rounded-xl bg-white px-5 py-3 shadow-sm ring-1 ring-slate-200">
+        {attempt.score === null && (
+          <p className="text-sm text-slate-600">
+            Nilai soal otomatis (pilihan ganda, PG kompleks, kategori):{' '}
+            <strong>{formatScore(attempt.auto_score)}</strong>. Nilai akhir muncul setelah guru
+            menilai {attempt.ungraded} jawaban esai.
+          </p>
         )}
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="text-xs text-slate-500">
+          {attempt.number > 1 && `Remedial ke-${attempt.number - 1} · `}
           Dikumpulkan {formatDate(attempt.submitted_at)}
           {attempt.is_late && <span className="text-amber-700"> · melewati batas waktu</span>}
           {attempt.violation_count > 0 && (
@@ -113,7 +110,9 @@ export default function StudentAssessmentPage() {
   const assessment = useFetch(assessmentsApi.get, id)
   const [session, setSession] = useState(null) // hasil start/my-attempt/submit
   const [starting, setStarting] = useState(false)
-  const [confirmStart, setConfirmStart] = useState(false)
+  // null = tertutup, 'start' = pengerjaan pertama, 'remedial' = percobaan remedial.
+  const [confirmMode, setConfirmMode] = useState(null)
+  const [showResult, setShowResult] = useState(false)
   const [error, setError] = useState('')
   const [token, setToken] = useState('')
   const [tokenError, setTokenError] = useState('')
@@ -138,8 +137,9 @@ export default function StudentAssessmentPage() {
     setError('')
     setTokenError('')
     try {
-      setSession(await assessmentsApi.start(id, token))
-      setConfirmStart(false)
+      setSession(await assessmentsApi.start(id, token, confirmMode === 'remedial'))
+      setConfirmMode(null)
+      setShowResult(false)
     } catch (err) {
       // Token salah: tetap di dialog agar siswa bisa mengetik ulang.
       const fieldError = getFieldErrors(err).token
@@ -147,7 +147,7 @@ export default function StudentAssessmentPage() {
         setTokenError(fieldError)
       } else {
         setError(getErrorMessage(err))
-        setConfirmStart(false)
+        setConfirmMode(null)
       }
     } finally {
       setStarting(false)
@@ -157,6 +157,8 @@ export default function StudentAssessmentPage() {
   const handleSubmitted = useCallback(
     (result) => {
       setSession(result)
+      setShowResult(true) // popup nilai langsung muncul setelah mengumpulkan
+      setToken('')
       assessment.reload()
       window.scrollTo({ top: 0 })
     },
@@ -201,9 +203,14 @@ export default function StudentAssessmentPage() {
       </Alert>
 
       {current?.status === 'in_progress' ? (
-        <TakeAssessment assessment={a} data={session} onSubmitted={handleSubmitted} />
+        <TakeAssessment
+          key={current.id}
+          assessment={a}
+          data={session}
+          onSubmitted={handleSubmitted}
+        />
       ) : current ? (
-        <ResultView assessment={a} data={session} />
+        <ResultView assessment={a} data={session} onRemedial={() => setConfirmMode('remedial')} />
       ) : (
         <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <Badge color={badge.color}>{badge.label}</Badge>
@@ -244,20 +251,34 @@ export default function StudentAssessmentPage() {
               Tenggat sudah lewat, asesmen ini tidak bisa dikerjakan lagi.
             </Alert>
           ) : (
-            <Button className="mt-5" onClick={() => setConfirmStart(true)}>
+            <Button className="mt-5" onClick={() => setConfirmMode('start')}>
               Mulai Kerjakan
             </Button>
           )}
         </section>
       )}
 
+      {session?.result && current?.submitted_at && (
+        <ResultDialog
+          open={showResult}
+          result={session.result}
+          attempt={current}
+          maxScore={a.max_score}
+          onClose={() => setShowResult(false)}
+          onRemedial={() => {
+            setShowResult(false)
+            setConfirmMode('remedial')
+          }}
+        />
+      )}
+
       <Modal
-        open={confirmStart}
-        title="Mulai mengerjakan?"
-        onClose={() => setConfirmStart(false)}
+        open={Boolean(confirmMode)}
+        title={confirmMode === 'remedial' ? 'Mulai remedial?' : 'Mulai mengerjakan?'}
+        onClose={() => setConfirmMode(null)}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setConfirmStart(false)}>
+            <Button variant="secondary" onClick={() => setConfirmMode(null)}>
               Nanti Saja
             </Button>
             <Button loading={starting} onClick={start} disabled={a.exam_event && !token.trim()}>
@@ -285,8 +306,20 @@ export default function StudentAssessmentPage() {
             {a.duration_minutes
               ? `Waktu ${a.duration_minutes} menit langsung berjalan dan tidak bisa dijeda. `
               : ''}
-            Asesmen hanya bisa dikerjakan <strong>satu kali</strong>. Jawaban tersimpan otomatis
-            sampai Anda menekan Selesai Ujian.
+            {confirmMode === 'remedial' ? (
+              <>
+                Soal remedial <strong>sama</strong> dengan sebelumnya. Jika nilai remedial mencapai
+                KKM, nilai akhir dicatat sebesar KKM ({a.passing_score}).{' '}
+              </>
+            ) : (
+              <>
+                Asesmen dikerjakan <strong>satu kali</strong>
+                {a.remedial_attempts > 0 &&
+                  ` (jika di bawah KKM ${a.passing_score}, ada ${a.remedial_attempts} kesempatan remedial)`}
+                .{' '}
+              </>
+            )}
+            Jawaban tersimpan otomatis sampai Anda menekan Selesai Ujian.
           </p>
           <div className="rounded-lg bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200">
             <p className="flex items-center gap-2 font-semibold">

@@ -18,6 +18,7 @@ import ProgressBar from './ProgressBar'
 function studentAction(assessment) {
   const attempt = assessment.my_attempt
   if (attempt?.status === 'in_progress') return 'Lanjutkan'
+  if (assessment.my_result?.status === 'remedial') return 'Remedial'
   if (attempt) return 'Lihat Hasil'
   return assessment.is_past_due ? 'Lihat Detail' : 'Kerjakan'
 }

@@ -14,7 +14,13 @@ import PageHeader from '../../components/PageHeader'
 import Spinner from '../../components/Spinner'
 import useFetch from '../../hooks/useFetch'
 import { useTabs } from '../../hooks/useTabs'
-import { attemptStatus, KIND_COLORS, QUESTION_KINDS } from '../../utils/assessments'
+import {
+  attemptStatus,
+  formatPercent,
+  KIND_COLORS,
+  QUESTION_KINDS,
+  resultDisplay,
+} from '../../utils/assessments'
 import { getErrorMessage, getFieldErrors } from '../../utils/errors'
 import { formatDate } from '../../utils/media'
 import { formatScore } from '../../utils/tasks'
@@ -246,6 +252,29 @@ function ResultsTab({ assessment }) {
             <span className="font-normal text-slate-500">/{assessment.max_score}</span>
             {a.score === null && (
               <span className="block text-xs font-normal text-amber-700">sementara</span>
+            )}
+          </span>
+        )
+      },
+    },
+    {
+      header: 'Nilai Akhir',
+      cell: (row) => {
+        const shown = resultDisplay(row.result)
+        if (!shown) return <span className="text-slate-400">-</span>
+        const remedials = row.attempts.length - 1
+        return (
+          <span className="flex flex-col items-start gap-1">
+            {row.result.final_score !== null && (
+              <span className="font-semibold text-slate-900">
+                {formatPercent(row.result.final_score)}
+              </span>
+            )}
+            <Badge color={shown.color}>{shown.label}</Badge>
+            {remedials > 0 && (
+              <span className="text-xs text-slate-500">
+                {remedials}× remedial · pertama {formatPercent(row.result.first_score)}
+              </span>
             )}
           </span>
         )

@@ -21,6 +21,7 @@ from .images import image_error, read_zip, save_image
 from .models import Assessment, Attempt, ImageSlot, Question, QuestionImage
 from .question_import import build_question_template, parse_excel, parse_text, prepare, preview
 from .question_import import save as save_imported
+from .results import final_result, max_score_of
 from .serializers import (
     AssessmentSerializer,
     GradeSerializer,
@@ -34,6 +35,7 @@ from .serializers import (
 from .services import (
     ensure_editable,
     grade_answers,
+    latest_attempt,
     record_violation,
     save_draft,
     start_attempt,
@@ -95,7 +97,7 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             .order_by(*Assessment._meta.ordering)
         )
         if user.role == Role.STUDENT:
-            mine = Attempt.objects.filter(student=user).prefetch_related("answers")
+            mine = Attempt.objects.filter(student=user).prefetch_related("answers").order_by("-number")
             queryset = queryset.prefetch_related(Prefetch("attempts", queryset=mine, to_attr="my_attempts"))
         return queryset
 
@@ -138,7 +140,9 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     def start(self, request, pk=None):
         """Siswa mulai (atau melanjutkan) mengerjakan. Mengembalikan soal TANPA kunci jawaban."""
         assessment = self.get_object()
-        attempt = start_attempt(assessment, request.user, str(request.data.get("token", "")))
+        token = str(request.data.get("token", ""))
+        remedial = str(request.data.get("remedial", "")).lower() in ("1", "true")
+        attempt = start_attempt(assessment, request.user, token, remedial)
         if attempt.submitted_at:
             return self._my_attempt_response(attempt)
         return Response(
@@ -158,10 +162,12 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         )
 
     def _my_open_attempt(self, request):
-        assessment = self.get_object()
-        return get_object_or_404(
-            Attempt.objects.select_related("assessment"), assessment=assessment, student=request.user
-        )
+        """Pengerjaan terbaru siswa (remedial jika ada). Yang sudah dikumpulkan ditolak/diabaikan oleh
+        save_draft & record_violation."""
+        attempt = latest_attempt(self.get_object(), request.user)
+        if attempt is None:
+            raise NotFound()
+        return attempt
 
     @action(detail=True, methods=["post"], permission_classes=[IsStudent])
     def draft(self, request, pk=None):
@@ -184,7 +190,9 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], permission_classes=[IsStudent])
     def submit(self, request, pk=None):
         assessment = self.get_object()
-        attempt = get_object_or_404(Attempt, assessment=assessment, student=request.user)
+        attempt = latest_attempt(assessment, request.user)
+        if attempt is None:
+            raise NotFound()
         serializer = SubmitSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         submit_attempt(attempt, serializer.validated_data["answers"])
@@ -193,7 +201,12 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     @action(detail=True, url_path="my-attempt", permission_classes=[IsStudent])
     def my_attempt(self, request, pk=None):
         assessment = self.get_object()
-        attempt = attempt_with_answers().filter(assessment=assessment, student=request.user).first()
+        attempt = (
+            attempt_with_answers()
+            .filter(assessment=assessment, student=request.user)
+            .order_by("-number")
+            .first()
+        )
         if attempt is None:
             return Response({"attempt": None, "questions": []})
         if not attempt.submitted_at:
@@ -201,12 +214,14 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         return self._my_attempt_response(attempt)
 
     def _my_attempt_response(self, attempt):
-        # Kunci jawaban dibuka setelah tenggat, jika guru mengizinkan.
+        # Kunci jawaban dibuka setelah tenggat terakhir (termasuk remedial), jika guru mengizinkan.
         assessment = attempt.assessment
-        reveal = assessment.show_answers and assessment.is_past_due
+        reveal = assessment.show_answers and timezone.now() > assessment.last_due_at
+        attempts = Attempt.objects.filter(assessment=assessment, student=attempt.student)
         return Response(
             {
                 "attempt": attempt_summary(attempt),
+                "result": final_result(assessment, attempts, max_score_of(assessment)),
                 "questions": answer_sheet(attempt, reveal_answers=reveal),
                 "answers_revealed": reveal,
             }
@@ -217,16 +232,26 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         """Rekap: setiap siswa di kelas beserta status & nilai pengerjaannya."""
         assessment = self.get_object()
         attempts = list(
-            assessment.attempts.select_related("student", "assessment").prefetch_related("answers")
+            assessment.attempts.select_related("student", "assessment")
+            .prefetch_related("answers")
+            .order_by("number")
         )
-        by_student = {a.student_id: a for a in attempts}
-        rows = [
-            {
-                "student": {"id": s.id, "full_name": s.full_name, "nis": s.nis},
-                "attempt": attempt_summary(by_student.get(s.id)),
-            }
-            for s in roster_students(assessment.teaching_assignment, attempts)
-        ]
+        by_student = {}
+        for attempt in attempts:
+            by_student.setdefault(attempt.student_id, []).append(attempt)
+        max_score = max_score_of(assessment)
+        rows = []
+        for s in roster_students(assessment.teaching_assignment, attempts):
+            mine = by_student.get(s.id, [])
+            rows.append(
+                {
+                    "student": {"id": s.id, "full_name": s.full_name, "nis": s.nis},
+                    # Pengerjaan terbaru (remedial jika ada) + riwayat semua percobaan.
+                    "attempt": attempt_summary(mine[-1]) if mine else None,
+                    "attempts": [attempt_summary(a) for a in mine],
+                    "result": final_result(assessment, mine, max_score),
+                }
+            )
         return Response(rows)
 
 

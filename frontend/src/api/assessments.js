@@ -17,7 +17,12 @@ export const assessmentsApi = {
 
   // Siswa: mulai/lanjutkan, kumpulkan, lihat hasil.
   // token: dari kartu peserta ujian, wajib jika asesmen ditautkan ke acara ujian (exam_event).
-  start: (id, token) => post(`/assessments/${id}/start/`, token ? { token } : {}),
+  // remedial: true = mulai percobaan remedial (hanya jika hasil berstatus remedial).
+  start: (id, token, remedial = false) =>
+    post(`/assessments/${id}/start/`, {
+      ...(token ? { token } : {}),
+      ...(remedial ? { remedial } : {}),
+    }),
   submit: (id, answers) => post(`/assessments/${id}/submit/`, { answers }),
   myAttempt: (id) => get(`/assessments/${id}/my-attempt/`),
   // Pengawasan: simpan jawaban sementara & catat keluar dari halaman ujian.
