@@ -29,6 +29,9 @@ const TeacherTaskPage = lazy(() => import('../pages/guru/TeacherTaskPage'))
 const AnnouncementsPage = lazy(() => import('../pages/AnnouncementsPage'))
 const AttendanceReportPage = lazy(() => import('../pages/AttendanceReportPage'))
 const StudentAttendancePage = lazy(() => import('../pages/siswa/StudentAttendancePage'))
+const ExamsPage = lazy(() => import('../pages/ExamsPage'))
+const ExamEventPage = lazy(() => import('../pages/ExamEventPage'))
+const ExamCardsPrintPage = lazy(() => import('../pages/ExamCardsPrintPage'))
 const ChatPage = lazy(() => import('../pages/ChatPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const ReportPage = lazy(() => import('../pages/ReportPage'))
@@ -74,6 +77,12 @@ export default function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
 
         <Route element={<ProtectedRoute />}>
+          {/* Halaman cetak tanpa header & menu agar hasil cetaknya bersih. */}
+          <Route element={<ProtectedRoute roles={[...ADMIN_ROLES, ROLES.TEACHER]} />}>
+            <Route element={<SchoolRoute />}>
+              <Route path="cetak/kartu-ujian/:id" element={<ExamCardsPrintPage />} />
+            </Route>
+          </Route>
           <Route element={<DashboardLayout />}>
             <Route path="admin" element={<ProtectedRoute roles={ADMIN_ROLES} />}>
               <Route index element={<AdminHome />} />
@@ -87,6 +96,8 @@ export default function AppRoutes() {
                 <Route path="laporan" element={<ReportPage />} />
                 <Route path="presensi" element={<AttendanceReportPage />} />
                 <Route path="pembayaran" element={<PaymentsPage />} />
+                <Route path="ujian" element={<ExamsPage />} />
+                <Route path="ujian/:id" element={<ExamEventPage />} />
                 <Route path="tahun-ajaran" element={<PromotionPage />} />
               </Route>
               <Route element={<ProtectedRoute roles={[ROLES.FOUNDATION]} />}>
@@ -106,6 +117,8 @@ export default function AppRoutes() {
               <Route path="sesi" element={<SessionsPage />} />
               <Route path="laporan" element={<ReportPage />} />
               <Route path="presensi" element={<AttendanceReportPage />} />
+              <Route path="ujian" element={<ExamsPage />} />
+              <Route path="ujian/:id" element={<ExamEventPage />} />
             </Route>
 
             <Route path="siswa" element={<ProtectedRoute roles={[ROLES.STUDENT]} />}>

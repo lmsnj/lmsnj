@@ -357,7 +357,10 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   (per siswa, hanya dibuat jika ada isian): centang wali kelas, pengecualian (KHUSUS admin, alasan wajib),
   ruang (admin). Layak = semua syarat lolos ATAU dikecualikan. Nomor peserta = `<id acara 3 digit>-<NIS>`.
   Aturan di `services.py` (`check_requirements` murni). Akses kelas: admin semua kelas acara, guru hanya
-  kelas yang ia walikan.
+  kelas yang ia walikan. Frontend: `pages/ExamsPage.jsx` (`/admin/ujian`, `/guru/ujian`),
+  `pages/ExamEventPage.jsx` (tabel kelayakan per kelas, simpan sekaligus), form `ExamEventFormModal`,
+  fungsi murni `utils/exams.js`. Cetak kartu: `/cetak/kartu-ujian/:id?kelas=` (`ExamCardsPrintPage`, DI LUAR
+  `DashboardLayout` agar header/menu tidak ikut tercetak; 8 kartu per A4, `@page` di `index.css`).
 - **Ruang obrolan:** hanya antar pengguna yang satu sekolah. Aturan di `apps/chat/rules.py` (`can_chat` & `contacts_for` harus selalu
   sejalan — ada test yang memeriksa semua pasangan). Siswa–siswa tidak boleh. Pesan baru dicek
   berkala (polling 4 detik saat percakapan terbuka), bukan WebSocket. Pemberitahuan pesan baru:
@@ -470,13 +473,13 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - [x] Fase 5: Penilaian
 - [x] Fase 6: Dashboard per peran
 - [x] Fase 7: Pemantapan
-- [ ] Fase 9: Ujian & kartu ujian
+- [x] Fase 9: Ujian & kartu ujian
   - [x] 9a: presensi per pertemuan (sesi mengajar) + rekap
   - [x] 9b: status pembayaran (lunas sampai triwulan ke-N, diisi admin, impor Excel)
-  - [ ] 9c: acara ujian, syarat (presensi, tugas, rata-rata nilai, pembayaran, centang manual),
+  - [x] 9c: acara ujian, syarat (presensi, tugas, rata-rata nilai, pembayaran, centang manual),
         pengecualian, cetak kartu (admin & wali kelas)
     - [x] 9c-1: backend (`apps/exams`: model, aturan syarat, API, test, contoh di seed_demo)
-    - [ ] 9c-2: frontend (`/admin/ujian`, `/guru/ujian`, halaman cetak kartu)
+    - [x] 9c-2: frontend (`/admin/ujian`, `/guru/ujian`, halaman cetak kartu)
 - [x] Fase 8: Multi-sekolah (yayasan: SD/MI, SMP/MTs, SMA/MA/SMK)
   - [x] 8a: model School + keanggotaan, migrasi data lama ke sekolah `smknj`, sekolah aktif (X-School),
         tingkat kelas per jenjang, kenaikan kelas per sekolah

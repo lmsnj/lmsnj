@@ -7,6 +7,7 @@ import {
   ClipboardPen,
   GraduationCap,
   House,
+  IdCard,
   Library,
   Megaphone,
   MessagesSquare,
@@ -47,6 +48,7 @@ const ADMIN_MORE = [
   { label: 'Laporan Nilai', icon: ChartColumn, to: '/admin/laporan' },
   { label: 'Rekap Presensi', icon: UserCheck, to: '/admin/presensi' },
   { label: 'Status Pembayaran', icon: Wallet, to: '/admin/pembayaran' },
+  { label: 'Ujian & Kartu Ujian', icon: IdCard, to: '/admin/ujian' },
   { ...ANNOUNCEMENTS, label: 'Pengumuman Sekolah' },
   { label: 'Tahun Ajaran Baru', icon: CalendarSync, to: '/admin/tahun-ajaran' },
 ]
@@ -88,6 +90,7 @@ export const NAVIGATION = {
       { label: 'Sesi Mengajar', icon: CalendarClock, to: '/guru/sesi' },
       { label: 'Laporan Kelas Wali', icon: ChartColumn, to: '/guru/laporan' },
       { label: 'Presensi Kelas Wali', icon: UserCheck, to: '/guru/presensi' },
+      { label: 'Kartu Ujian Kelas Wali', icon: IdCard, to: '/guru/ujian' },
       PROFILE,
     ],
   },
