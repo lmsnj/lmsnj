@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "apps.dashboard",
     "apps.announcements",
     "apps.schedule",
+    "apps.attendance",
     "apps.chat",
     "apps.assessments",
     "apps.branding",

@@ -14,6 +14,7 @@ class TeachingSessionSerializer(serializers.ModelSerializer):
     mode_display = serializers.CharField(source="get_mode_display", read_only=True)
     ends_at = serializers.DateTimeField(read_only=True)
     status = serializers.SerializerMethodField()
+    attendance_count = serializers.SerializerMethodField()
 
     class Meta:
         model = TeachingSession
@@ -33,6 +34,7 @@ class TeachingSessionSerializer(serializers.ModelSerializer):
             "location",
             "meeting_url",
             "status",
+            "attendance_count",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -42,6 +44,10 @@ class TeachingSessionSerializer(serializers.ModelSerializer):
             self.fields["teaching_assignment"].queryset = TeachingAssignment.objects.filter(
                 teacher=request.user
             )
+
+    def get_attendance_count(self, obj):
+        # Diisi lewat annotate di view; sesi yang baru dibuat belum punya presensi.
+        return getattr(obj, "attendance_count", 0)
 
     def get_status(self, obj):
         now = timezone.now()

@@ -3,6 +3,7 @@ import { SESSION_TEMPLATES } from '../utils/formTemplates'
 import { MapPin, Video } from 'lucide-react'
 import { useState } from 'react'
 import { sessionsApi } from '../api/sessions'
+import AttendanceSheetModal from '../components/AttendanceSheetModal'
 import Alert from '../components/Alert'
 import AssignmentSelect from '../components/AssignmentSelect'
 import Badge from '../components/Badge'
@@ -282,6 +283,15 @@ export default function SessionsPage() {
               actions={
                 isTeacher && (
                   <>
+                    {s.status !== 'upcoming' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDialog({ type: 'attendance', session: s })}
+                      >
+                        {s.attendance_count > 0 ? 'Presensi ✓' : 'Isi Presensi'}
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -312,6 +322,13 @@ export default function SessionsPage() {
           onSaved={(saved, isEdit) =>
             done(`Sesi "${saved.title}" ${isEdit ? 'diperbarui' : 'dijadwalkan'}.`)
           }
+        />
+      )}
+      {dialog?.type === 'attendance' && (
+        <AttendanceSheetModal
+          sessionId={dialog.session.id}
+          onClose={closeDialog}
+          onSaved={(data) => done(`Presensi "${data.title}" disimpan.`)}
         />
       )}
       <DeleteDialog

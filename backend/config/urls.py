@@ -18,6 +18,7 @@ urlpatterns = [
     path("api/", include("apps.dashboard.urls")),
     path("api/", include("apps.announcements.urls")),
     path("api/", include("apps.schedule.urls")),
+    path("api/", include("apps.attendance.urls")),
     path("api/", include("apps.chat.urls")),
     path("api/", include("apps.assessments.urls")),
     path("api/", include("apps.branding.urls")),

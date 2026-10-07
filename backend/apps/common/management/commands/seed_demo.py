@@ -18,6 +18,7 @@ from django.utils import timezone
 from apps.academics.models import Classroom, Subject, TeachingAssignment
 from apps.accounts.models import Role, User
 from apps.announcements.models import Announcement
+from apps.attendance.models import Attendance
 from apps.assessments.models import Assessment, Question
 from apps.chat.models import Conversation, Message
 from apps.materials.models import Material, MaterialType
@@ -457,6 +458,7 @@ class Command(BaseCommand):
             )  # fmt: skip
 
         self.seed_demo_exam(web)
+        self.seed_attendance(web)
 
         student = User.objects.filter(username="rizki").first()
         if student:
@@ -474,6 +476,33 @@ class Command(BaseCommand):
                 conversation.last_message_at = reply.created_at
                 conversation.save(update_fields=["last_message_at"])
             self.count("obrolan", created)
+
+    def seed_attendance(self, assignment, meetings=8):
+        """Pertemuan lampau berisi presensi, agar rekap presensi (dan syarat kartu ujian) punya data.
+        Sebagian besar hadir; beberapa siswa sengaja sering absen sehingga di bawah 90%."""
+        often_absent = {"dimas", "salsa"}
+        students = list(assignment.classroom.students.all())
+        for number in range(1, meetings + 1):
+            start = (self.now - timedelta(days=7 * (meetings - number) + 1)).replace(
+                hour=7, minute=30, second=0, microsecond=0
+            )
+            session, created = TeachingSession.objects.get_or_create(
+                teaching_assignment=assignment,
+                title=f"Pertemuan {number}",
+                defaults={"starts_at": start, "location": "Lab RPL 1", "created_by": assignment.teacher},
+            )
+            if not created:
+                continue
+            self.count("pertemuan", True)
+            for student in students:
+                chance = self.random.random()
+                if student.username in often_absent and chance < 0.35:
+                    status = "A"
+                else:
+                    status = "S" if chance < 0.04 else "I" if chance < 0.07 else "H"
+                Attendance.objects.create(
+                    session=session, student=student, status=status, recorded_by=assignment.teacher
+                )
 
     def seed_demo_exam(self, web):
         """Ujian contoh bergaya simulasi TKA (lihat _demo_exam.py) untuk mencoba mode ujian siswa."""

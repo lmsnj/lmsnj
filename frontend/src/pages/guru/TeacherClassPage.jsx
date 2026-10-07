@@ -12,6 +12,7 @@ import Spinner from '../../components/Spinner'
 import useFetch from '../../hooks/useFetch'
 import { useTabs } from '../../hooks/useTabs'
 import { ALL } from '../../utils/academic'
+import AttendanceTab from './AttendanceTab'
 import GradebookTab from './GradebookTab'
 import MaterialsManager from './MaterialsManager'
 import TasksTab from './TasksTab'
@@ -21,6 +22,7 @@ const TABS = [
   { id: 'materi', label: 'Materi' },
   { id: 'tugas', label: 'Tugas' },
   { id: 'nilai', label: 'Nilai' },
+  { id: 'presensi', label: 'Presensi' },
   { id: 'siswa', label: 'Anggota' },
 ]
 
@@ -125,6 +127,7 @@ function ClassContent({ assignment: a }) {
       )}
       {tab === 'tugas' && <TasksTab assignmentId={a.id} openForm={creating === 'tugas'} />}
       {tab === 'nilai' && <GradebookTab assignment={a} />}
+      {tab === 'presensi' && <AttendanceTab assignment={a} />}
       {tab === 'siswa' && <StudentsTab students={students} />}
     </>
   )

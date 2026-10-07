@@ -14,6 +14,7 @@ import {
   Palette,
   School,
   Trophy,
+  UserCheck,
   UserRound,
   Users,
 } from 'lucide-react'
@@ -43,6 +44,7 @@ const ADMIN_MAIN = [
 ]
 const ADMIN_MORE = [
   { label: 'Laporan Nilai', icon: ChartColumn, to: '/admin/laporan' },
+  { label: 'Rekap Presensi', icon: UserCheck, to: '/admin/presensi' },
   { ...ANNOUNCEMENTS, label: 'Pengumuman Sekolah' },
   { label: 'Tahun Ajaran Baru', icon: CalendarSync, to: '/admin/tahun-ajaran' },
 ]
@@ -83,6 +85,7 @@ export const NAVIGATION = {
       ANNOUNCEMENTS,
       { label: 'Sesi Mengajar', icon: CalendarClock, to: '/guru/sesi' },
       { label: 'Laporan Kelas Wali', icon: ChartColumn, to: '/guru/laporan' },
+      { label: 'Presensi Kelas Wali', icon: UserCheck, to: '/guru/presensi' },
       PROFILE,
     ],
   },
@@ -97,6 +100,7 @@ export const NAVIGATION = {
     ],
     more: [
       { label: 'Nilai & Progres', icon: Trophy, to: '/siswa/nilai' },
+      { label: 'Kehadiran Saya', icon: UserCheck, to: '/siswa/presensi' },
       ANNOUNCEMENTS,
       { label: 'Jadwal Sesi', icon: CalendarClock, to: '/siswa/sesi' },
       PROFILE,

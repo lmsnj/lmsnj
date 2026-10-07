@@ -26,6 +26,8 @@ const TeacherMaterialsPage = lazy(() => import('../pages/guru/TeacherMaterialsPa
 const TeacherTasksPage = lazy(() => import('../pages/guru/TeacherTasksPage'))
 const TeacherTaskPage = lazy(() => import('../pages/guru/TeacherTaskPage'))
 const AnnouncementsPage = lazy(() => import('../pages/AnnouncementsPage'))
+const AttendanceReportPage = lazy(() => import('../pages/AttendanceReportPage'))
+const StudentAttendancePage = lazy(() => import('../pages/siswa/StudentAttendancePage'))
 const ChatPage = lazy(() => import('../pages/ChatPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const ReportPage = lazy(() => import('../pages/ReportPage'))
@@ -82,6 +84,7 @@ export default function AppRoutes() {
                 <Route path="mapel" element={<SubjectsPage />} />
                 <Route path="pengampu" element={<AssignmentsPage />} />
                 <Route path="laporan" element={<ReportPage />} />
+                <Route path="presensi" element={<AttendanceReportPage />} />
                 <Route path="tahun-ajaran" element={<PromotionPage />} />
               </Route>
               <Route element={<ProtectedRoute roles={[ROLES.FOUNDATION]} />}>
@@ -100,6 +103,7 @@ export default function AppRoutes() {
               <Route path="asesmen/:id" element={<AssessmentEditorPage />} />
               <Route path="sesi" element={<SessionsPage />} />
               <Route path="laporan" element={<ReportPage />} />
+              <Route path="presensi" element={<AttendanceReportPage />} />
             </Route>
 
             <Route path="siswa" element={<ProtectedRoute roles={[ROLES.STUDENT]} />}>
@@ -113,6 +117,7 @@ export default function AppRoutes() {
               <Route path="asesmen" element={<StudentAssessmentsPage />} />
               <Route path="asesmen/:id" element={<StudentAssessmentPage />} />
               <Route path="sesi" element={<SessionsPage />} />
+              <Route path="presensi" element={<StudentAttendancePage />} />
             </Route>
 
             <Route path="profil" element={<ProfilePage />} />

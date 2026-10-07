@@ -18,7 +18,7 @@ dipakai sebagai contoh proyek pembelajaran bagi siswa.
 Fitur tambahan setelah MVP (sudah dibuat): pengumuman, laporan nilai per kelas, jadwal sesi mengajar,
 ruang obrolan (pesan langsung), dan lembar asesmen (kuis online).
 
-Belum dikerjakan (jangan dikerjakan kecuali diminta): absensi, forum diskusi, notifikasi real-time
+Belum dikerjakan (jangan dikerjakan kecuali diminta): forum diskusi, notifikasi real-time
 (push/WebSocket), terjemahan bahasa lain, aplikasi mobile, integrasi Dapodik.
 
 ## Stack
@@ -335,6 +335,15 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - **Laporan nilai kelas** (`apps/tasks/reports.py`): dibangun dari `build_gradebook`, jadi rata-ratanya
   sama dengan rekap guru. Akses: admin dan wali kelas (hanya kelasnya).
 - **Sesi mengajar:** mode `offline` (ruang) atau `online` (wajib link). Guru pengampu yang mengatur.
+- **Presensi** (`apps/attendance`): satu `Attendance` = satu siswa di satu sesi mengajar (status H/S/I/A,
+  unik per sesi-siswa, PROTECT — sesi berisi presensi tidak bisa dihapus). Diisi guru pengampu (atau
+  admin) lewat `/api/sessions/{id}/attendance/`, hanya setelah sesi dimulai dan hanya untuk siswa kelas
+  itu. Rekap & rumus di `services.py` (dipakai juga syarat kartu ujian): persentase = Hadir / pertemuan
+  yang SUDAH dicatat (`count_excused` = Sakit & Izin dihitung hadir). Rekap per kelas-mapel: guru
+  pengampu, wali kelas, admin; per kelas (semua mapel): wali kelas & admin; siswa: miliknya sendiri.
+  Frontend: tab "Presensi" di kelas guru (tombol "Pertemuan Hari Ini" membuat sesi lalu membuka lembar
+  presensi), `AttendanceSheetModal`, `AttendanceSummaryTable`, `/admin/presensi`, `/guru/presensi`,
+  `/siswa/presensi`.
 - **Ruang obrolan:** hanya antar pengguna yang satu sekolah. Aturan di `apps/chat/rules.py` (`can_chat` & `contacts_for` harus selalu
   sejalan — ada test yang memeriksa semua pasangan). Siswa–siswa tidak boleh. Pesan baru dicek
   berkala (polling 4 detik saat percakapan terbuka), bukan WebSocket. Pemberitahuan pesan baru:
@@ -409,7 +418,10 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET    | `/api/gradebook/{teaching_assignment_id}/` dan `.../export/` (CSV) | Guru pengampu/admin |
 | CRUD   | `/api/announcements/` (`?teaching_assignment=<id>` atau `school`) | Baca: semua (sekolah + kelas-mapelnya). Buat: admin & guru. Ubah/hapus: penulis/admin |
 | GET    | `/api/reports/classrooms/{id}/` dan `.../export/` (CSV) | Admin & wali kelas |
-| CRUD   | `/api/sessions/` (filter `teaching_assignment`, `starts_at__gte/lte`) | Seperti materi |
+| CRUD   | `/api/sessions/` (filter `teaching_assignment`, `starts_at__gte/lte`) | Seperti materi; ada `attendance_count` |
+| GET/PUT | `/api/sessions/{id}/attendance/` (PUT `records: [{student, status, note}]`) | Guru pengampu/admin |
+| GET    | `/api/attendance/summary/` (`classroom` ATAU `teaching_assignment`, `date_from`, `date_to`) | Lihat aturan presensi |
+| GET    | `/api/attendance/me/`             | Siswa            |
 | GET/POST | `/api/chat/conversations/` (`{user}` untuk memulai) | Login; hanya percakapan milik sendiri |
 | GET/POST | `/api/chat/conversations/{id}/messages/` (`?after=<id>`) | Anggota percakapan; kirim dibatasi 30/menit |
 | GET    | `/api/chat/conversations/contacts/`, `.../unread-count/` | Login |
@@ -438,6 +450,11 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - [x] Fase 5: Penilaian
 - [x] Fase 6: Dashboard per peran
 - [x] Fase 7: Pemantapan
+- [ ] Fase 9: Ujian & kartu ujian
+  - [x] 9a: presensi per pertemuan (sesi mengajar) + rekap
+  - [ ] 9b: status pembayaran (lunas sampai triwulan ke-N, diisi admin, impor Excel)
+  - [ ] 9c: acara ujian, syarat (presensi, tugas, rata-rata nilai, pembayaran, centang manual),
+        pengecualian, cetak kartu (admin & wali kelas)
 - [x] Fase 8: Multi-sekolah (yayasan: SD/MI, SMP/MTs, SMA/MA/SMK)
   - [x] 8a: model School + keanggotaan, migrasi data lama ke sekolah `smknj`, sekolah aktif (X-School),
         tingkat kelas per jenjang, kenaikan kelas per sekolah
