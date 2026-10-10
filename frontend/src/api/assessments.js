@@ -34,8 +34,12 @@ export const assessmentsApi = {
 }
 
 // Alamat lengkap video soal (alamat bertanda tangan dari API, diputar langsung oleh <video>).
-export const videoSource = (url) =>
-  url ? `${api.defaults.baseURL.replace(/\/$/, '')}${url}` : null
+// Alamat yang sudah lengkap (blob: file pilihan guru di pratinjau, atau http) dipakai apa adanya.
+export const videoSource = (url) => {
+  if (!url) return null
+  if (/^(blob:|https?:)/.test(url)) return url
+  return `${api.defaults.baseURL.replace(/\/$/, '')}${url}`
+}
 
 export const questionsApi = {
   create: (data) => post('/assessment-questions/', data),
