@@ -40,6 +40,7 @@ lms-smknj/
 ├── CLAUDE.md
 ├── README.md            # Cara menjalankan, akun demo
 ├── docs/DEPLOY.md       # Panduan memasang di server sekolah
+├── docs/REQUIREMENTS.md # Requirement tracking (ID, Priority, Acceptance Criteria, ...)
 ├── backend/
 │   ├── manage.py
 │   ├── requirements.txt
@@ -55,7 +56,8 @@ lms-smknj/
 │   │   ├── announcements/   # Pengumuman sekolah (admin) & kelas-mapel (guru)
 │   │   ├── schedule/        # Jadwal sesi mengajar (TeachingSession); bukan "sessions" (bentrok app Django)
 │   │   ├── chat/            # Ruang obrolan; rules.py = siapa boleh mengobrol dengan siapa
-│   │   ├── assessments/     # Lembar asesmen (kuis); services.py = aturan mengerjakan & menilai
+│   │   ├── assessments/     # Lembar asesmen (kuis); services.py = aturan mengerjakan & menilai;
+│   │   │                    #   interactive.py = soal interaktif; videos.py = streaming video soal
 │   │   ├── exams/           # Acara ujian, syarat & pengecualian kartu ujian; services.py = aturan syarat
 │   │   ├── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
 │   │   └── schools/         # Sekolah (multi-sekolah yayasan); context.py = sekolah aktif (header X-School)
@@ -397,6 +399,22 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   `remedial: true` (token kartu diminta lagi jika ada `exam_event`). Kunci jawaban baru dibuka setelah
   `last_due_at` (tenggat remedial). Siswa melihat popup hasil (`pages/siswa/AssessmentResult.jsx`)
   langsung setelah mengumpulkan; tampilan status di `utils/assessments.js::resultDisplay`.
+- **Soal interaktif** (`apps/assessments/interactive.py`, frontend `utils/interactive.js` +
+  `components/interactive/`): `fill_blank` (isian, `[[jawaban|alternatif]]`), `drag_drop` (tarik & lepas,
+  `[[jawaban]]` + pengecoh teks/gambar), `matching` (pasangan kiri-kanan + pengecoh kanan),
+  `interactive_video` (YouTube/file + checkpoint berisi sub-soal PG/isian/tarik/jodoh). Guru mengirim
+  `spec`; server membuat `Question.content` (boleh dilihat siswa, id pilihan acak) dan `answer_key`
+  (kunci + spec; HANYA di `QuestionSerializer`, siswa tidak pernah menerimanya). Urutan pilihan diacak
+  per pengerjaan (seed = id Attempt). Jawaban siswa di `Answer.response` / draft `response`; penilaian
+  murni di `grade_*` dengan `Question.scoring_mode` partial/all_or_nothing (soal lama tidak terpengaruh).
+  Soal terjawab (`isAnswered`) hanya jika semua celah/pasangan/checkpoint terisi. Hasil: `answer.result`
+  (benar/salah per bagian, terlihat setelah dikumpulkan) + `key` (hanya jika kunci dibuka). Video: poin
+  soal = jumlah poin checkpoint; mode latihan memeriksa checkpoint di server (`.../checkpoint/`) lalu
+  menguncinya di `Attempt.checkpoint_answers` (tidak bisa ditimpa draft/submit). File video = slot
+  `video` di `QuestionImage` (MP4/WEBM, `MAX_VIDEO_UPLOAD_MB`), diputar lewat alamat bertanda tangan
+  `/api/assessment-videos/{id}/?t=` (pengecualian dari pola blob agar bisa streaming + Range); iframe
+  YouTube diberi `data-exam-frame` agar fokus di dalamnya tidak dihitung pelanggaran. Pratinjau form
+  guru memakai komponen yang sama dengan siswa. Impor: jenis `isian`/`seret`/`jodohkan` (video tidak).
 - **Jenis soal** (`QuestionKind`): `choice` (PG, `correct_choice`), `multiple` (PG kompleks/MCMA,
   `correct_choices` minimal 2), `category` (pilihan = pernyataan, `category_labels` 2 label mis.
   Benar/Salah, `correct_choices` = indeks label per pernyataan), `essay`. Jawaban PG kompleks &
@@ -478,8 +496,10 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | CRUD   | `/api/assessments/` | Seperti tugas; untuk siswa ada `my_attempt` |
 | GET    | `/api/assessments/{id}/questions/`, `.../results/` | Guru pengampu/admin |
 | POST/GET | `/api/assessments/{id}/start/` (`token` jika ada `exam_event`, `remedial`), `.../submit/`, `.../my-attempt/`, `.../draft/`, `.../violation/` | Siswa |
-| CRUD   | `/api/assessment-questions/` | Guru pengampu (terkunci setelah ada pengerjaan) |
-| POST/DELETE | `/api/assessment-questions/{id}/images/` (`slot`, `index`, `file`) | Guru pengampu |
+| CRUD   | `/api/assessment-questions/` (soal interaktif: `spec`, `scoring_mode`; baca `content`, `key`) | Guru pengampu (terkunci setelah ada pengerjaan) |
+| POST/DELETE | `/api/assessment-questions/{id}/images/` (`slot` stimulus/question/choice/video, `index`, `file`) | Guru pengampu |
+| POST   | `/api/assessments/{id}/checkpoint/` (`question`, `checkpoint`, `response`) | Siswa; hanya video mode latihan |
+| GET    | `/api/assessment-videos/{id}/?t=<tanda tangan>` | Pemilik tanda tangan (berlaku 6 jam, hak akses dicek ulang); mendukung Range |
 | GET    | `/api/assessment-images/{id}/` | Guru pengampu/admin; siswa setelah mulai mengerjakan |
 | GET    | `/api/assessments/question-template/` | Guru/admin: template Excel soal |
 | POST   | `/api/assessments/{id}/import-questions/` (`mode` excel/text, `file`/`text`, `images` ZIP, `dry_run`) | Guru pengampu |
@@ -517,3 +537,5 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] 8e: seed_demo beberapa sekolah, README/DEPLOY
 - [x] Tambahan: impor pengguna dari Excel, tampilan baru, pengumuman, laporan nilai, sesi mengajar,
       ruang obrolan, lembar asesmen
+- [x] Soal interaktif (lihat `docs/REQUIREMENTS.md` QA-INT-00..04): isian singkat, tarik & lepas,
+      menjodohkan, video interaktif

@@ -12,6 +12,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.common.images import MAX_IMAGE_MB, image_error  # noqa: F401 (image_error dipakai views)
 
+from .interactive import choice_count
 from .models import ImageSlot, QuestionImage
 
 # Batas ZIP agar tidak bisa dipakai membebani server ("zip bomb").
@@ -82,7 +83,7 @@ def save_image(question, slot, index, name, data):
 
 def images_data(question):
     """Bentuk data gambar untuk API: url relatif (diunduh lewat API dengan token)."""
-    result = {"stimulus": None, "question": None, "choices": [None] * len(question.choices or [])}
+    result = {"stimulus": None, "question": None, "choices": [None] * choice_count(question)}
     for image in question.images.all():
         item = {"id": image.id, "url": f"/assessment-images/{image.id}/", "name": image.original_filename}
         if image.slot == ImageSlot.CHOICE:

@@ -6,8 +6,9 @@ from rest_framework import serializers
 from apps.academics.models import TeachingAssignment
 from apps.exams.models import ExamEvent
 
+from . import interactive
 from .images import images_data
-from .models import Assessment, ImageSlot, Question, QuestionKind, ViolationKind
+from .models import INTERACTIVE_KINDS, Assessment, ImageSlot, Question, QuestionKind, ViolationKind
 from .results import final_result, max_score_of
 from .services import ensure_editable, ensure_publishable
 
@@ -74,6 +75,13 @@ class QuestionSerializer(serializers.ModelSerializer):
     image_choices = serializers.ListField(
         child=serializers.IntegerField(min_value=0), write_only=True, required=False
     )
+    # Soal interaktif boleh tanpa pertanyaan (diisi petunjuk bawaan); soal lain wajib (dicek di validate).
+    text = serializers.CharField(required=False, allow_blank=True)
+    # Soal interaktif: rancangan guru (kalimat [[...]], pasangan, checkpoint). Dibaca lagi lewat
+    # to_representation dari answer_key["spec"].
+    spec = serializers.JSONField(required=False, write_only=True)
+    content = serializers.SerializerMethodField()
+    key = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
@@ -87,16 +95,33 @@ class QuestionSerializer(serializers.ModelSerializer):
             "text",
             "text_direction",
             "points",
+            "scoring_mode",
             "choices",
             "correct_choice",
             "correct_choices",
             "category_labels",
             "images",
             "image_choices",
+            "spec",
+            "content",
+            "key",
         ]
 
     def get_images(self, obj):
         return images_data(obj)
+
+    def get_content(self, obj):
+        if obj.kind not in INTERACTIVE_KINDS:
+            return None
+        return interactive.teacher_content(obj, user=getattr(self.context.get("request"), "user", None))
+
+    def get_key(self, obj):
+        return interactive.key_display(obj) if obj.kind in INTERACTIVE_KINDS and obj.answer_key else None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["spec"] = instance.answer_key.get("spec") if instance.kind in INTERACTIVE_KINDS else None
+        return data
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -127,6 +152,12 @@ class QuestionSerializer(serializers.ModelSerializer):
             with_image |= set(
                 self.instance.images.filter(slot=ImageSlot.CHOICE).values_list("index", flat=True)
             )
+        if kind in INTERACTIVE_KINDS:
+            return self.validate_interactive(attrs, kind, with_image, current)
+        attrs.pop("spec", None)
+        if not str(current("text", "")).strip():
+            raise serializers.ValidationError({"text": "Pertanyaan wajib diisi."})
+        attrs.update(content={}, answer_key={})
         if kind == QuestionKind.ESSAY:
             attrs.update(choices=[], correct_choice=None, correct_choices=[], category_labels=[])
             return attrs
@@ -162,17 +193,40 @@ class QuestionSerializer(serializers.ModelSerializer):
             attrs.update(category_labels=labels, correct_choices=correct, correct_choice=None)
         return attrs
 
+    def validate_interactive(self, attrs, kind, with_image, current):
+        """Soal interaktif: bangun content + answer_key dari spec (lihat interactive.py)."""
+        if not str(current("text", "")).strip():
+            attrs["text"] = interactive.DEFAULT_TEXT[kind]
+        attrs.update(choices=[], correct_choice=None, correct_choices=[], category_labels=[])
+        spec = attrs.pop("spec", None)
+        if spec is None:
+            # Mis. hanya mengubah urutan soal: isi soal tidak dibangun ulang (id pilihan tetap).
+            if self.instance and self.instance.kind == kind and self.instance.answer_key:
+                return attrs
+            raise serializers.ValidationError({"spec": "Lengkapi isi soal terlebih dahulu."})
+        _, content, key, total = interactive.build(kind, spec, image_options=with_image)
+        attrs.update(content=content, answer_key=key)
+        if total is not None:
+            # Video interaktif: poin soal = jumlah poin semua checkpoint.
+            attrs["points"] = total
+        return attrs
+
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
-        # Gambar milik pilihan yang sudah dihapus ikut dihapus.
-        instance.images.filter(slot=ImageSlot.CHOICE, index__gte=len(instance.choices)).delete()
+        # Gambar milik pilihan yang sudah dihapus ikut dihapus (juga video jika tidak dipakai lagi).
+        instance.images.filter(slot=ImageSlot.CHOICE, index__gte=interactive.choice_count(instance)).delete()
+        if instance.kind != QuestionKind.INTERACTIVE_VIDEO or instance.content.get("source") != "file":
+            instance.images.filter(slot=ImageSlot.VIDEO).delete()
         return instance
 
 
 class StudentQuestionSerializer(serializers.ModelSerializer):
-    """Soal versi SISWA: tanpa kunci jawaban."""
+    """Soal versi SISWA: tanpa kunci jawaban (answer_key tidak pernah ikut).
+
+    context: `seed` (id pengerjaan, untuk mengacak pilihan soal interaktif) dan `request`."""
 
     images = serializers.SerializerMethodField()
+    content = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
@@ -185,13 +239,27 @@ class StudentQuestionSerializer(serializers.ModelSerializer):
             "text",
             "text_direction",
             "points",
+            "scoring_mode",
             "choices",
             "category_labels",
             "images",
+            "content",
         ]
 
     def get_images(self, obj):
-        return images_data(obj)
+        data = images_data(obj)
+        if obj.kind in INTERACTIVE_KINDS:
+            # Gambar pilihan sudah ada di dalam content (urutan aslinya bisa membocorkan kunci).
+            data["choices"] = []
+            data.pop("video", None)
+        return data
+
+    def get_content(self, obj):
+        if obj.kind not in INTERACTIVE_KINDS:
+            return None
+        return interactive.student_content(
+            obj, self.context.get("seed", 0), user=getattr(self.context.get("request"), "user", None)
+        )
 
 
 class AssessmentSerializer(serializers.ModelSerializer):
@@ -334,6 +402,8 @@ class SubmitAnswerSerializer(serializers.Serializer):
         max_length=MAX_CHOICES,
     )
     text = serializers.CharField(required=False, allow_blank=True, default="", max_length=10000)
+    # Soal interaktif: jawaban per celah/pasangan/checkpoint (diperiksa di interactive.clean_response).
+    response = serializers.JSONField(required=False, default=dict)
     # Tanda "ragu-ragu" dari siswa; hanya disimpan di jawaban sementara, tidak memengaruhi nilai.
     flagged = serializers.BooleanField(required=False, default=False)
 
@@ -356,28 +426,36 @@ class GradeSerializer(serializers.Serializer):
     grades = GradeItemSerializer(many=True)
 
 
-def answer_sheet(attempt, reveal_answers, include_key=False):
-    """Soal + jawaban siswa. Kunci jawaban hanya disertakan jika `include_key` (guru) atau `reveal_answers`."""
+def answer_sheet(attempt, reveal_answers, include_key=False, request=None):
+    """Soal + jawaban siswa. Kunci jawaban hanya disertakan jika `include_key` (guru) atau `reveal_answers`.
+
+    Soal interaktif: `answer.result` = benar/salah per celah/pasangan/checkpoint (terlihat setelah
+    dikumpulkan, setara dengan poin yang sudah terlihat), `key` = kunci (hanya jika dibuka)."""
     answers = {a.question_id: a for a in attempt.answers.all()}
+    context = {"seed": attempt.id, "request": request}
+    show_key = include_key or reveal_answers
     sheet = []
     for question in attempt.assessment.questions.all():
         answer = answers.get(question.id)
-        item = StudentQuestionSerializer(question).data
+        item = StudentQuestionSerializer(question, context=context).data
+        is_interactive = question.kind in INTERACTIVE_KINDS
         item["answer"] = (
             {
                 "id": answer.id,
                 "choice": answer.choice,
                 "choices": answer.choices,
                 "text": answer.text,
+                "response": answer.response,
+                "result": interactive.grade(question, answer.response)[1] if is_interactive else None,
                 "points": float(answer.points) if answer.points is not None else None,
                 "feedback": answer.feedback,
             }
             if answer
             else None
         )
-        show_key = include_key or reveal_answers
         item["key_revealed"] = show_key
         item["correct_choice"] = question.correct_choice if show_key else None
         item["correct_choices"] = question.correct_choices if show_key else None
+        item["key"] = interactive.key_display(question) if show_key and is_interactive else None
         sheet.append(item)
     return sheet

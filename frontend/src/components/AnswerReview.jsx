@@ -1,6 +1,8 @@
 import { Check, X } from 'lucide-react'
 import { choiceLetter, questionDir } from '../utils/assessments'
 import { categoryLabels } from '../utils/exam'
+import { isInteractive } from '../utils/interactive'
+import InteractiveAnswer from './interactive/InteractiveAnswer'
 import { ChoiceContent } from './QuestionContent'
 
 /**
@@ -12,6 +14,18 @@ import { ChoiceContent } from './QuestionContent'
  */
 export default function AnswerReview({ question, answer, showKey = true, who, imageNames }) {
   if (question.kind === 'essay') return null
+  if (isInteractive(question.kind)) {
+    const key = showKey ? question.key : null
+    // Tanpa jawaban (editor guru / pratinjau impor): tampilkan kuncinya saja.
+    const keyOnly = !answer?.response
+    return (
+      <InteractiveAnswer
+        question={question}
+        value={answer?.response}
+        review={{ result: answer?.result, key, keyOnly }}
+      />
+    )
+  }
   if (question.kind === 'category') {
     return <CategoryReview question={question} answer={answer} showKey={showKey} who={who} />
   }

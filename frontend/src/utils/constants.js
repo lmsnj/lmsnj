@@ -49,6 +49,8 @@ export const PAGE_SIZE = 20
 
 // Batas ukuran upload; harus sama dengan MAX_UPLOAD_SIZE_MB di backend.
 export const MAX_UPLOAD_MB = 10
+// Batas video soal video interaktif. Samakan dengan MAX_VIDEO_UPLOAD_MB di backend/.env.
+export const MAX_VIDEO_UPLOAD_MB = 100
 
 export const MATERIAL_TYPES = {
   pdf: { label: 'PDF', color: 'red' },

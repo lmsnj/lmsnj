@@ -11,6 +11,7 @@ export default function FormModal({
   submitting,
   error,
   submitLabel = 'Simpan',
+  size = 'md',
   children,
 }) {
   const formId = useId()
@@ -18,6 +19,7 @@ export default function FormModal({
   return (
     <Modal
       open
+      size={size}
       title={title}
       onClose={onClose}
       footer={

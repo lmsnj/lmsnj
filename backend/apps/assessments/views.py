@@ -1,15 +1,17 @@
+from django.core import signing
 from django.db.models import Count, IntegerField, OuterRef, Prefetch, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.academics.selectors import teaching_assignments_for
-from apps.accounts.models import Role
+from apps.accounts.models import Role, User
 from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStudent, IsTeacher
 from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.files import file_response
@@ -17,8 +19,9 @@ from apps.common.mixins import ProtectedDeleteMixin
 from apps.schools.context import active_school
 from apps.tasks.gradebook import roster_students
 
+from . import interactive
 from .images import image_error, read_zip, save_image
-from .models import Assessment, Attempt, ImageSlot, Question, QuestionImage
+from .models import Assessment, Attempt, ImageSlot, Question, QuestionImage, QuestionKind
 from .question_import import build_question_template, parse_excel, parse_text, prepare, preview
 from .question_import import save as save_imported
 from .results import final_result, max_score_of
@@ -33,6 +36,8 @@ from .serializers import (
     attempt_summary,
 )
 from .services import (
+    check_checkpoint,
+    checkpoint_feedback,
     ensure_editable,
     grade_answers,
     latest_attempt,
@@ -41,6 +46,7 @@ from .services import (
     start_attempt,
     submit_attempt,
 )
+from .videos import ranged_response, read_token, video_error
 
 
 def _subquery(queryset, aggregate):
@@ -108,7 +114,11 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     def questions(self, request, pk=None):
         """Soal lengkap dengan kunci jawaban, untuk guru pengampu (dan admin)."""
         assessment = self.get_object()
-        return Response(QuestionSerializer(assessment.questions.prefetch_related("images"), many=True).data)
+        return Response(
+            QuestionSerializer(
+                assessment.questions.prefetch_related("images"), many=True, context={"request": request}
+            ).data
+        )
 
     @action(detail=False, url_path="question-template", permission_classes=[IsAdminOrTeacher])
     def question_template(self, request):
@@ -151,8 +161,12 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         return Response(
             {
                 "attempt": attempt_summary(attempt),
+                # Video mode latihan: checkpoint yang sudah diperiksa (dipulihkan setelah refresh).
+                "checkpoints": checkpoint_feedback(attempt),
                 "questions": StudentQuestionSerializer(
-                    assessment.questions.prefetch_related("images"), many=True
+                    assessment.questions.prefetch_related("images"),
+                    many=True,
+                    context={"request": request, "seed": attempt.id},
                 ).data,
                 # Jawaban sementara di server, dipulihkan jika pindah perangkat / cache terhapus.
                 "draft": attempt.draft_answers,
@@ -179,6 +193,18 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         save_draft(self._my_open_attempt(request), serializer.validated_data["answers"])
         return Response({"saved": True})
+
+    @action(detail=True, methods=["post"], permission_classes=[IsStudent])
+    def checkpoint(self, request, pk=None):
+        """Video interaktif mode latihan: periksa jawaban satu checkpoint (benar/salah + pembahasan).
+        Jawaban yang sudah diperiksa dikunci dan ikut dinilai saat dikumpulkan."""
+        result = check_checkpoint(
+            self._my_open_attempt(request),
+            request.data.get("question"),
+            str(request.data.get("checkpoint", "")),
+            request.data.get("response"),
+        )
+        return Response(result)
 
     @action(detail=True, methods=["post"], permission_classes=[IsStudent])
     def violation(self, request, pk=None):
@@ -225,7 +251,7 @@ class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             {
                 "attempt": attempt_summary(attempt),
                 "result": final_result(assessment, attempts, max_score_of(assessment)),
-                "questions": answer_sheet(attempt, reveal_answers=reveal),
+                "questions": answer_sheet(attempt, reveal_answers=reveal, request=self.request),
                 "answers_revealed": reveal,
             }
         )
@@ -286,10 +312,12 @@ class QuestionViewSet(viewsets.ModelViewSet):
         raw_index = str(params.get("index") or 0)
         index = int(raw_index) if raw_index.isdigit() else -1
         if slot not in ImageSlot.values:
-            raise ValidationError({"slot": "Letak gambar harus stimulus, question, atau choice."})
+            raise ValidationError({"slot": "Letak gambar harus stimulus, question, choice, atau video."})
+        if slot == ImageSlot.VIDEO:
+            return self._video(request, question)
         if slot != ImageSlot.CHOICE:
             index = 0
-        elif not 0 <= index < len(question.choices):
+        elif not 0 <= index < interactive.choice_count(question):
             raise ValidationError({"index": "Nomor pilihan tidak ada pada soal ini."})
         if request.method == "DELETE":
             question.images.filter(slot=slot, index=index).delete()
@@ -303,6 +331,27 @@ class QuestionViewSet(viewsets.ModelViewSet):
             raise ValidationError({"file": error})
         save_image(question, slot, index, file.name, data)
         # Ambil ulang: daftar gambar hasil prefetch di objek lama belum memuat gambar baru.
+        return Response(self.get_serializer(self.get_queryset().get(pk=question.pk)).data)
+
+    def _video(self, request, question):
+        """File video soal video interaktif (sumber "file"). Disimpan langsung tanpa dibaca utuh ke memori."""
+        if question.kind != QuestionKind.INTERACTIVE_VIDEO or question.content.get("source") != "file":
+            raise ValidationError({"slot": "Video hanya untuk soal video interaktif bersumber file."})
+        if request.method == "DELETE":
+            question.images.filter(slot=ImageSlot.VIDEO).delete()
+            return Response(status=204)
+        file = request.FILES.get("file")
+        if file is None:
+            raise ValidationError({"file": "Pilih file video."})
+        head = file.read(16)
+        file.seek(0)
+        error = video_error(file.name, head, file.size)
+        if error:
+            raise ValidationError({"file": error})
+        question.images.filter(slot=ImageSlot.VIDEO).delete()
+        video = QuestionImage(question=question, slot=ImageSlot.VIDEO, original_filename=file.name[:255])
+        video.file.save(file.name, file, save=False)
+        video.save()
         return Response(self.get_serializer(self.get_queryset().get(pk=question.pk)).data)
 
 
@@ -326,7 +375,7 @@ class AttemptViewSet(viewsets.GenericViewSet):
                 "student": {"id": attempt.student.id, "full_name": attempt.student.full_name},
                 "assessment": {"id": attempt.assessment.id, "title": attempt.assessment.title},
                 "attempt": attempt_summary(attempt),
-                "questions": answer_sheet(attempt, reveal_answers=True, include_key=True),
+                "questions": answer_sheet(attempt, reveal_answers=True, include_key=True, request=request),
                 "events": [
                     {"kind": e.kind, "label": e.get_kind_display(), "created_at": e.created_at}
                     for e in attempt.events.all()
@@ -359,3 +408,30 @@ class AssessmentImageView(APIView):
         response = file_response(image.file, image.original_filename or "gambar")
         response["Cache-Control"] = "private, max-age=3600"
         return response
+
+
+class AssessmentVideoView(APIView):
+    """Putar video soal lewat alamat bertanda tangan (lihat videos.py). Hak akses pengguna pemilik
+    token dicek ulang: guru/admin sesuai asesmennya, siswa hanya setelah mulai mengerjakan."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        video = get_object_or_404(
+            QuestionImage.objects.select_related("question__assessment__teaching_assignment__classroom"),
+            pk=pk,
+            slot=ImageSlot.VIDEO,
+        )
+        try:
+            user_id = read_token(request.query_params.get("t", ""), video.id)
+        except signing.BadSignature:
+            raise PermissionDenied("Alamat video sudah kedaluwarsa. Muat ulang halaman.")
+        user = User.objects.filter(pk=user_id, is_active=True).first()
+        assessment = video.question.assessment
+        school = assessment.teaching_assignment.classroom.school
+        if user is None or not assessments_for(user, school).filter(pk=assessment.pk).exists():
+            raise NotFound()
+        if user.role == Role.STUDENT and not assessment.attempts.filter(student=user).exists():
+            raise NotFound()
+        return ranged_response(request, video.file, video.original_filename)

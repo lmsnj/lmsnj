@@ -85,9 +85,22 @@ export const QUESTION_KINDS = {
   multiple: 'PG kompleks',
   category: 'Kategori (Benar/Salah)',
   essay: 'Esai',
+  fill_blank: 'Isian singkat',
+  drag_drop: 'Tarik & lepas',
+  matching: 'Menjodohkan',
+  interactive_video: 'Video interaktif',
 }
 
-export const KIND_COLORS = { choice: 'blue', multiple: 'green', category: 'amber', essay: 'gray' }
+export const KIND_COLORS = {
+  choice: 'blue',
+  multiple: 'green',
+  category: 'amber',
+  essay: 'gray',
+  fill_blank: 'blue',
+  drag_drop: 'green',
+  matching: 'amber',
+  interactive_video: 'red',
+}
 
 // Huruf pilihan: 0 -> A, 1 -> B, dst.
 export const choiceLetter = (index) => String.fromCharCode(65 + index)

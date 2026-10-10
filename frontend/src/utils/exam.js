@@ -5,6 +5,9 @@
 // - multiple (PG kompleks) : daftar nomor pilihan yang dicentang, mis. [0, 2]
 // - category (kategori)    : untuk setiap pernyataan, nomor label (0 = label pertama) atau null
 // - essay                  : teks
+// - soal interaktif        : objek jawaban (response), lihat utils/interactive.js
+
+import { isComplete, isInteractive } from './interactive.js'
 
 const DEFAULT_LABELS = ['Benar', 'Salah']
 
@@ -12,6 +15,7 @@ export const categoryLabels = (question) =>
   question.category_labels?.length === 2 ? question.category_labels : DEFAULT_LABELS
 
 export function isAnswered(question, value) {
+  if (isInteractive(question.kind)) return isComplete(question.kind, question.content, value)
   switch (question.kind) {
     case 'choice':
       return Number.isInteger(value)
@@ -42,6 +46,14 @@ export function instructionFor(question) {
       const [first, second] = categoryLabels(question)
       return `Tentukan ${first} atau ${second} untuk setiap pernyataan.`
     }
+    case 'fill_blank':
+      return 'Ketik jawabanmu pada setiap kotak kosong di dalam kalimat.'
+    case 'drag_drop':
+      return 'Seret pilihan ke tempat kosong. Di HP: ketuk pilihan, lalu ketuk tempat kosong. Ketuk tempat yang sudah terisi untuk mengosongkannya.'
+    case 'matching':
+      return 'Klik pernyataan di kiri, lalu klik pasangannya di kanan. Klik lagi pernyataan yang sudah berpasangan untuk membatalkan.'
+    case 'interactive_video':
+      return 'Putar video. Video berhenti otomatis di beberapa bagian dan pertanyaan muncul; jawab untuk melanjutkan.'
     default:
       return 'Tulis jawabanmu pada kotak yang tersedia.'
   }
@@ -97,6 +109,8 @@ export function answerPayload(question, value, flagged = false) {
     item.choices = question.choices.map((_, i) =>
       Array.isArray(value) ? (value[i] ?? null) : null,
     )
+  } else if (isInteractive(question.kind)) {
+    item.response = value && typeof value === 'object' ? value : {}
   } else item.text = value ?? ''
   if (flagged) item.flagged = true
   return item
@@ -115,6 +129,7 @@ export function fromServerDraft(questions, draft) {
     if (!question) continue
     if (question.kind === 'choice') answers[item.question] = item.choice ?? null
     else if (question.kind === 'essay') answers[item.question] = item.text ?? ''
+    else if (isInteractive(question.kind)) answers[item.question] = item.response ?? {}
     else answers[item.question] = item.choices ?? []
     if (item.flagged) flags[item.question] = true
   }

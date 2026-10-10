@@ -71,6 +71,16 @@ const FORMAT_HELP = [
   ['[pg kompleks]', 'jawaban benar lebih dari satu: Kunci: A, C (atau *A. dan *C.)'],
   ['[kategori]', 'pilihan = pernyataan; Kunci: B, S, B (Benar/Salah per pernyataan)'],
   ['Label: Sesuai / Tidak sesuai', 'opsional untuk kategori (bawaan Benar / Salah)'],
+  [
+    '[isian]',
+    'kalimat dengan jawaban di [[...]]; alternatif benar dipisah |, mis. [[HyperText|Hypertext]]',
+  ],
+  ['[seret]', 'tarik & lepas: kalimat dengan [[jawaban]]; pilihan A. B. ... = pengecoh'],
+  ['[jodohkan]', 'pilihan ditulis "A. kiri = kanan"; pengecoh kanan "C. = teks"'],
+  [
+    'Mode skor: semua',
+    'isian/seret/jodohkan: poin penuh hanya jika semua benar (bawaan: sebagian)',
+  ],
   ['Grup: G1', 'soal dengan grup sama memakai stimulus bersama (isi di soal pertama)'],
   ['| a | b |', 'tabel; baris |---| memisah judul dan isi; sel < = gabung dengan sel kiri'],
   ['*miring* / **tebal**', 'huruf miring (mis. istilah asing) / tebal'],

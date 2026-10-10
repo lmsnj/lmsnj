@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { assessmentsApi } from '../../api/assessments'
 import Alert from '../../components/Alert'
 import Button from '../../components/Button'
+import InteractiveAnswer from '../../components/interactive/InteractiveAnswer'
 import Modal from '../../components/Modal'
 import { ChoiceContent, QuestionText, Stimulus } from '../../components/QuestionContent'
 import useAuth from '../../hooks/useAuth'
@@ -36,6 +37,7 @@ import {
   toggleChoice,
   toPayload,
 } from '../../utils/exam'
+import { isInteractive } from '../../utils/interactive'
 
 const DRAFT_SYNC_MS = 1500
 // Ukuran huruf soal (A- / A / A+). Isi soal memakai satuan em agar ikut membesar.
@@ -390,7 +392,18 @@ function CategoryTable({ question, value, number, onPick }) {
   )
 }
 
-function AnswerArea({ question, value, number, onChange }) {
+function AnswerArea({ question, value, number, onChange, ...extra }) {
+  if (isInteractive(question.kind)) {
+    return (
+      <InteractiveAnswer
+        question={question}
+        value={value}
+        number={number}
+        onChange={onChange}
+        {...extra}
+      />
+    )
+  }
   if (question.kind === 'choice') {
     return <ChoiceCards question={question} value={value} number={number} onPick={onChange} />
   }
@@ -460,6 +473,8 @@ export default function TakeAssessment({ assessment, data, onSubmitted }) {
   // Selisih jam perangkat dengan jam server, agar timer tidak tertipu jam HP yang salah.
   const [clockOffset] = useState(() => new Date(data.server_time).getTime() - Date.now())
   const shared = useMemo(() => sharedStimuli(questions), [questions])
+  // Video mode latihan: hasil checkpoint yang sudah diperiksa server, per soal.
+  const [checkpointResults, setCheckpointResults] = useState(data.checkpoints ?? {})
   const mainRef = useRef(null)
 
   const answersRef = useRef(answers)
@@ -567,7 +582,10 @@ export default function TakeAssessment({ assessment, data, onSubmitted }) {
         return
       }
       const target = event.target
-      const typing = target.closest?.('textarea, input:not([type=radio]):not([type=checkbox])')
+      // Panah di dalam <video> dipakai untuk menggeser video, bukan pindah soal.
+      const typing = target.closest?.(
+        'textarea, video, input:not([type=radio]):not([type=checkbox])',
+      )
       // Radio di tabel kategori memakai panah bawaan browser untuk memilih label.
       const nativeRadio = target.matches?.('input[type=radio]:not([data-exam-choice])')
       if (typing || nativeRadio) return
@@ -669,6 +687,20 @@ export default function TakeAssessment({ assessment, data, onSubmitted }) {
                   value={answers[question.id]}
                   number={current + 1}
                   onChange={(value) => setAnswer(question.id, value)}
+                  feedback={checkpointResults[question.id]}
+                  onCheck={async (checkpoint, response) => {
+                    const result = await assessmentsApi.checkpoint(
+                      assessment.id,
+                      question.id,
+                      checkpoint,
+                      response,
+                    )
+                    setCheckpointResults((all) => ({
+                      ...all,
+                      [question.id]: { ...all[question.id], [checkpoint]: result },
+                    }))
+                    return result
+                  }}
                 />
               </section>
             </div>

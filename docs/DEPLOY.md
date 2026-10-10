@@ -137,6 +137,24 @@ server {
         proxy_read_timeout 120s;
     }
 
+    # Unggah video soal video interaktif: sedikit di atas MAX_VIDEO_UPLOAD_MB (100 MB).
+    location ~ ^/api/assessment-questions/\d+/images/$ {
+        client_max_body_size 105M;
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 600s;
+    }
+
+    # Putar video soal (streaming dengan header Range): jangan ditampung dulu oleh Nginx.
+    location /api/assessment-videos/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header Range $http_range;
+        proxy_buffering off;
+    }
+
     location ~ ^/(admin|static)/ {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
@@ -254,5 +272,6 @@ alamat lain ke `index.html`, dan naikkan batas ukuran upload.
 - [ ] Tidak ada akun demo; Admin Yayasan dan admin sekolah memakai password yang kuat
 - [ ] Setiap sekolah sudah dibuat (jenjang benar) dan punya minimal satu admin sekolah
 - [ ] Upload PDF 9 MB berhasil (memastikan `client_max_body_size` benar)
+- [ ] Unggah video soal (mis. 50 MB) berhasil dan video bisa digeser saat diputar
 - [ ] Refresh browser di halaman dalam (mis. `/guru/kelas/1`) tidak menghasilkan 404
 - [ ] Backup database + folder media berjalan dan sudah diuji pulihkan

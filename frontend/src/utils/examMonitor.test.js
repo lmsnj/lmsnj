@@ -65,6 +65,18 @@ test('jendela lain lebih dari 2 detik dihitung', () => {
   assert.deepEqual(t.log, ['blur'])
 })
 
+test('fokus di iframe video soal (YouTube) tidak dihitung sebagai jendela lain', () => {
+  const t = setup()
+  t.doc.activeElement = { matches: (selector) => selector === 'iframe[data-exam-frame]' }
+  t.fire(t.win, 'blur')
+  t.advance(5000)
+  assert.deepEqual(t.log, [])
+  t.doc.activeElement = { matches: () => false } // iframe lain / elemen biasa tetap dihitung
+  t.fire(t.win, 'blur')
+  t.advance(BLUR_GRACE_MS)
+  assert.deepEqual(t.log, ['blur'])
+})
+
 test('keluar layar penuh dihitung hanya jika diwajibkan', () => {
   for (const [required, expected] of [
     [true, ['fullscreen_exit']],

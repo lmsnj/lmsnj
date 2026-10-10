@@ -1,4 +1,14 @@
-import { ArrowDown, ArrowUp, FileUp, Lock } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  Clapperboard,
+  FileUp,
+  Link2,
+  Lock,
+  Puzzle,
+  TextCursorInput,
+} from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { assessmentsApi, questionsApi } from '../../api/assessments'
@@ -9,6 +19,7 @@ import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import DataTable from '../../components/DataTable'
 import DeleteDialog from '../../components/DeleteDialog'
+import Dropdown, { DropdownItem } from '../../components/Dropdown'
 import EmptyState from '../../components/EmptyState'
 import PageHeader from '../../components/PageHeader'
 import Spinner from '../../components/Spinner'
@@ -28,6 +39,14 @@ import AssessmentFormModal from './AssessmentFormModal'
 import GradeAttemptModal from './GradeAttemptModal'
 import ImportQuestionsModal from './ImportQuestionsModal'
 import QuestionFormModal from './QuestionFormModal'
+
+// Soal interaktif yang bisa ditambahkan (menu "+ Soal Interaktif").
+const INTERACTIVE_MENU = [
+  { kind: 'fill_blank', icon: TextCursorInput },
+  { kind: 'drag_drop', icon: Puzzle },
+  { kind: 'matching', icon: Link2 },
+  { kind: 'interactive_video', icon: Clapperboard },
+]
 
 const TABS = [
   { id: 'soal', label: 'Soal' },
@@ -83,6 +102,31 @@ function QuestionsTab({ assessment, onChanged }) {
           <Button variant="secondary" onClick={() => setDialog({ type: 'form', kind: 'essay' })}>
             + Esai
           </Button>
+          <Dropdown
+            label="Tambah soal interaktif"
+            align="left"
+            buttonClassName="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-brand-700 ring-1 ring-brand-600 hover:bg-brand-50"
+            button={() => (
+              <>
+                + Soal Interaktif <ChevronDown className="size-4" aria-hidden="true" />
+              </>
+            )}
+          >
+            {(close) =>
+              INTERACTIVE_MENU.map((item) => (
+                <DropdownItem
+                  key={item.kind}
+                  icon={item.icon}
+                  onClick={() => {
+                    close()
+                    setDialog({ type: 'form', kind: item.kind })
+                  }}
+                >
+                  {QUESTION_KINDS[item.kind]}
+                </DropdownItem>
+              ))
+            }
+          </Dropdown>
           <Button variant="secondary" onClick={() => setDialog({ type: 'import' })}>
             <FileUp className="size-4" aria-hidden="true" /> Impor Soal (Word / Excel)
           </Button>
@@ -99,7 +143,7 @@ function QuestionsTab({ assessment, onChanged }) {
         </div>
       ) : list.length === 0 ? (
         <EmptyState title="Belum ada soal">
-          Tambahkan soal pilihan ganda, PG kompleks, kategori, atau esai.
+          Tambahkan soal pilihan ganda, PG kompleks, kategori, esai, atau soal interaktif.
         </EmptyState>
       ) : (
         <ol className="space-y-3">

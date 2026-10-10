@@ -231,7 +231,9 @@ class ComplexImportTests(KindsTestBase):
         )
         self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
         kinds = {q.kind for q in self.imported()}
-        self.assertEqual(kinds, {"choice", "multiple", "category", "essay"})
+        self.assertEqual(
+            kinds, {"choice", "multiple", "category", "essay", "fill_blank", "drag_drop", "matching"}
+        )
         grouped = [q for q in self.imported() if q.group == "G1"]
         self.assertEqual(len(grouped), 2)
         self.assertTrue(grouped[0].stimulus and not grouped[1].stimulus)

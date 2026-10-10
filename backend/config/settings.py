@@ -164,6 +164,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "10"))
 # Django membatasi body request non-file; beri ruang untuk file + field lain.
 DATA_UPLOAD_MAX_MEMORY_SIZE = (MAX_UPLOAD_SIZE_MB + 1) * 1024 * 1024
+# Batas ukuran file video soal video interaktif (MB). Video diputar lewat streaming, bukan diunduh utuh.
+MAX_VIDEO_UPLOAD_MB = int(os.getenv("MAX_VIDEO_UPLOAD_MB", "100"))
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

@@ -89,10 +89,27 @@ class QuestionKind(models.TextChoices):
     # PG kompleks kategori: setiap pernyataan dijawab Benar/Salah (label bisa diganti guru).
     CATEGORY = "category", "Kategori (Benar/Salah)"
     ESSAY = "essay", "Esai"
+    # Soal interaktif (lihat interactive.py): isi soal di `content`, kunci di `answer_key`.
+    FILL_BLANK = "fill_blank", "Isian singkat"
+    DRAG_DROP = "drag_drop", "Tarik & lepas"
+    MATCHING = "matching", "Menjodohkan"
+    INTERACTIVE_VIDEO = "interactive_video", "Video interaktif"
 
 
 # Jenis soal yang dinilai otomatis dengan kunci jawaban.
 AUTO_GRADED_KINDS = (QuestionKind.CHOICE, QuestionKind.MULTIPLE, QuestionKind.CATEGORY)
+INTERACTIVE_KINDS = (
+    QuestionKind.FILL_BLANK,
+    QuestionKind.DRAG_DROP,
+    QuestionKind.MATCHING,
+    QuestionKind.INTERACTIVE_VIDEO,
+)
+
+
+class ScoringMode(models.TextChoices):
+    # Poin dibagi rata per celah/pasangan yang benar.
+    PARTIAL = "partial", "Sebagian (per celah/pasangan benar)"
+    ALL_OR_NOTHING = "all_or_nothing", "Semua benar atau 0"
 
 
 class TextDirection(models.TextChoices):
@@ -107,7 +124,7 @@ class Question(models.Model):
 
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="questions")
     order = models.PositiveIntegerField("urutan", default=0)
-    kind = models.CharField("jenis", max_length=10, choices=QuestionKind.choices, default=QuestionKind.CHOICE)
+    kind = models.CharField("jenis", max_length=20, choices=QuestionKind.choices, default=QuestionKind.CHOICE)
     # Bacaan/konteks sebelum pertanyaan (opsional), mis. teks bacaan, tabel, atau keterangan grafik.
     stimulus = models.TextField("stimulus", blank=True)
     # Soal grup: soal dengan kode grup yang sama memakai stimulus bersama, yaitu stimulus soal
@@ -129,6 +146,13 @@ class Question(models.Model):
     correct_choices = models.JSONField("jawaban benar (PG kompleks/kategori)", default=list, blank=True)
     # Kategori: dua label jawaban, mis. ["Benar", "Salah"] atau ["Sesuai", "Tidak sesuai"].
     category_labels = models.JSONField("label kategori", default=list, blank=True)
+    # Soal interaktif: `content` = isi soal yang boleh dilihat siswa (tanpa jawaban), `answer_key` =
+    # kunci + rancangan asli guru ("spec"). answer_key TIDAK PERNAH dikirim ke siswa saat mengerjakan.
+    content = models.JSONField("isi soal interaktif", default=dict, blank=True)
+    answer_key = models.JSONField("kunci soal interaktif", default=dict, blank=True)
+    scoring_mode = models.CharField(
+        "mode skor", max_length=15, choices=ScoringMode.choices, default=ScoringMode.PARTIAL
+    )
 
     class Meta:
         verbose_name = "soal"
@@ -146,6 +170,11 @@ class Question(models.Model):
             return bool(self.correct_choices)
         if self.kind == QuestionKind.CATEGORY:
             return bool(self.choices) and len(self.correct_choices) == len(self.choices)
+        if self.kind == QuestionKind.INTERACTIVE_VIDEO and self.content.get("source") == "file":
+            # Video unggahan: soal baru lengkap setelah file videonya diunggah.
+            return bool(self.answer_key) and self.images.filter(slot=ImageSlot.VIDEO).exists()
+        if self.kind in INTERACTIVE_KINDS:
+            return bool(self.answer_key)
         return True
 
 
@@ -164,6 +193,9 @@ class Attempt(models.Model):
     draft_answers = models.JSONField("jawaban sementara", default=list, blank=True)
     violation_count = models.PositiveSmallIntegerField("jumlah keluar halaman", default=0)
     auto_submitted = models.BooleanField("dikumpulkan otomatis", default=False)
+    # Video interaktif mode latihan: jawaban checkpoint yang sudah diperiksa server (sudah melihat
+    # benar/salah) dikunci di sini agar tidak bisa diganti. {question_id: {checkpoint_id: jawaban}}
+    checkpoint_answers = models.JSONField("jawaban checkpoint terkunci", default=dict, blank=True)
 
     class Meta:
         verbose_name = "pengerjaan"
@@ -192,6 +224,8 @@ class Answer(models.Model):
     # PG kompleks: indeks pilihan yang dicentang. Kategori: indeks label per pernyataan (None = kosong).
     choices = models.JSONField("pilihan (PG kompleks/kategori)", default=list, blank=True)
     text = models.TextField("jawaban", blank=True)
+    # Soal interaktif: jawaban per celah/pasangan/checkpoint (bentuknya lihat interactive.py).
+    response = models.JSONField("jawaban soal interaktif", default=dict, blank=True)
     # Kosong = belum dinilai (hanya terjadi pada esai yang diisi siswa).
     points = models.DecimalField("poin", max_digits=6, decimal_places=2, null=True, blank=True)
     feedback = models.TextField("umpan balik", blank=True)
@@ -229,10 +263,13 @@ class ImageSlot(models.TextChoices):
     STIMULUS = "stimulus", "Gambar stimulus"
     QUESTION = "question", "Gambar soal"
     CHOICE = "choice", "Gambar pilihan"
+    # File video untuk soal video interaktif (diputar lewat alamat bertanda tangan, lihat videos.py).
+    VIDEO = "video", "Video soal"
 
 
 class QuestionImage(models.Model):
-    """Gambar pada soal. Untuk slot `choice`, `index` = nomor pilihan (0 = A)."""
+    """Gambar (atau video) pada soal. Untuk slot `choice`, `index` = nomor pilihan (0 = A); pada soal
+    tarik & lepas = nomor pilihan jawaban (urutan: jawaban celah, lalu pengecoh)."""
 
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="images")
     slot = models.CharField("letak", max_length=10, choices=ImageSlot.choices)

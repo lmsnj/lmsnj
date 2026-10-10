@@ -6,6 +6,9 @@
 - Gambar stimulus/soal/pilihan ditulis sebagai NAMA FILE, dan filenya diunggah dalam satu ZIP.
 - Jenis soal: pg, pg kompleks (kunci lebih dari satu, mis. "A, C"), kategori (setiap pernyataan
   dijawab Benar/Salah, kunci mis. "B, S, B"), dan esai. Kolom Grup = soal dengan stimulus bersama.
+- Soal interaktif: isian (Pertanyaan berisi [[jawaban|alternatif]]), seret / tarik lepas (Pertanyaan
+  berisi [[jawaban]], Pilihan A-E = pengecoh), dan jodohkan (Pilihan A-E = "kiri = kanan", pengecoh
+  kanan ditulis "= teks"). Video interaktif tidak bisa diimpor (checkpoint dibuat lewat form).
 - Tabel ditulis dengan garis tegak: | Kolom 1 | Kolom 2 | (lihat utils/richText.js di frontend).
 - Setiap soal diperiksa dengan QuestionSerializer (aturan yang sama dengan form tambah soal).
   Impor hanya dijalankan jika SEMUA soal benar.
@@ -18,15 +21,22 @@ from django.db.models import Max
 
 from apps.common.excel import Column, build_template, first_errors, read_rows
 
+from . import interactive
 from .images import image_key, save_image
-from .models import ImageSlot, QuestionKind, TextDirection
+from .models import INTERACTIVE_KINDS, ImageSlot, QuestionKind, TextDirection
 from .serializers import QuestionSerializer
 
 SHEET = "Soal"
 LETTERS = "ABCDE"
 
 COLUMNS = [
-    Column("kind", "Jenis", required=True, width=12, choices=["pg", "pg kompleks", "kategori", "esai"]),
+    Column(
+        "kind",
+        "Jenis",
+        required=True,
+        width=12,
+        choices=["pg", "pg kompleks", "kategori", "esai", "isian", "seret", "jodohkan"],
+    ),
     Column("group", "Grup", width=8, text=True),
     Column("stimulus", "Stimulus", width=36, text=True),
     Column("stimulus_image", "Gambar Stimulus", width=18, text=True),
@@ -38,6 +48,7 @@ COLUMNS = [
     *[Column(f"image_{letter}", f"Gambar {letter}", width=14, text=True) for letter in LETTERS],
     Column("key", "Kunci", width=12, text=True),
     Column("labels", "Label Kategori", width=18, text=True),
+    Column("scoring", "Mode Skor", width=12, choices=["sebagian", "semua"]),
 ]
 
 KIND_ALIASES = {
@@ -48,7 +59,16 @@ KIND_ALIASES = {
     "kategori": QuestionKind.CATEGORY, "benar salah": QuestionKind.CATEGORY,
     "benar/salah": QuestionKind.CATEGORY, "category": QuestionKind.CATEGORY,
     "esai": QuestionKind.ESSAY, "essay": QuestionKind.ESSAY, "uraian": QuestionKind.ESSAY,
+    "isian": QuestionKind.FILL_BLANK, "isian singkat": QuestionKind.FILL_BLANK,
+    "titik-titik": QuestionKind.FILL_BLANK, "fill_blank": QuestionKind.FILL_BLANK,
+    "seret": QuestionKind.DRAG_DROP, "tarik lepas": QuestionKind.DRAG_DROP,
+    "tarik & lepas": QuestionKind.DRAG_DROP, "drag drop": QuestionKind.DRAG_DROP,
+    "drag_drop": QuestionKind.DRAG_DROP,
+    "jodohkan": QuestionKind.MATCHING, "menjodohkan": QuestionKind.MATCHING,
+    "matching": QuestionKind.MATCHING,
 }  # fmt: skip
+SCORING_ALIASES = {"": "partial", "sebagian": "partial", "partial": "partial",
+                   "semua": "all_or_nothing", "all_or_nothing": "all_or_nothing"}  # fmt: skip
 DIRECTION_ALIASES = {
     "": TextDirection.AUTO, "otomatis": TextDirection.AUTO, "auto": TextDirection.AUTO,
     "rtl": TextDirection.RTL, "arab": TextDirection.RTL, "ltr": TextDirection.LTR,
@@ -59,7 +79,8 @@ DEFAULT_LABELS = ["Benar", "Salah"]
 FIELD_LABELS = {
     "text": "Pertanyaan", "choices": "Pilihan", "correct_choice": "Kunci", "correct_choices": "Kunci",
     "points": "Poin", "kind": "Jenis", "text_direction": "Arah teks", "stimulus": "Stimulus",
-    "category_labels": "Label kategori", "group": "Grup",
+    "category_labels": "Label kategori", "group": "Grup", "spec": "Isi soal",
+    "scoring_mode": "Mode skor",
 }  # fmt: skip
 
 # Karakter kontrol arah yang TIDAK terlihat (LRM, RLM, embedding, override, isolate) dan BOM.
@@ -73,14 +94,16 @@ NBSP = chr(0xA0)
 QUESTION_RE = re.compile(r"^\s*([0-9٠-٩]+)\s*[.)]\s*(.*)$")
 OPTION_RE = re.compile(r"^\s*(\*)?\s*\(?\s*([A-Ea-e]|هـ|[أابجده])\s*[.)]\s*(.*)$")
 META_RE = re.compile(
-    r"^\s*(kunci|jawaban|poin|nilai|arah(?: teks)?|jenis|grup|label(?: kategori)?|stimulus|gambar stimulus"
+    r"^\s*(kunci|jawaban|poin|nilai|arah(?: teks)?|jenis|grup|label(?: kategori)?|mode skor|stimulus|gambar stimulus"
     r"|gambar soal|gambar)\s*:\s*(.*)$",
     re.IGNORECASE,
 )
 INLINE_IMAGE_RE = re.compile(r"\s*\[gambar\s*:\s*([^\]]+)\]\s*$", re.IGNORECASE)
 # Penanda jenis setelah nomor soal, mis. "3. [pg kompleks] Pilih ..." atau "4. [kategori] ...".
 KIND_TAG_RE = re.compile(
-    r"^\s*\[(esai|essay|uraian|pg kompleks|pgk|mcma|kategori|benar salah|benar/salah)\]\s*", re.IGNORECASE
+    r"^\s*\[(esai|essay|uraian|pg kompleks|pgk|mcma|kategori|benar salah|benar/salah"
+    r"|isian|isian singkat|titik-titik|seret|tarik lepas|tarik & lepas|jodohkan|menjodohkan)\]\s*",
+    re.IGNORECASE,
 )
 # Pemisah kunci PG kompleks: "A, C" / "A;C" / "A C". Kategori: "B, S, B" atau "Benar; Salah".
 KEY_SPLIT_RE = re.compile(r"[\s,;/]+")
@@ -133,8 +156,12 @@ def normalize_item(label, raw):
     if kind_text:
         kind = KIND_ALIASES.get(kind_text)
         if kind is None:
-            errors.append("Jenis harus 'pg', 'pg kompleks', 'kategori', atau 'esai'.")
+            errors.append(
+                "Jenis harus 'pg', 'pg kompleks', 'kategori', 'esai', 'isian', 'seret', atau 'jodohkan'."
+            )
             kind = QuestionKind.CHOICE
+    elif interactive.GAP_RE.search(clean(raw.get("text", ""))):
+        kind = QuestionKind.FILL_BLANK  # kalimat berisi [[jawaban]] tanpa jenis = isian
     elif not choices:
         kind = QuestionKind.ESSAY
     else:
@@ -180,6 +207,13 @@ def normalize_item(label, raw):
             )
             correct_list = []
 
+    scoring = SCORING_ALIASES.get(clean(raw.get("scoring", "")).strip().lower())
+    if scoring is None:
+        errors.append("Mode skor harus 'sebagian' atau 'semua'.")
+        scoring = "partial"
+    if kind in INTERACTIVE_KINDS:
+        return normalize_interactive(label, raw, kind, choices, direction, points, scoring, errors)
+
     return {
         "row": label,
         "data": {
@@ -195,6 +229,47 @@ def normalize_item(label, raw):
             "category_labels": labels,
         },
         "images": raw.get("images") or empty_images(),
+        "errors": errors,
+    }
+
+
+def normalize_interactive(label, raw, kind, choices, direction, points, scoring, errors):
+    """Isian, seret, jodohkan: kalimat [[...]] di kolom Pertanyaan, pengecoh/pasangan di Pilihan."""
+    text = clean(raw.get("text", "")).strip()
+    images = raw.get("images") or empty_images()
+    if kind == QuestionKind.FILL_BLANK:
+        spec, text = {"template": text, "case_sensitive": False}, ""
+    elif kind == QuestionKind.DRAG_DROP:
+        spec, text = {"template": text, "distractors": choices}, ""
+        # Gambar Pilihan A-E = gambar pengecoh; nomor pilihan dihitung setelah jawaban [[...]].
+        gap_count = len(interactive.parse_gaps(spec["template"])[1])
+        images = {**images, "choices": {gap_count + i: name for i, name in images["choices"].items()}}
+    else:
+        pairs, distractors = [], []
+        for choice in choices:
+            left, sep, right = choice.partition("=")
+            if not sep:
+                errors.append(f"Pilihan '{choice}' harus ditulis 'kiri = kanan' (pengecoh: '= teks').")
+            elif left.strip():
+                pairs.append({"left": left.strip(), "right": right.strip()})
+            else:
+                distractors.append(right.strip())
+        spec = {"pairs": pairs, "distractors": distractors}
+        if images["choices"]:
+            errors.append("Soal jodohkan tidak memakai gambar pilihan.")
+    return {
+        "row": label,
+        "data": {
+            "kind": kind,
+            "group": clean(raw.get("group", "")).strip(),
+            "stimulus": clean(raw.get("stimulus", "")).strip(),
+            "text": text,
+            "text_direction": direction,
+            "points": points,
+            "scoring_mode": scoring,
+            "spec": spec,
+        },
+        "images": images,
         "errors": errors,
     }
 
@@ -294,6 +369,8 @@ def parse_text(text):
                     current["group"] = value
                 elif name.startswith("label"):
                     current["labels"] = value
+                elif name == "mode skor":
+                    current["scoring"] = value
                 else:  # gambar / gambar soal
                     current["images"]["question"] = value
                 mode = "meta"
@@ -362,11 +439,29 @@ def prepare(assessment, request, items, zip_images):
     return rows
 
 
+def interactive_preview(row):
+    """Soal interaktif yang valid: isi soal + kunci untuk pratinjau (komponen yang sama dengan siswa)."""
+    data = row["item"]["data"]
+    if data["kind"] not in INTERACTIVE_KINDS or not row["serializer"].is_valid():
+        return {}
+    validated = row["serializer"].validated_data
+    content, key = validated["content"], validated["answer_key"]
+    if data["kind"] == QuestionKind.DRAG_DROP:
+        names = row["item"]["images"]["choices"]
+        options = [
+            {**o, "image": {"name": names[i]} if i in names else None}
+            for i, o in enumerate(content["options"])
+        ]
+        content = {**content, "options": options}
+    return {"content": content, "key": interactive.KEY_DISPLAYS[data["kind"]](validated["content"], key)}
+
+
 def preview(rows):
     return [
         {
             "row": r["item"]["row"],
             **r["item"]["data"],
+            **interactive_preview(r),
             "images": {
                 "stimulus": r["item"]["images"]["stimulus"],
                 "question": r["item"]["images"]["question"],
@@ -428,11 +523,11 @@ _BLANK_IMAGES = ["", "", "", "", ""]
 
 
 def example(kind, text, choices=(), key="", points="", group="", stimulus="", stimulus_image="",
-            direction="otomatis", labels=""):  # fmt: skip
+            direction="otomatis", labels="", scoring=""):  # fmt: skip
     """Satu baris contoh sesuai urutan COLUMNS."""
     choices = [*choices, *[""] * (len(LETTERS) - len(choices))]
     return [kind, group, stimulus, stimulus_image, text, "", direction, points, *choices, *_BLANK_IMAGES,
-            key, labels]  # fmt: skip
+            key, labels, scoring]  # fmt: skip
 
 
 EXAMPLE_TABLE = (
@@ -475,10 +570,16 @@ EXAMPLES = [
     example("pg", r"Jika $R_{1} = 4\,\Omega$ dan $R_{2} = 6\,\Omega$ disusun seri, hambatan totalnya adalah ...",
             [r"$10\,\Omega$", r"$2{,}4\,\Omega$", r"$24\,\Omega$", r"$2\,\Omega$"], "A", 2,
             stimulus="Perhatikan gambar rangkaian listrik berikut.", stimulus_image="rangkaian1.png"),
+    example("isian", "HTML singkatan dari [[HyperText|Hypertext]] Markup [[Language]].", points=2),
+    example("seret", "Ibu kota Indonesia adalah [[Jakarta]] di pulau [[Jawa]].", ["Bandung", "Sumatra"], points=2,
+            scoring="semua"),
+    example("jodohkan", "Pasangkan tag HTML dengan fungsinya.",
+            ["<h1> = Judul", "<p> = Paragraf", "<a> = Tautan", "= Gambar"], points=3),
 ]  # fmt: skip
 
 GUIDE = [
-    "Jenis*    : pg (pilihan ganda), pg kompleks (jawaban benar lebih dari satu), kategori, atau esai.",
+    "Jenis*    : pg (pilihan ganda), pg kompleks (jawaban benar lebih dari satu), kategori, esai,",
+    "            isian, seret (tarik & lepas), atau jodohkan. Video interaktif dibuat lewat form.",
     "Pertanyaan* wajib diisi. Poin: kosong = 1 (pg/pg kompleks/kategori) atau 5 (esai).",
     "Stimulus  : bacaan/keterangan/tabel sebelum pertanyaan (opsional).",
     "Pilihan   : isi Pilihan A-E seperlunya (minimal 2). Kunci pg: A-E. Kunci pg kompleks: mis. A, C.",
@@ -494,6 +595,11 @@ GUIDE = [
     "GAMBAR    : isi kolom Gambar Stimulus / Gambar Soal / Gambar A-E dengan NAMA FILE (mis. grafik1.png),",
     "            lalu unggah semua gambar dalam satu file ZIP bersama Excel ini. Gambar: PNG/JPG/GIF/WEBP, maks. 2 MB.",
     "Pilihan boleh hanya berupa gambar: kosongkan teks Pilihan dan isi kolom Gambar-nya.",
+    "ISIAN     : tulis kalimat di Pertanyaan, jawaban di dalam [[...]]; alternatif benar dipisah |,",
+    "            mis. HTML singkatan dari [[HyperText|Hypertext]] Markup Language.",
+    "SERET     : Pertanyaan berisi [[jawaban]] (satu jawaban per celah); Pilihan A-E = pengecoh (boleh kosong).",
+    "JODOHKAN  : Pilihan A-E = pasangan 'kiri = kanan', mis. <h1> = Judul. Pengecoh kanan: '= teks'.",
+    "MODE SKOR : isian/seret/jodohkan: sebagian (bawaan, poin per celah/pasangan benar) atau semua.",
     "Tip       : sel sudah berformat Teks agar Excel tidak mengubah isian (mis. 1/2 menjadi tanggal).",
 ]
 

@@ -7,7 +7,8 @@ export const DEDUPE_MS = 3000
 
 /**
  * Memantau siswa keluar dari halaman ujian dan memanggil `onViolation(kind)`:
- * 'hidden' (pindah tab/aplikasi), 'blur' (jendela lain > 2 detik), 'fullscreen_exit'.
+ * 'hidden' (pindah tab/aplikasi), 'blur' (jendela lain > 2 detik, kecuali fokus di iframe video
+ * soal yang ditandai `data-exam-frame`), 'fullscreen_exit'.
  * Juga meminta konfirmasi browser saat tab akan ditutup/di-refresh.
  *
  * Dibuat sebagai fungsi biasa (bukan hook) agar mudah diuji tanpa browser; `doc`, `win`,
@@ -38,9 +39,12 @@ export function createExamMonitor({
       report('hidden')
     }
   }
+  // Mengeklik video YouTube di soal video interaktif memindahkan fokus ke iframe-nya sehingga
+  // jendela kehilangan fokus. Itu bukan membuka jendela lain, jadi tidak dihitung.
+  const inExamFrame = () => Boolean(doc.activeElement?.matches?.('iframe[data-exam-frame]'))
   const handleBlur = () => {
     clearTimer(blurTimer)
-    blurTimer = setTimer(() => !doc.hidden && report('blur'), BLUR_GRACE_MS)
+    blurTimer = setTimer(() => !doc.hidden && !inExamFrame() && report('blur'), BLUR_GRACE_MS)
   }
   const handleFocus = () => clearTimer(blurTimer)
   const handleFullscreen = () => {

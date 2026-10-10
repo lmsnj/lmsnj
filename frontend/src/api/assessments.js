@@ -28,19 +28,32 @@ export const assessmentsApi = {
   // Pengawasan: simpan jawaban sementara & catat keluar dari halaman ujian.
   saveDraft: (id, answers) => post(`/assessments/${id}/draft/`, { answers }),
   violation: (id, kind) => post(`/assessments/${id}/violation/`, { kind }),
+  // Video interaktif mode latihan: periksa satu checkpoint (benar/salah + pembahasan, lalu terkunci).
+  checkpoint: (id, question, checkpoint, response) =>
+    post(`/assessments/${id}/checkpoint/`, { question, checkpoint, response }),
 }
+
+// Alamat lengkap video soal (alamat bertanda tangan dari API, diputar langsung oleh <video>).
+export const videoSource = (url) =>
+  url ? `${api.defaults.baseURL.replace(/\/$/, '')}${url}` : null
 
 export const questionsApi = {
   create: (data) => post('/assessment-questions/', data),
   update: (id, data) => patch(`/assessment-questions/${id}/`, data),
   remove: (id) => api.delete(`/assessment-questions/${id}/`),
-  // slot: 'stimulus' | 'question' | 'choice' (index = nomor pilihan, 0 = A)
-  uploadImage: (id, slot, index, file) => {
+  // slot: 'stimulus' | 'question' | 'choice' (index = nomor pilihan, 0 = A) | 'video'
+  // onProgress (opsional): menerima persen 0-100, untuk file besar seperti video.
+  uploadImage: (id, slot, index, file, onProgress) => {
     const form = new FormData()
     form.append('slot', slot)
     form.append('index', index)
     form.append('file', file)
-    return post(`/assessment-questions/${id}/images/`, form)
+    return api
+      .post(`/assessment-questions/${id}/images/`, form, {
+        onUploadProgress: (event) =>
+          onProgress?.(event.total ? Math.round((event.loaded / event.total) * 100) : 0),
+      })
+      .then((res) => res.data)
   },
   removeImage: (id, slot, index) =>
     api.delete(`/assessment-questions/${id}/images/`, { params: { slot, index } }),

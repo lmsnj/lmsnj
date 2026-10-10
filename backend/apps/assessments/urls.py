@@ -10,4 +10,5 @@ router.register("assessment-attempts", views.AttemptViewSet, basename="assessmen
 
 urlpatterns = router.urls + [
     path("assessment-images/<int:pk>/", views.AssessmentImageView.as_view(), name="assessment-image"),
+    path("assessment-videos/<int:pk>/", views.AssessmentVideoView.as_view(), name="assessment-video"),
 ]
