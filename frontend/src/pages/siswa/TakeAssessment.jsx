@@ -519,12 +519,12 @@ export default function TakeAssessment({ assessment, data, onSubmitted }) {
   const handleViolation = useCallback(
     async (kind) => {
       setWarning(kind)
+      // Kirim jawaban terbaru dulu, agar pengumpulan otomatis memakai jawaban paling baru.
+      // Jika gagal, pelanggaran tetap dilaporkan (memakai jawaban sementara terakhir di server).
+      await assessmentsApi
+        .saveDraft(assessment.id, toPayload(questions, answersRef.current, flagsRef.current))
+        .catch(() => {})
       try {
-        // Kirim jawaban terbaru dulu, agar pengumpulan otomatis memakai jawaban paling baru.
-        await assessmentsApi.saveDraft(
-          assessment.id,
-          toPayload(questions, answersRef.current, flagsRef.current),
-        )
         const res = await assessmentsApi.violation(assessment.id, kind)
         if (res.attempt.status === 'in_progress') setViolations(res.attempt.violation_count)
         else finish(res)
