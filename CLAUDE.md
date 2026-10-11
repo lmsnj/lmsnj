@@ -221,7 +221,7 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
 - Bar menu hijau (`rounded-xl bg-brand-600`) di bawah header. Item aktif: `bg-white text-brand-700`.
   Di layar < `lg` bar disembunyikan dan diganti menu hamburger.
 - Menu per peran **hanya** diatur di `layouts/navigation.js`. Halaman baru = tambahkan item di sana.
-- **Admin Yayasan** memakai `layouts/SidebarLayout.jsx` (peran di `SIDEBAR_ROLES`, `DashboardLayout.jsx`):
+- **Admin Yayasan & admin sekolah** memakai `layouts/SidebarLayout.jsx` (peran di `SIDEBAR_ROLES`, `DashboardLayout.jsx`):
   sidebar hijau tua `bg-brand-900` di kiri (logo + nama, menu utama, bagian "Lainnya", tombol Keluar
   di bawah; item aktif `bg-brand-600`), bar atas putih (Ganti Sekolah, lonceng, menu akun). Di < `lg`
   sidebar jadi laci hamburger. Beranda yayasan bergaya panel admin: judul "Dashboard" + tombol

@@ -17,7 +17,7 @@ import ImpersonationBanner from './ImpersonationBanner'
 import SidebarLayout from './SidebarLayout'
 
 // Peran yang memakai tata letak sidebar (panel admin); peran lain memakai bar menu hijau.
-const SIDEBAR_ROLES = [ROLES.FOUNDATION]
+const SIDEBAR_ROLES = [ROLES.FOUNDATION, ROLES.ADMIN]
 
 // Tombol menu di bar hijau. Aktif = latar putih, teks hijau.
 function navItemClass(isActive) {
