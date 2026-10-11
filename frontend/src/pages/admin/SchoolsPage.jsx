@@ -29,6 +29,7 @@ import TextField from '../../components/TextField'
 import useAuth from '../../hooks/useAuth'
 import useFetch from '../../hooks/useFetch'
 import useFormSubmit from '../../hooks/useFormSubmit'
+import useQueryFlag from '../../hooks/useQueryFlag'
 import { SCHOOL_LEVELS } from '../../utils/constants'
 
 const HERO_ICONS = [Building2, School, GraduationCap, Users, BookOpen, ClipboardCheck]
@@ -127,7 +128,9 @@ function SchoolFormModal({ school, onClose, onSaved }) {
 export default function SchoolsPage() {
   const { reloadSchools } = useAuth()
   const [notice, setNotice] = useState('')
-  const [dialog, setDialog] = useState(null)
+  // ?baru=1 dari tombol "Tambah Sekolah" di Beranda yayasan langsung membuka form.
+  const openNew = useQueryFlag('baru')
+  const [dialog, setDialog] = useState(() => (openNew ? { type: 'form', school: null } : null))
   const summary = useFetch(schoolsApi.summary)
 
   const schools = summary.data ?? []

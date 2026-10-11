@@ -1,114 +1,98 @@
-import {
-  ArrowRight,
-  BookOpen,
-  Building2,
-  CalendarDays,
-  ClipboardList,
-  GraduationCap,
-  Layers,
-  Library,
-  School,
-  Send,
-  TriangleAlert,
-  UserCog,
-  Users,
-} from 'lucide-react'
+import { ArrowRight, Layers, Plus, TriangleAlert } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { schoolsApi } from '../../api/schools'
 import Badge from '../../components/Badge'
 import { SchoolLogoBox } from '../../components/brand/SchoolLogo'
 import Button from '../../components/Button'
-import {
-  DashboardState,
-  Panel,
-  PanelItem,
-  StatCard,
-  StatGrid,
-  SummaryHeading,
-} from '../../components/Dashboard'
-import DataTable from '../../components/DataTable'
-import PageHero from '../../components/PageHero'
+import { DashboardState, Panel, PanelItem } from '../../components/Dashboard'
 import useAuth from '../../hooks/useAuth'
 import useBranding from '../../hooks/useBranding'
 import useFetch from '../../hooks/useFetch'
 import { attentionItems, byLevelGroup, totals } from '../../utils/foundation'
 import { firstName, longDate, timeGreeting } from '../../utils/greeting'
 
-const HERO_ICONS = [Building2, School, GraduationCap, Users, BookOpen, Layers, ClipboardList]
-
 /**
- * Beranda admin yayasan: gambaran seluruh sekolah yang terdaftar (bukan fitur satu sekolah).
- * Fitur admin satu sekolah tetap ada di menu, untuk sekolah yang dibuka lewat "Ganti Sekolah".
+ * Beranda admin yayasan (gaya panel admin): judul "Dashboard", kartu angka putih, lalu daftar
+ * sekolah. Ini gambaran seluruh sekolah, bukan fitur satu sekolah — fitur admin satu sekolah
+ * ada di menu setelah sekolah dibuka lewat "Ganti Sekolah".
  */
 export default function FoundationDashboard() {
   const { user } = useAuth()
   const { app } = useBranding()
   const { data, error } = useFetch(schoolsApi.summary)
-  const sum = data ? totals(data) : null
 
   return (
     <>
-      <PageHero
-        title={`Halo, ${firstName(user.full_name)}! 👋`}
-        description={`${timeGreeting()}, ${user.full_name}. Berikut gambaran seluruh sekolah di bawah ${app.school_name}.`}
-        icons={HERO_ICONS}
-        centerIcon={Building2}
-        stats={[
-          { icon: CalendarDays, content: longDate() },
-          { icon: Building2, content: <strong className="text-white">{app.school_name}</strong> },
-          sum && {
-            icon: School,
-            content: (
-              <>
-                <strong className="text-white">{sum.schools}</strong> sekolah aktif
-              </>
-            ),
-          },
-        ].filter(Boolean)}
-      />
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {timeGreeting()}, {firstName(user.full_name)} · {longDate()} · {app.school_name}
+          </p>
+        </div>
+        <Link
+          to="/admin/sekolah?baru=1"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-800 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-900"
+        >
+          <Plus className="size-4" aria-hidden="true" />
+          Tambah Sekolah
+        </Link>
+      </div>
 
-      <SummaryHeading subtitle="Gabungan semua sekolah aktif (kelas: tahun ajaran terbaru tiap sekolah)" />
       <DashboardState loading={!data} error={error}>
-        {data && <FoundationContent schools={data} sum={sum} />}
+        {data && <FoundationContent schools={data} />}
       </DashboardState>
     </>
   )
 }
 
-function FoundationContent({ schools, sum }) {
+// Kartu angka polos: label abu-abu di atas, angka besar di bawah.
+function NumberCard({ label, value, hint, to }) {
+  const className = 'block rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition'
+  const content = (
+    <>
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-3xl font-extrabold text-slate-900">{value}</p>
+      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+    </>
+  )
+  if (!to) return <div className={className}>{content}</div>
+  return (
+    <Link to={to} className={`${className} hover:shadow-md hover:ring-brand-300`}>
+      {content}
+    </Link>
+  )
+}
+
+function FoundationContent({ schools }) {
+  const sum = totals(schools)
   const issues = attentionItems(schools)
 
   return (
     <>
-      <StatGrid>
-        <StatCard
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <NumberCard
           label="Sekolah aktif"
-          icon={Building2}
-          tone="brand"
           value={sum.schools}
           hint={sum.inactive ? `${sum.inactive} nonaktif` : undefined}
           to="/admin/sekolah"
         />
-        <StatCard label="Total siswa" icon={GraduationCap} tone="blue" value={sum.students} />
-        <StatCard label="Total guru" icon={UserCog} tone="violet" value={sum.teachers} />
-        <StatCard label="Total kelas" icon={School} tone="amber" value={sum.classrooms} />
-        <StatCard label="Mata pelajaran" icon={Library} value={sum.subjects} />
-        <StatCard label="Materi" icon={BookOpen} value={sum.materials} />
-        <StatCard
+        <NumberCard label="Total siswa" value={sum.students} />
+        <NumberCard label="Total guru" value={sum.teachers} />
+        <NumberCard label="Total kelas" value={sum.classrooms} hint="Tahun ajaran terbaru" />
+        <NumberCard label="Mata pelajaran" value={sum.subjects} />
+        <NumberCard label="Materi" value={sum.materials} />
+        <NumberCard
           label="Tugas & asesmen"
-          icon={ClipboardList}
           value={sum.tasks + sum.assessments}
           hint={`${sum.tasks} tugas · ${sum.assessments} asesmen`}
         />
-        <StatCard
-          label="Pengumpulan"
-          icon={Send}
-          value={sum.submissions_this_week}
-          hint="7 hari terakhir"
-        />
-      </StatGrid>
+        <NumberCard label="Pengumpulan 7 hari terakhir" value={sum.submissions_this_week} />
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <SchoolList schools={schools} />
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Panel title="Sebaran per jenjang" icon={Layers}>
           {byLevelGroup(schools).map((group) => (
             <PanelItem
@@ -143,14 +127,12 @@ function FoundationContent({ schools, sum }) {
           ))}
         </Panel>
       </div>
-
-      <SchoolTable schools={schools} />
     </>
   )
 }
 
-// Tabel data semua sekolah. "Buka" = membuka sekolah itu (header & menu berganti ke sekolah tsb.).
-function SchoolTable({ schools }) {
+// Daftar semua sekolah. "Buka" = membuka sekolah itu (menu berganti ke menu admin sekolah tsb.).
+function SchoolList({ schools }) {
   const { school: current, schools: openable, selectSchool } = useAuth()
   const navigate = useNavigate()
   const open = (row) => {
@@ -160,61 +142,42 @@ function SchoolTable({ schools }) {
     navigate('/admin')
   }
 
-  const columns = [
-    {
-      header: 'Sekolah',
-      cell: (row) => (
-        <div className="flex items-center gap-3">
-          <SchoolLogoBox school={row} className="size-10" />
-          <div className="min-w-0">
-            <p className="font-semibold whitespace-nowrap text-slate-900">{row.name}</p>
-            <div className="mt-0.5 flex gap-1">
-              <Badge color="green">{row.level_display}</Badge>
-              {!row.is_active && <Badge color="red">Nonaktif</Badge>}
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      header: 'Tahun ajaran',
-      cell: (row) => row.academic_year ?? <span className="text-slate-400">-</span>,
-      className: 'whitespace-nowrap',
-    },
-    { header: 'Siswa', cell: (row) => row.students, className: 'text-right' },
-    { header: 'Guru', cell: (row) => row.teachers, className: 'text-right' },
-    { header: 'Kelas', cell: (row) => row.classrooms, className: 'text-right' },
-    { header: 'Mapel', cell: (row) => row.subjects, className: 'text-right' },
-    { header: 'Materi', cell: (row) => row.materials, className: 'text-right' },
-    { header: 'Tugas', cell: (row) => row.tasks, className: 'text-right' },
-    {
-      header: 'Aksi',
-      className: 'text-right',
-      cell: (row) =>
-        row.is_active ? (
-          <Button variant="ghost" size="sm" onClick={() => open(row)}>
-            Buka <ArrowRight className="size-4" aria-hidden="true" />
-          </Button>
-        ) : null,
-    },
-  ]
-
   return (
-    <section className="mt-8">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-          <Building2 className="size-5 text-brand-600" aria-hidden="true" />
-          Data Sekolah Terdaftar
-        </h2>
+    <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-semibold text-slate-900">Data sekolah</h2>
         <Link to="/admin/sekolah" className="text-sm font-medium text-brand-700 hover:underline">
           Kelola daftar sekolah →
         </Link>
       </div>
-      <DataTable
-        columns={columns}
-        rows={schools}
-        emptyMessage="Belum ada sekolah. Tambahkan di menu Daftar Sekolah."
-      />
+      {schools.length === 0 ? (
+        <p className="py-8 text-center text-sm text-slate-500">
+          Belum ada sekolah. Tambahkan lewat tombol Tambah Sekolah.
+        </p>
+      ) : (
+        <ul className="divide-y divide-slate-100">
+          {schools.map((row) => (
+            <li key={row.id} className="flex flex-wrap items-center gap-3 py-4">
+              <SchoolLogoBox school={row} className="size-10" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-slate-900">{row.name}</p>
+                <p className="text-sm text-slate-500">
+                  {row.level_display} · {row.academic_year ?? 'belum ada kelas'} · {row.students}{' '}
+                  siswa · {row.teachers} guru · {row.classrooms} kelas
+                </p>
+              </div>
+              <Badge color={row.is_active ? 'green' : 'red'}>
+                {row.is_active ? 'Aktif' : 'Nonaktif'}
+              </Badge>
+              {row.is_active && (
+                <Button variant="ghost" size="sm" onClick={() => open(row)}>
+                  Buka <ArrowRight className="size-4" aria-hidden="true" />
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

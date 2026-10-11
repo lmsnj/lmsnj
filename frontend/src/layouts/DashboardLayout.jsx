@@ -13,6 +13,10 @@ import { ROLE_HOME, ROLES } from '../utils/constants'
 import { LanguageMenu, NotificationBell, UserMenu } from './HeaderMenus'
 import { navigationFor } from './navigation'
 import SchoolSwitcher from './SchoolSwitcher'
+import SidebarLayout from './SidebarLayout'
+
+// Peran yang memakai tata letak sidebar (panel admin); peran lain memakai bar menu hijau.
+const SIDEBAR_ROLES = [ROLES.FOUNDATION]
 
 // Tombol menu di bar hijau. Aktif = latar putih, teks hijau.
 function navItemClass(isActive) {
@@ -204,8 +208,40 @@ export default function DashboardLayout() {
   const chat = useChatNotifications({ showToasts: location.pathname !== '/obrolan' })
   const badges = { chat: chat.unread }
 
+  const page = (
+    // key: error di satu halaman tidak terbawa saat pindah halaman.
+    <ErrorBoundary key={location.pathname}>
+      {/* Header & menu tetap tampil selama kode halaman berikutnya diunduh. */}
+      <Suspense
+        fallback={
+          <div className="py-16 text-center text-brand-600">
+            <Spinner className="size-8" />
+          </div>
+        }
+      >
+        <Outlet />
+      </Suspense>
+    </ErrorBoundary>
+  )
+
   // key = sekolah aktif: saat pindah sekolah semua isi halaman dipasang ulang sehingga data
   // dimuat ulang dari sekolah yang baru (tidak ada data sekolah lama yang tertinggal).
+  if (SIDEBAR_ROLES.includes(user.role)) {
+    return (
+      <div key={school?.id ?? 'none'}>
+        <SidebarLayout
+          nav={nav}
+          badges={badges}
+          chat={chat.conversations}
+          notice={showNoSchool && <NoSchoolNotice role={user.role} />}
+        >
+          {page}
+        </SidebarLayout>
+        <ChatToasts toasts={chat.toasts} onDismiss={chat.dismiss} />
+      </div>
+    )
+  }
+
   return (
     <div key={school?.id ?? 'none'} className="min-h-screen bg-surface">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
@@ -247,21 +283,7 @@ export default function DashboardLayout() {
           <NavBar nav={nav} badges={badges} />
           {showNoSchool && <NoSchoolNotice role={user.role} />}
         </div>
-        <main className="py-6">
-          {/* key: error di satu halaman tidak terbawa saat pindah halaman. */}
-          <ErrorBoundary key={location.pathname}>
-            {/* Header & menu tetap tampil selama kode halaman berikutnya diunduh. */}
-            <Suspense
-              fallback={
-                <div className="py-16 text-center text-brand-600">
-                  <Spinner className="size-8" />
-                </div>
-              }
-            >
-              <Outlet />
-            </Suspense>
-          </ErrorBoundary>
-        </main>
+        <main className="py-6">{page}</main>
       </div>
 
       {menuOpen && <MobileMenu nav={nav} badges={badges} onClose={() => setMenuOpen(false)} />}
