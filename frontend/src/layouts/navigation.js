@@ -8,6 +8,7 @@ import {
   GraduationCap,
   House,
   IdCard,
+  LogIn,
   Library,
   Megaphone,
   MessagesSquare,
@@ -55,12 +56,19 @@ const ADMIN_MORE = [
 // Identitas sekolah yang sedang dibuka; di mode yayasan halaman yang sama = identitas yayasan.
 const IDENTITY = { label: 'Identitas Sekolah', icon: Palette, to: '/admin/identitas' }
 const SCHOOL_LIST = { label: 'Daftar Sekolah', icon: Building2, to: '/admin/sekolah' }
+// Admin yayasan masuk ke akun pengguna lain (lihat pages/admin/ImpersonatePage.jsx).
+const IMPERSONATE = { label: 'Masuk sebagai Pengguna', icon: LogIn, to: '/admin/masuk-sebagai' }
 
 // Admin yayasan punya dua mode:
 // - mode yayasan (belum membuka sekolah): ringkasan semua sekolah & pengaturan yayasan;
 // - membuka satu sekolah (lewat "Ganti Sekolah"): menu admin sekolah itu.
 const FOUNDATION_HOME = {
-  main: [{ label: 'Beranda', icon: House, to: '/admin', end: true }, SCHOOL_LIST, CHAT],
+  main: [
+    { label: 'Beranda', icon: House, to: '/admin', end: true },
+    SCHOOL_LIST,
+    IMPERSONATE,
+    CHAT,
+  ],
   more: [{ ...IDENTITY, label: 'Identitas Yayasan' }, PROFILE],
 }
 
@@ -68,7 +76,7 @@ const FOUNDATION_HOME = {
 export function navigationFor(role, school) {
   if (role !== ROLES.FOUNDATION) return NAVIGATION[role]
   if (!school) return FOUNDATION_HOME
-  return { main: ADMIN_MAIN, more: [...ADMIN_MORE, IDENTITY, SCHOOL_LIST, PROFILE] }
+  return { main: ADMIN_MAIN, more: [...ADMIN_MORE, IDENTITY, SCHOOL_LIST, IMPERSONATE, PROFILE] }
 }
 
 export const NAVIGATION = {

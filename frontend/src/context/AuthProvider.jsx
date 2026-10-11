@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { authApi } from '../api/auth'
 import {
+  impersonatorStore,
   refreshAccessToken,
   schoolStore,
   setSessionExpiredHandler,
@@ -33,6 +34,7 @@ export default function AuthProvider({ children }) {
   useEffect(() => {
     setSessionExpiredHandler(() => {
       tokenStore.clear()
+      impersonatorStore.clear()
       setUser(null)
     })
 
@@ -55,7 +57,8 @@ export default function AuthProvider({ children }) {
     return data.user
   }, [])
 
-  const logout = useCallback(async () => {
+  // Batalkan refresh token yang sedang dipakai di server (sekali jalan, kegagalan diabaikan).
+  const endCurrentSession = async () => {
     const refresh = tokenStore.getRefresh()
     try {
       if (refresh) await authApi.logout(refresh)
@@ -63,10 +66,58 @@ export default function AuthProvider({ children }) {
       // Tetap keluar di sisi frontend walaupun request logout gagal.
     }
     tokenStore.clear()
+  }
+
+  const clearSession = () => {
+    impersonatorStore.clear()
     schoolStore.clear()
     setSchoolState({ schools: [], school: null })
     setUser(null)
+  }
+
+  // Admin yayasan masuk ke akun lain. Sesinya sendiri disimpan dulu agar bisa kembali.
+  const impersonate = useCallback(async (userId) => {
+    const data = await authApi.impersonate(userId)
+    impersonatorStore.set({ refresh: tokenStore.getRefresh(), school: schoolStore.get() })
+    tokenStore.set(data)
+    schoolStore.clear()
+    setSchoolState(await loadSchools(data.user))
+    setUser(data.user)
+    return data.user
   }, [])
+
+  // Kembali ke akun admin yayasan: token akun yang dimasuki dibatalkan, sesi admin dipulihkan.
+  // Jika sesi admin sudah kedaluwarsa, pengguna diarahkan ke halaman login (user = null).
+  const stopImpersonating = useCallback(async () => {
+    const saved = impersonatorStore.get()
+    await endCurrentSession()
+    impersonatorStore.clear()
+    if (!saved?.refresh) {
+      clearSession()
+      return null
+    }
+    try {
+      tokenStore.set({ refresh: saved.refresh })
+      if (saved.school) schoolStore.set(saved.school)
+      else schoolStore.clear()
+      await refreshAccessToken()
+      const me = await authApi.me()
+      setSchoolState(await loadSchools(me))
+      setUser(me)
+      return me
+    } catch {
+      tokenStore.clear()
+      clearSession()
+      return null
+    }
+  }, [])
+
+  // Keluar saat sedang masuk ke akun lain = keluar dari kedua sesi (akun itu & admin yayasan).
+  const logout = useCallback(async () => {
+    if (impersonatorStore.get()) await stopImpersonating()
+    await endCurrentSession()
+    clearSession()
+  }, [stopImpersonating])
 
   // Pindah sekolah: request berikutnya memakai sekolah baru. Halaman dimuat ulang oleh
   // DashboardLayout (key = id sekolah) agar tidak ada data sekolah lama yang tertinggal.
@@ -86,12 +137,24 @@ export default function AuthProvider({ children }) {
       initializing,
       login,
       logout,
+      impersonate,
+      stopImpersonating,
       schools: schoolState.schools.filter((school) => school.is_active !== false),
       school: schoolState.school,
       selectSchool,
       reloadSchools,
     }),
-    [user, initializing, login, logout, schoolState, selectSchool, reloadSchools],
+    [
+      user,
+      initializing,
+      login,
+      logout,
+      impersonate,
+      stopImpersonating,
+      schoolState,
+      selectSchool,
+      reloadSchools,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

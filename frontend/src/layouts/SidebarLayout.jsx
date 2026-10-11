@@ -126,7 +126,7 @@ function Sidebar({ nav, badges, onNavigate }) {
   )
 }
 
-export default function SidebarLayout({ nav, badges, chat, notice, children }) {
+export default function SidebarLayout({ nav, badges, chat, banner, notice, children }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -156,6 +156,7 @@ export default function SidebarLayout({ nav, badges, chat, notice, children }) {
         </div>
       )}
 
+      {banner}
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
         <div className="flex h-16 items-center gap-3 px-4 sm:px-8">
           <button

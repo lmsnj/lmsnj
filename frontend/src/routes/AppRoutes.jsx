@@ -16,6 +16,7 @@ const BrandingPage = lazy(() => import('../pages/admin/BrandingPage'))
 const PromotionPage = lazy(() => import('../pages/admin/PromotionPage'))
 const PaymentsPage = lazy(() => import('../pages/admin/PaymentsPage'))
 const SchoolsPage = lazy(() => import('../pages/admin/SchoolsPage'))
+const ImpersonatePage = lazy(() => import('../pages/admin/ImpersonatePage'))
 const ClassroomDetailPage = lazy(() => import('../pages/admin/ClassroomDetailPage'))
 const ClassroomsPage = lazy(() => import('../pages/admin/ClassroomsPage'))
 const SubjectsPage = lazy(() => import('../pages/admin/SubjectsPage'))
@@ -102,6 +103,7 @@ export default function AppRoutes() {
               </Route>
               <Route element={<ProtectedRoute roles={[ROLES.FOUNDATION]} />}>
                 <Route path="sekolah" element={<SchoolsPage />} />
+                <Route path="masuk-sebagai" element={<ImpersonatePage />} />
               </Route>
             </Route>
 

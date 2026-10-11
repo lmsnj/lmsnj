@@ -3,6 +3,7 @@ import axios from 'axios'
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
 const REFRESH_KEY = 'lms_refresh_token'
 const SCHOOL_KEY = 'lms_school'
+const IMPERSONATOR_KEY = 'lms_impersonator'
 
 // Access token hanya disimpan di memori (hilang saat tab ditutup) agar lebih aman.
 // Refresh token disimpan di localStorage supaya pengguna tetap login setelah reload.
@@ -28,6 +29,20 @@ export const schoolStore = {
   get: () => localStorage.getItem(SCHOOL_KEY),
   set: (id) => localStorage.setItem(SCHOOL_KEY, String(id)),
   clear: () => localStorage.removeItem(SCHOOL_KEY),
+}
+
+// Sesi admin yayasan yang disimpan sementara selama ia "masuk sebagai" pengguna lain:
+// { refresh, school }. Dipakai untuk kembali ke akunnya tanpa login ulang.
+export const impersonatorStore = {
+  get() {
+    try {
+      return JSON.parse(localStorage.getItem(IMPERSONATOR_KEY))
+    } catch {
+      return null
+    }
+  },
+  set: (session) => localStorage.setItem(IMPERSONATOR_KEY, JSON.stringify(session)),
+  clear: () => localStorage.removeItem(IMPERSONATOR_KEY),
 }
 
 // Alamat lengkap untuk path dari API (mis. "/api/branding/logo/?v=1"), untuk <img src>.

@@ -127,6 +127,15 @@ Pola yang wajib dipakai ulang:
   Daftar Sekolah, Obrolan, Identitas Yayasan), dan halaman data sekolah dilindungi `SchoolRoute`
   (dialihkan ke `/admin`). Setelah memilih sekolah di "Ganti Sekolah" berlaku menu admin sekolah;
   pilihan "Biro Pendidikan" (`selectSchool(null)`) kembali ke mode yayasan.
+- **Masuk sebagai pengguna** (impersonate, `ImpersonationView` di `apps/accounts/views.py`): admin yayasan
+  mendapat token akun admin sekolah/guru/siswa yang aktif (bukan sesama yayasan) dengan klaim JWT
+  `impersonator` (ikut tersalin saat token di-refresh); `/auth/me/` mengembalikan `impersonator`
+  ({id, full_name} atau null). Setiap kali masuk dicatat di `ImpersonationLog` (baca saja di admin Django).
+  Selama menyamar: ganti password ditolak, tidak bisa menyamar lagi. Frontend: halaman
+  `/admin/masuk-sebagai` (`ImpersonatePage`), `AuthProvider.impersonate/stopImpersonating` — refresh token
+  admin disimpan di `impersonatorStore` (`api/client.js`) lalu dipulihkan saat kembali (token akun yang
+  dimasuki di-blacklist). Pita kuning `layouts/ImpersonationBanner.jsx` + item "Kembali ke ..." di menu akun.
+  Keluar saat menyamar = keluar dari kedua sesi. `DashboardLayout` diberi `key` = user + sekolah.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan.
 - **Material** (materi): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `description`, `material_type` (`pdf`/`video`/`link`), `file` + `original_filename` (khusus PDF, maks. 10 MB), `url` (video/link), `is_published` (draf tidak terlihat siswa), `created_by`.
 - **Capaian & urutan materi** (`apps/materials/progress.py`): `Material.order` (urutan per kelas-mapel, materi
@@ -458,7 +467,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | CRUD   | `/api/schools/` (multipart `logo`, `remove_logo`) | Baca: sekolah yang boleh dibuka (yayasan: semua, termasuk nonaktif). Tambah/hapus: yayasan. Ubah: yayasan, atau admin sekolah (nama/slogan/logo sekolahnya) |
 | GET    | `/api/schools/summary/`           | Admin Yayasan: jumlah siswa/guru/kelas/materi/tugas per sekolah |
 | GET    | `/api/schools/{id}/logo/`         | Publik           |
-| POST   | `/api/auth/change-password/`      | Login            |
+| POST   | `/api/auth/change-password/`      | Login (ditolak 403 saat "masuk sebagai") |
+| GET/POST | `/api/auth/impersonate/` (GET `search`, `role`, `schools`; POST `user`) | Admin Yayasan: daftar akun aktif non-yayasan semua sekolah / token akun itu |
 | CRUD   | `/api/users/` (filter `role`, `is_active`, `classroom`, `classroom__isnull`, `search`) | Admin |
 | POST   | `/api/users/{id}/reset-password/` | Admin            |
 | POST   | `/api/users/join/` (`username`)   | Admin: daftarkan akun guru/admin yang sudah ada ke sekolah aktif. Hapus pengguna yang terdaftar di >1 sekolah = hanya keluar dari sekolah aktif |

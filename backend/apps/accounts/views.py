@@ -2,7 +2,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -15,8 +15,8 @@ from apps.common.files import validate_upload
 from apps.common.mixins import ProtectedDeleteMixin
 from apps.schools.context import active_school, require_school
 
-from .models import Role, User
-from .permissions import IsAdmin
+from .models import ImpersonationLog, Role, User
+from .permissions import IsAdmin, IsFoundation
 from .serializers import (
     ChangePasswordSerializer,
     LoginSerializer,
@@ -28,6 +28,25 @@ from .serializers import (
 from .user_import import build_template, create_users, read_rows, validate_rows
 
 XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+# Klaim di token akun yang dimasuki admin yayasan: id admin yayasan tersebut. Ikut tersalin ke
+# access token dan ke refresh token hasil rotasi, jadi penandanya tidak hilang saat token diperbarui.
+IMPERSONATOR_CLAIM = "impersonator"
+
+
+def impersonator_id(request):
+    """Id admin yayasan yang sedang "masuk sebagai" user ini, atau None jika login biasa."""
+    token = request.auth
+    return token.get(IMPERSONATOR_CLAIM) if token is not None and hasattr(token, "get") else None
+
+
+def me_data(user, impersonator=None):
+    """Data user untuk frontend + siapa admin yayasan yang sedang masuk ke akun ini (jika ada)."""
+    data = UserSerializer(user).data
+    data["impersonator"] = (
+        {"id": impersonator.pk, "full_name": impersonator.full_name} if impersonator else None
+    )
+    return data
 
 
 class LoginView(TokenObtainPairView):
@@ -51,20 +70,71 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class MeView(generics.RetrieveAPIView):
-    serializer_class = UserSerializer
-
-    def get_object(self):
-        return self.request.user
+class MeView(APIView):
+    def get(self, request):
+        admin_id = impersonator_id(request)
+        impersonator = User.objects.filter(pk=admin_id).first() if admin_id else None
+        return Response(me_data(request.user, impersonator))
 
 
 class ChangePasswordView(APIView):
     def post(self, request):
+        # Admin yayasan yang masuk ke akun orang lain tidak boleh mengganti password pemiliknya.
+        if impersonator_id(request):
+            raise PermissionDenied("Password tidak dapat diubah saat masuk sebagai pengguna lain.")
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         request.user.set_password(serializer.validated_data["new_password"])
         request.user.save(update_fields=["password"])
         return Response({"detail": "Password berhasil diubah."})
+
+
+class ImpersonationView(generics.ListAPIView):
+    """Admin yayasan masuk ke akun pengguna lain tanpa password, mis. untuk membantu atau memeriksa
+    tampilan guru/siswa. GET = akun yang bisa dimasuki (semua sekolah), POST {user} = token akun itu.
+    Setiap kali masuk dicatat di ImpersonationLog."""
+
+    permission_classes = [IsFoundation]
+    serializer_class = UserSerializer
+    filterset_fields = {"role": ["exact"], "schools": ["exact"]}
+    search_fields = ["username", "full_name", "nis", "nip"]
+
+    def get_queryset(self):
+        # Sesama admin yayasan tidak bisa dimasuki; akun nonaktif memang tidak boleh dipakai.
+        return (
+            User.objects.filter(is_active=True)
+            .exclude(role=Role.FOUNDATION)
+            .select_related("classroom")
+            .prefetch_related("schools")
+            .distinct()
+            .order_by("full_name")
+        )
+
+    def post(self, request):
+        # Dari akun yang sedang dimasuki tidak bisa masuk lagi ke akun lain (harus kembali dulu).
+        if impersonator_id(request):
+            raise PermissionDenied("Kembali ke akun admin yayasan terlebih dahulu.")
+        try:
+            target = self.get_queryset().get(pk=int(request.data.get("user")))
+        except (TypeError, ValueError, User.DoesNotExist):
+            raise ValidationError({"user": "Akun tidak ditemukan atau tidak aktif."})
+
+        refresh = RefreshToken.for_user(target)
+        refresh[IMPERSONATOR_CLAIM] = request.user.pk
+        ImpersonationLog.objects.create(
+            impersonator=request.user,
+            impersonator_username=request.user.username,
+            target=target,
+            target_username=target.username,
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
+        return Response(
+            {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": me_data(target, request.user),
+            }
+        )
 
 
 class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):

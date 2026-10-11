@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 
 from apps.common.testing import default_school
 
-from .models import Role, User
+from .models import ImpersonationLog, Role, User
 
 PASSWORD = "RahasiaKuat#2026"
 
@@ -143,3 +143,88 @@ class UserManagementTests(APITestCase):
     def test_createsuperuser_gets_foundation_role(self):
         user = User.objects.create_superuser("root", "root@example.com", PASSWORD, full_name="Root")
         self.assertEqual(user.role, Role.FOUNDATION)
+
+
+class ImpersonationTests(APITestCase):
+    """Admin yayasan masuk ke akun lain tanpa password, lalu kembali ke akunnya sendiri."""
+
+    def setUp(self):
+        self.foundation = User.objects.create_user(
+            username="yayasan", password=PASSWORD, full_name="Admin Yayasan", role=Role.FOUNDATION
+        )
+        self.teacher = make_user("guru1", Role.TEACHER, nip="1981")
+        self.admin = make_user("admin1", Role.ADMIN)
+        self.url = reverse("auth-impersonate")
+
+    def impersonate(self, user):
+        self.client.force_authenticate(self.foundation)
+        res = self.client.post(self.url, {"user": user.pk})
+        self.client.force_authenticate(None)
+        return res
+
+    def use_token(self, access):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+
+    def test_only_foundation_can_impersonate(self):
+        self.client.force_authenticate(self.admin)
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)
+        res = self.client.post(self.url, {"user": self.teacher.pk})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_list_excludes_foundation_and_inactive(self):
+        other = User.objects.create_user(username="yayasan2", password=PASSWORD, role=Role.FOUNDATION)
+        inactive = make_user("lama", Role.TEACHER, is_active=False)
+        self.client.force_authenticate(self.foundation)
+        res = self.client.get(self.url, {"page_size": 100})
+        ids = {row["id"] for row in res.data["results"]}
+        self.assertIn(self.teacher.pk, ids)
+        self.assertNotIn(other.pk, ids)
+        self.assertNotIn(inactive.pk, ids)
+
+    def test_impersonate_returns_tokens_of_target_and_logs(self):
+        res = self.impersonate(self.teacher)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["user"]["id"], self.teacher.pk)
+        self.assertEqual(res.data["user"]["impersonator"]["id"], self.foundation.pk)
+        log = ImpersonationLog.objects.get()
+        self.assertEqual((log.impersonator, log.target), (self.foundation, self.teacher))
+
+        self.use_token(res.data["access"])
+        me = self.client.get(reverse("auth-me")).data
+        self.assertEqual(me["username"], "guru1")
+        self.assertEqual(me["impersonator"]["full_name"], "Admin Yayasan")
+
+    def test_marker_survives_token_refresh(self):
+        refresh = self.impersonate(self.teacher).data["refresh"]
+        tokens = self.client.post(reverse("auth-refresh"), {"refresh": refresh}).data
+        self.use_token(tokens["access"])
+        self.assertEqual(self.client.get(reverse("auth-me")).data["impersonator"]["id"], self.foundation.pk)
+
+    def test_normal_login_has_no_impersonator(self):
+        cache.clear()
+        tokens = self.client.post(reverse("auth-login"), {"username": "guru1", "password": PASSWORD}).data
+        self.use_token(tokens["access"])
+        self.assertIsNone(self.client.get(reverse("auth-me")).data["impersonator"])
+
+    def test_cannot_impersonate_foundation_or_inactive(self):
+        other = User.objects.create_user(username="yayasan2", password=PASSWORD, role=Role.FOUNDATION)
+        self.teacher.is_active = False
+        self.teacher.save()
+        for target in (other, self.teacher, self.foundation):
+            self.assertEqual(self.impersonate(target).status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(ImpersonationLog.objects.exists())
+
+    def test_cannot_change_password_while_impersonating(self):
+        self.use_token(self.impersonate(self.teacher).data["access"])
+        res = self.client.post(
+            reverse("auth-change-password"), {"old_password": PASSWORD, "new_password": "BaruKuat#2026"}
+        )
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.teacher.refresh_from_db()
+        self.assertTrue(self.teacher.check_password(PASSWORD))
+
+    def test_impersonated_admin_cannot_impersonate_again(self):
+        # Akun admin sekolah yang dimasuki tetap bukan admin yayasan, jadi tetap ditolak.
+        self.use_token(self.impersonate(self.admin).data["access"])
+        res = self.client.post(self.url, {"user": self.teacher.pk})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)

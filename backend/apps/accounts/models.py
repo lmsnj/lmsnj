@@ -79,3 +79,27 @@ class User(AbstractUser):
     @property
     def is_student(self):
         return self.role == Role.STUDENT
+
+
+class ImpersonationLog(models.Model):
+    """Catatan setiap kali admin yayasan masuk ke akun pengguna lain (siapa, ke akun siapa, kapan).
+    Username disalin agar catatan tetap terbaca walaupun akunnya kemudian dihapus."""
+
+    impersonator = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="admin yayasan"
+    )
+    impersonator_username = models.CharField("username admin", max_length=150)
+    target = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="akun yang dimasuki"
+    )
+    target_username = models.CharField("username akun", max_length=150)
+    ip_address = models.GenericIPAddressField("alamat IP", null=True, blank=True)
+    created_at = models.DateTimeField("waktu", auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "catatan masuk sebagai pengguna"
+        verbose_name_plural = "catatan masuk sebagai pengguna"
+
+    def __str__(self):
+        return f"{self.impersonator_username} -> {self.target_username}"

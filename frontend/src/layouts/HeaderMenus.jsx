@@ -1,4 +1,13 @@
-import { Bell, Check, ChevronDown, KeyRound, Languages, LogOut, UserRound } from 'lucide-react'
+import {
+  Bell,
+  Check,
+  ChevronDown,
+  KeyRound,
+  Languages,
+  LogOut,
+  Undo2,
+  UserRound,
+} from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { dashboardApi } from '../api/dashboard'
 import Dropdown, { DropdownItem } from '../components/Dropdown'
@@ -156,12 +165,16 @@ function initials(name) {
 }
 
 export function UserMenu() {
-  const { user, logout } = useAuth()
+  const { user, logout, stopImpersonating } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
     await logout()
     navigate('/login', { replace: true })
+  }
+  const handleReturn = async () => {
+    const admin = await stopImpersonating()
+    navigate(admin ? '/admin/masuk-sebagai' : '/login', { replace: true })
   }
 
   return (
@@ -199,6 +212,11 @@ export function UserMenu() {
             Ganti Password
           </DropdownItem>
           <div className="my-1 border-t border-slate-100" />
+          {user.impersonator && (
+            <DropdownItem icon={Undo2} onClick={handleReturn} className="text-amber-700">
+              Kembali ke {user.impersonator.full_name}
+            </DropdownItem>
+          )}
           <DropdownItem icon={LogOut} onClick={handleLogout} className="text-red-600">
             Keluar
           </DropdownItem>

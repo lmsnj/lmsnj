@@ -13,6 +13,7 @@ import { ROLE_HOME, ROLES } from '../utils/constants'
 import { LanguageMenu, NotificationBell, UserMenu } from './HeaderMenus'
 import { navigationFor } from './navigation'
 import SchoolSwitcher from './SchoolSwitcher'
+import ImpersonationBanner from './ImpersonationBanner'
 import SidebarLayout from './SidebarLayout'
 
 // Peran yang memakai tata letak sidebar (panel admin); peran lain memakai bar menu hijau.
@@ -224,12 +225,14 @@ export default function DashboardLayout() {
     </ErrorBoundary>
   )
 
-  // key = sekolah aktif: saat pindah sekolah semua isi halaman dipasang ulang sehingga data
-  // dimuat ulang dari sekolah yang baru (tidak ada data sekolah lama yang tertinggal).
+  // key = user + sekolah aktif: saat pindah sekolah (atau admin yayasan masuk ke akun lain) semua
+  // isi halaman dipasang ulang sehingga data dimuat ulang (tidak ada data lama yang tertinggal).
+  const layoutKey = `${user.id}-${school?.id ?? 'none'}`
   if (SIDEBAR_ROLES.includes(user.role)) {
     return (
-      <div key={school?.id ?? 'none'}>
+      <div key={layoutKey}>
         <SidebarLayout
+          banner={<ImpersonationBanner />}
           nav={nav}
           badges={badges}
           chat={chat.conversations}
@@ -243,7 +246,8 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div key={school?.id ?? 'none'} className="min-h-screen bg-surface">
+    <div key={layoutKey} className="min-h-screen bg-surface">
+      <ImpersonationBanner />
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
           <button
