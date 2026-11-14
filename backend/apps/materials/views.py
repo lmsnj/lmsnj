@@ -13,10 +13,11 @@ from apps.academics.models import TeachingAssignment
 from apps.accounts.models import Role
 from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStudent, IsTeacher
 from apps.assessments import ai_generate, auto_assessment
+from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.files import file_response
 from apps.schools.context import active_school
 
-from . import objective_quiz
+from . import objective_quiz, objective_quiz_excel
 from . import progress as learning
 from .models import Material, MaterialProgress
 from .selectors import materials_for
@@ -160,6 +161,34 @@ class MaterialViewSet(viewsets.ModelViewSet):
         if user.role == Role.STUDENT:
             result["material"] = self._material_response(material).data
         return Response(result)
+
+    def _owned_material(self, request):
+        material = self.get_object()
+        if material.teaching_assignment.teacher_id != request.user.id:
+            raise PermissionDenied("Hanya guru pengampu yang dapat mengatur kuis capaian materi ini.")
+        return material
+
+    @action(detail=True, url_path="objective-quiz-template", permission_classes=[IsTeacher])
+    def objective_quiz_template(self, request, pk=None):
+        """Template Excel kuis capaian, sudah berisi kuis yang ada (untuk menambah/mengubah soal)."""
+        material = self._owned_material(request)
+        if not material.objectives:
+            raise ValidationError({"detail": "Isi dulu daftar capaian materi ini."})
+        content = objective_quiz_excel.build_quiz_template(material)
+        return template_response(content, f"Kuis Capaian - {material.title[:60]}.xlsx")
+
+    @action(detail=True, methods=["post"], url_path="objective-quiz-import", permission_classes=[IsTeacher])
+    def objective_quiz_import(self, request, pk=None):
+        """Impor kuis capaian dari Excel. dry_run=true (bawaan) hanya memeriksa; false menyimpan jika
+        SEMUA baris benar. Capaian yang ada di file diganti soalnya; capaian lain tidak berubah."""
+        material = self._owned_material(request)
+        preview, grouped = objective_quiz_excel.check_file(request.FILES.get("file"), material)
+
+        def save():
+            objective_quiz.set_quizzes(material, grouped)
+            return sum(len(items) for items in grouped.values())
+
+        return import_response(preview, is_dry_run(request), save)
 
     @action(detail=True, methods=["get", "put"], permission_classes=[IsAdminOrTeacher])
     def progress(self, request, pk=None):

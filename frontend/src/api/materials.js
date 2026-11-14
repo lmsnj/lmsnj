@@ -33,6 +33,17 @@ export const materialsApi = {
     api.get(`/materials/${id}/objective-quiz/`, { params: { index } }).then((res) => res.data),
   submitObjectiveQuiz: (id, index, answers) =>
     api.post(`/materials/${id}/objective-quiz/`, { index, answers }).then((res) => res.data),
+  // Impor kuis capaian dari Excel (template berisi kuis yang ada).
+  objectiveQuizTemplate: (id) =>
+    api
+      .get(`/materials/${id}/objective-quiz-template/`, { responseType: 'blob' })
+      .then((res) => res.data),
+  importObjectiveQuiz: (id, file, dryRun) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('dry_run', dryRun ? 'true' : 'false')
+    return api.post(`/materials/${id}/objective-quiz-import/`, form).then((res) => res.data)
+  },
   reorder: (teachingAssignment, materialIds) =>
     api
       .post('/materials/reorder/', {

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ListChecks, Sparkles } from 'lucide-react'
+import { ArrowDown, ArrowUp, ClipboardList, ListChecks, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { materialsApi } from '../../api/materials'
 import Alert from '../../components/Alert'
@@ -13,6 +13,7 @@ import { moveItem } from '../../utils/learningPath'
 import GenerateAssessmentModal from './GenerateAssessmentModal'
 import MaterialFormModal from './MaterialFormModal'
 import MaterialProgressModal from './MaterialProgressModal'
+import ObjectiveQuizImportModal from './ObjectiveQuizImportModal'
 
 /**
  * Daftar + kelola materi guru. Dipakai di tab "Materi" halaman kelas-mapel (assignmentId tetap)
@@ -30,7 +31,7 @@ export default function MaterialsManager({
   summary,
 }) {
   const [notice, setNotice] = useState({ type: 'success', text: '' })
-  // { type: 'form' | 'view' | 'delete' | 'progress' | 'ai', material }
+  // { type: 'form' | 'view' | 'delete' | 'progress' | 'ai' | 'quiz', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
   const materials = useFetch(materialsApi.list, {
     ...ALL,
@@ -133,6 +134,18 @@ export default function MaterialsManager({
             >
               <ListChecks className="size-4" aria-hidden="true" /> Progres
             </Button>
+            {material.objectives?.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDialog({ type: 'quiz', material })}
+                title="Impor atau ubah kuis per capaian lewat Excel"
+              >
+                <ClipboardList className="size-4" aria-hidden="true" /> Kuis Capaian
+                {material.objective_quiz?.some(Boolean) &&
+                  ` (${material.objective_quiz.filter(Boolean).length}/${material.objectives.length})`}
+              </Button>
+            )}
             {(material.concepts?.length > 0 || material.objectives?.length > 0) && (
               <Button
                 variant="ghost"
@@ -178,6 +191,20 @@ export default function MaterialsManager({
       )}
       {dialog?.type === 'progress' && (
         <MaterialProgressModal material={dialog.material} onClose={closeDialog} />
+      )}
+      {dialog?.type === 'quiz' && (
+        <ObjectiveQuizImportModal
+          material={dialog.material}
+          onClose={closeDialog}
+          onImported={(count) => {
+            closeDialog()
+            setNotice({
+              type: 'success',
+              text: `${count} soal kuis capaian "${dialog.material.title}" diimpor.`,
+            })
+            materials.reload()
+          }}
+        />
       )}
       {dialog?.type === 'ai' && (
         <GenerateAssessmentModal

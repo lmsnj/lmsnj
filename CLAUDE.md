@@ -475,6 +475,9 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   mengirim `objective_quiz` (jumlah soal per capaian). Guru pengampu mengatur lewat PUT atau
   `python manage.py load_objective_quiz <id_materi> <file.json> [--dry-run]` (contoh: kuis Flowgorithm, simpan lokal).
   Panel siswa: tombol "Uji (N soal)" / "Lulus"; guru: "Kuis N soal · Coba" (pratinjau, tidak disimpan).
+  Guru mengimpor/mengubah lewat Excel (tombol "Kuis Capaian" di `MaterialsManager`, `ObjectiveQuizImportModal`,
+  `objective_quiz_excel.py`): template SUDAH berisi kuis yang ada + kunci; kolom No Capaian, Jenis (pg/isian/seret/
+  jodohkan), Pertanyaan, Kalimat [[...]], Pilihan A-E, Kunci, Pembahasan; capaian di file diganti, lainnya tetap.
 - **Asesmen otomatis** (tombol "Asesmen Otomatis" di `MaterialsManager`, `pages/guru/GenerateAssessmentModal.jsx`):
   sumber utama GRATIS = `Material.concepts` ("istilah = penjelasan" per baris, min. 4, maks. 12, TIDAK dikirim
   ke siswa) -> `apps/assessments/auto_assessment.py::build_questions` (fungsi murni, seed = id materi): jodohkan,
@@ -559,6 +562,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/materials/{id}/open/`, `.../objectives/` (`checked`) | Siswa (materi tidak terkunci) |
 | GET/PUT | `/api/materials/{id}/progress/` (PUT `records: [{student, teacher_approved, unlocked, note}]`) | GET guru pengampu/admin, PUT guru pengampu |
 | GET/POST | `/api/materials/{id}/generate-assessment/` (POST `source`, `question_count` 5-20 untuk AI) | Guru pengampu: buat asesmen "Cek Pemahaman" (`source` = `concepts` gratis / `ai`); GET = jumlah konsep, `ai_enabled` |
+| GET/POST | `/api/materials/{id}/objective-quiz-template/`, `.../objective-quiz-import/` (multipart `file`, `dry_run`) | Guru pengampu: template berisi kuis yang ada / impor kuis capaian |
 | GET/POST/PUT | `/api/materials/{id}/objective-quiz/` (GET `?index=`; POST `index`, `answers`; PUT `quizzes: {indeks: [soal]}`) | Siswa (materi terbuka): kerjakan; guru pengampu/admin: pratinjau; PUT guru pengampu |
 | POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu |
 | CRUD   | `/api/tasks/` (multipart; filter `teaching_assignment`, `is_published`, `due_at__gte`, `due_at__lte`) | Sama dengan materi. Untuk siswa ada `my_submission`; untuk guru `ungraded_count` |
