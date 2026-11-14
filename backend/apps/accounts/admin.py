@@ -6,14 +6,14 @@ from .models import ImpersonationLog, User
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ["username", "full_name", "role", "nis", "nip", "is_active"]
+    list_display = ["username", "full_name", "role", "nis", "nip", "teacher_code", "is_active"]
     list_filter = ["role", "is_active", "is_staff"]
-    search_fields = ["username", "full_name", "email", "nis", "nip"]
+    search_fields = ["username", "full_name", "email", "nis", "nip", "teacher_code"]
     ordering = ["full_name"]
 
     fieldsets = [
         (None, {"fields": ["username", "password"]}),
-        ("Data diri", {"fields": ["full_name", "email", "role", "nis", "nip"]}),
+        ("Data diri", {"fields": ["full_name", "email", "role", "nis", "nip", "teacher_code"]}),
         ("Hak akses", {"fields": ["is_active", "is_staff", "is_superuser", "groups", "user_permissions"]}),
         ("Waktu penting", {"fields": ["last_login", "date_joined"]}),
     ]

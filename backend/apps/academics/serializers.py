@@ -116,6 +116,7 @@ class TeachingAssignmentSerializer(serializers.ModelSerializer):
             "classroom",
             "classroom_name",
             "academic_year",
+            "weekly_hours",
             "student_count",
         ]
 

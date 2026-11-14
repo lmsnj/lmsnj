@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from apps.academics.models import TeachingAssignment
 
-from .models import SessionMode, TeachingSession
+from .models import SessionMode, TeachingSession, TimeSlot, Timetable, TimetableEntry
 
 
 class TeachingSessionSerializer(serializers.ModelSerializer):
@@ -65,3 +65,42 @@ class TeachingSessionSerializer(serializers.ModelSerializer):
         if mode == SessionMode.OFFLINE:
             attrs["meeting_url"] = ""
         return attrs
+
+
+class TimetableSerializer(serializers.ModelSerializer):
+    semester_display = serializers.CharField(source="get_semester_display", read_only=True)
+
+    class Meta:
+        model = Timetable
+        fields = ["id", "code", "academic_year", "semester", "semester_display", "effective_from"]
+
+
+class TimeSlotSerializer(serializers.ModelSerializer):
+    day_display = serializers.CharField(source="get_day_display", read_only=True)
+
+    class Meta:
+        model = TimeSlot
+        fields = ["id", "day", "day_display", "period", "starts_at", "ends_at", "kind", "label"]
+
+
+class TimetableEntrySerializer(serializers.ModelSerializer):
+    subject_code = serializers.CharField(source="teaching_assignment.subject.code", read_only=True)
+    subject_name = serializers.CharField(source="teaching_assignment.subject.name", read_only=True)
+    classroom = serializers.IntegerField(source="teaching_assignment.classroom_id", read_only=True)
+    classroom_name = serializers.CharField(source="teaching_assignment.classroom.name", read_only=True)
+    teacher = serializers.IntegerField(source="teaching_assignment.teacher_id", read_only=True)
+    teacher_name = serializers.CharField(source="teaching_assignment.teacher.full_name", read_only=True)
+
+    class Meta:
+        model = TimetableEntry
+        fields = [
+            "id",
+            "time_slot",
+            "teaching_assignment",
+            "subject_code",
+            "subject_name",
+            "classroom",
+            "classroom_name",
+            "teacher",
+            "teacher_name",
+        ]

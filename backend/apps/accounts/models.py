@@ -31,6 +31,9 @@ class User(AbstractUser):
     nis = models.CharField("NIS", max_length=20, null=True, blank=True, db_index=True)
     # null=True agar banyak user tanpa NIP tidak bentrok dengan aturan unique.
     nip = models.CharField("NIP", max_length=30, unique=True, null=True, blank=True)
+    # Kode guru di jadwal sekolah (mis. A0372). Dipakai untuk mencocokkan guru saat impor jadwal.
+    # Tidak unik global: sekolah lain bisa memakai kode yang sama; impor mencocokkan per sekolah.
+    teacher_code = models.CharField("kode guru", max_length=20, null=True, blank=True, db_index=True)
     # Khusus siswa. Jika kelas dihapus, siswa hanya menjadi "belum punya kelas".
     classroom = models.ForeignKey(
         "academics.Classroom",

@@ -19,7 +19,8 @@ pembelajaran bagi siswa. Identitas aplikasi bawaan: "Sigma Teknologi" / "LMS Sig
 - Dashboard berbeda untuk tiap peran.
 
 Fitur tambahan setelah MVP (sudah dibuat): pengumuman, laporan nilai per kelas, jadwal sesi mengajar,
-ruang obrolan (pesan langsung), dan lembar asesmen (kuis online).
+ruang obrolan (pesan langsung), lembar asesmen (kuis online), dan jadwal pelajaran mingguan
+(diimpor dari JSON, lihat `docs/jadwal/README.md`).
 
 Belum dikerjakan (jangan dikerjakan kecuali diminta): forum diskusi, notifikasi real-time
 (push/WebSocket), terjemahan bahasa lain, aplikasi mobile, integrasi Dapodik.
@@ -57,7 +58,8 @@ lms-smknj/
 │   │   ├── tasks/           # Tugas, Pengumpulan, Penilaian; services.py = aturan, gradebook.py = rekap nilai & CSV
 │   │   ├── dashboard/       # Ringkasan per peran (tanpa model); services.py memakai selector modul lain
 │   │   ├── announcements/   # Pengumuman sekolah (admin) & kelas-mapel (guru)
-│   │   ├── schedule/        # Jadwal sesi mengajar (TeachingSession); bukan "sessions" (bentrok app Django)
+│   │   ├── schedule/        # Sesi mengajar (TeachingSession) + jadwal pelajaran mingguan (Timetable);
+│   │   │                    #   timetable_import.py = impor JSON, services.py = aturan bentrok & beban guru
 │   │   ├── chat/            # Ruang obrolan; rules.py = siapa boleh mengobrol dengan siapa
 │   │   ├── assessments/     # Lembar asesmen (kuis); services.py = aturan mengerjakan & menilai;
 │   │   │                    #   interactive.py = soal interaktif; videos.py = streaming video soal
@@ -167,7 +169,18 @@ Pola yang wajib dipakai ulang:
   (`wa.me/?text=`, pilih kontak di WhatsApp) & Salin per akun + Cetak Kartu. Halaman cetak
   `/cetak/kartu-akun` (`AccountCardsPrintPage`, di luar `DashboardLayout`, 10 kartu per A4) menerima data
   lewat `cardStore` (sessionStorage, dihapus saat halaman ditinggalkan — password tidak dikirim balik ke server).
-- **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan.
+- **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan. `weekly_hours` = JP resmi per minggu (opsional, dari distribusi JP).
+- **Jadwal pelajaran mingguan** (`apps/schedule`, panduan `docs/jadwal/README.md`): **Timetable** (versi jadwal milik
+  satu sekolah: `school`, `code` unik per sekolah, `academic_year`, `semester`, `effective_from`, `is_active` = satu
+  yang aktif PER SEKOLAH). **TimeSlot**: `day` (Senin = 0 … Ahad = 6, sama dengan `date.weekday()`), `period`,
+  `starts_at`, `ends_at`, `kind` (`lesson`/`activity`), `label`. **TimetableEntry**: `time_slot` + `teaching_assignment`.
+  `User.teacher_code` (kode guru di jadwal, mis. A0372) TIDAK unik global — dicocokkan hanya di antara anggota
+  sekolah itu. Pekan sekolah boleh Sabtu–Kamis (Jumat libur). Kelas gabungan = guru & mapel sama di beberapa kelas
+  pada jam yang sama; bukan bentrok (`services.find_conflicts`). Impor: `python manage.py import_timetable
+  <file.json> --school <kode> [--dry-run]` (`timetable_import.py`; mapel/kelas/guru dicari & dibuat di sekolah itu,
+  guru baru otomatis terdaftar di sekolah itu; aman diulang). File JSON berisi nama guru: simpan lokal
+  (`docs/jadwal/*.json` di-.gitignore). `GET /api/timetable/` (jadwal aktif sekolah aktif, isi sesuai peran; admin
+  bisa `?classroom=`/`?teacher=`) dan `GET /api/timetable/teacher-loads/` (admin).
 - **Material** (materi): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `description`, `material_type` (`pdf`/`video`/`link`), `file` + `original_filename` (khusus PDF, maks. 10 MB), `url` (video/link), `is_published` (draf tidak terlihat siswa), `created_by`.
 - **Capaian & urutan materi** (`apps/materials/progress.py`): `Material.order` (urutan per kelas-mapel, materi
   baru = terakhir, ubah lewat `reorder`), `objectives` (daftar capaian, dicentang siswa; multipart dikirim

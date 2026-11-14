@@ -110,6 +110,8 @@ class TeachingAssignment(models.Model):
     classroom = models.ForeignKey(
         Classroom, verbose_name="kelas", on_delete=models.PROTECT, related_name="teaching_assignments"
     )
+    # JP resmi per minggu menurut dokumen distribusi JP. Kosong = belum ditetapkan.
+    weekly_hours = models.PositiveSmallIntegerField("JP per minggu", null=True, blank=True)
 
     class Meta:
         verbose_name = "pengampu"

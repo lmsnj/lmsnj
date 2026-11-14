@@ -1,6 +1,7 @@
 import {
   BookOpen,
   CalendarClock,
+  CalendarDays,
   CalendarSync,
   ChartColumn,
   ClipboardCheck,
@@ -34,6 +35,7 @@ import { ROLES } from '../utils/constants'
  */
 const PROFILE = { label: 'Profil Saya', icon: UserRound, to: '/profil' }
 const CHAT = { label: 'Ruang Obrolan', icon: MessagesSquare, to: '/obrolan', badge: 'chat' }
+const TIMETABLE = { label: 'Jadwal Pelajaran', icon: CalendarDays }
 const ANNOUNCEMENTS = { label: 'Pengumuman', icon: Megaphone, to: '/pengumuman' }
 
 // Menu admin dipakai juga oleh admin yayasan (di sekolah yang sedang dibuka).
@@ -46,6 +48,7 @@ const ADMIN_MAIN = [
   CHAT,
 ]
 const ADMIN_MORE = [
+  { ...TIMETABLE, to: '/admin/jadwal' },
   { label: 'Laporan Nilai', icon: ChartColumn, to: '/admin/laporan' },
   { label: 'Rekap Presensi', icon: UserCheck, to: '/admin/presensi' },
   { label: 'Status Pembayaran', icon: Wallet, to: '/admin/pembayaran' },
@@ -95,6 +98,7 @@ export const NAVIGATION = {
     ],
     more: [
       ANNOUNCEMENTS,
+      { ...TIMETABLE, to: '/guru/jadwal' },
       { label: 'Sesi Mengajar', icon: CalendarClock, to: '/guru/sesi' },
       { label: 'Laporan Kelas Wali', icon: ChartColumn, to: '/guru/laporan' },
       { label: 'Presensi Kelas Wali', icon: UserCheck, to: '/guru/presensi' },
@@ -115,6 +119,7 @@ export const NAVIGATION = {
       { label: 'Nilai & Progres', icon: Trophy, to: '/siswa/nilai' },
       { label: 'Kehadiran Saya', icon: UserCheck, to: '/siswa/presensi' },
       ANNOUNCEMENTS,
+      { ...TIMETABLE, to: '/siswa/jadwal' },
       { label: 'Jadwal Sesi', icon: CalendarClock, to: '/siswa/sesi' },
       PROFILE,
     ],

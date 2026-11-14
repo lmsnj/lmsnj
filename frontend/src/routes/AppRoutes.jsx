@@ -38,6 +38,7 @@ const ChatPage = lazy(() => import('../pages/ChatPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const ReportPage = lazy(() => import('../pages/ReportPage'))
 const SessionsPage = lazy(() => import('../pages/SessionsPage'))
+const TimetablePage = lazy(() => import('../pages/TimetablePage'))
 const AssessmentEditorPage = lazy(() => import('../pages/guru/AssessmentEditorPage'))
 const TeacherAssessmentsPage = lazy(() => import('../pages/guru/TeacherAssessmentsPage'))
 const StudentAssessmentPage = lazy(() => import('../pages/siswa/StudentAssessmentPage'))
@@ -100,6 +101,7 @@ export default function AppRoutes() {
                 <Route path="kelas/:id" element={<ClassroomDetailPage />} />
                 <Route path="mapel" element={<SubjectsPage />} />
                 <Route path="pengampu" element={<AssignmentsPage />} />
+                <Route path="jadwal" element={<TimetablePage />} />
                 <Route path="laporan" element={<ReportPage />} />
                 <Route path="presensi" element={<AttendanceReportPage />} />
                 <Route path="pembayaran" element={<PaymentsPage />} />
@@ -122,6 +124,7 @@ export default function AppRoutes() {
               <Route path="tugas/:id" element={<TeacherTaskPage />} />
               <Route path="asesmen" element={<TeacherAssessmentsPage />} />
               <Route path="asesmen/:id" element={<AssessmentEditorPage />} />
+              <Route path="jadwal" element={<TimetablePage />} />
               <Route path="sesi" element={<SessionsPage />} />
               <Route path="laporan" element={<ReportPage />} />
               <Route path="presensi" element={<AttendanceReportPage />} />
@@ -139,6 +142,7 @@ export default function AppRoutes() {
               <Route path="nilai" element={<StudentGradesPage />} />
               <Route path="asesmen" element={<StudentAssessmentsPage />} />
               <Route path="asesmen/:id" element={<StudentAssessmentPage />} />
+              <Route path="jadwal" element={<TimetablePage />} />
               <Route path="sesi" element={<SessionsPage />} />
               <Route path="presensi" element={<StudentAttendancePage />} />
             </Route>

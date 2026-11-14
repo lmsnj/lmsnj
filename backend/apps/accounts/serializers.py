@@ -27,6 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
             "role_display",
             "nis",
             "nip",
+            "teacher_code",
             "classroom",
             "classroom_name",
             "schools",

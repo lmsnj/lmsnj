@@ -19,3 +19,7 @@ frontend/dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Data jadwal berisi nama guru; simpan lokal saja (lihat docs/jadwal/README.md)
+docs/jadwal/*.json
+*password*.csv
