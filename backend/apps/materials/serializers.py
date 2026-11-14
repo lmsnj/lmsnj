@@ -15,6 +15,7 @@ from .progress import progress_for_request
 
 PDF_SIGNATURE = b"%PDF-"
 MAX_OBJECTIVES = 10
+MAX_CONCEPTS = 12
 
 
 class ObjectivesField(serializers.ListField):
@@ -40,6 +41,28 @@ class ObjectivesField(serializers.ListField):
         return values
 
 
+class ConceptsField(ObjectivesField):
+    """Konsep kunci, satu baris "istilah = penjelasan" (bahan asesmen otomatis)."""
+
+    child = serializers.CharField(max_length=300, allow_blank=True)
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            try:
+                data = json.loads(data or "[]")
+            except ValueError:
+                raise serializers.ValidationError("Format daftar konsep tidak valid.")
+        values = [
+            text.strip() for text in serializers.ListField.to_internal_value(self, data) if text.strip()
+        ]
+        if len(values) > MAX_CONCEPTS:
+            raise serializers.ValidationError(f"Maksimal {MAX_CONCEPTS} konsep per materi.")
+        wrong = [text for text in values if len([part for part in text.split("=", 1) if part.strip()]) < 2]
+        if wrong:
+            raise serializers.ValidationError(f"Tulis dengan format “istilah = penjelasan”: {wrong[0]}")
+        return values
+
+
 class MaterialSerializer(serializers.ModelSerializer):
     # Guru hanya boleh memilih kelas-mapel yang ia ampu (diisi di __init__).
     teaching_assignment = serializers.PrimaryKeyRelatedField(queryset=TeachingAssignment.objects.none())
@@ -49,6 +72,7 @@ class MaterialSerializer(serializers.ModelSerializer):
     classroom_name = serializers.CharField(source="teaching_assignment.classroom.name", read_only=True)
     created_by_name = serializers.CharField(source="created_by.full_name", read_only=True, default=None)
     objectives = ObjectivesField(required=False)
+    concepts = ConceptsField(required=False)
     required_task = serializers.PrimaryKeyRelatedField(
         queryset=Task.objects.all(), required=False, allow_null=True
     )
@@ -79,6 +103,7 @@ class MaterialSerializer(serializers.ModelSerializer):
             "is_published",
             "order",
             "objectives",
+            "concepts",
             "required_task",
             "required_task_title",
             "min_task_score",
@@ -114,6 +139,10 @@ class MaterialSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        request = self.context.get("request")
+        if request is None or request.user.role == Role.STUDENT:
+            # Konsep kunci = bahan soal cek pemahaman; jangan jadi contekan siswa.
+            data.pop("concepts", None)
         progress = data.get("progress")
         if progress and progress["locked"]:
             # Materi terkunci: judul & capaian terlihat, isinya belum.

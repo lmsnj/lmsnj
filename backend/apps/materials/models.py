@@ -34,6 +34,8 @@ class Material(models.Model):
     order = models.PositiveIntegerField("urutan", default=0)
     # Daftar kalimat capaian, mis. "Saya bisa menyebutkan 5 tag HTML". Siswa mencentang semuanya.
     objectives = models.JSONField("capaian", default=list, blank=True)
+    # Konsep kunci "istilah = penjelasan" (satu per baris), bahan asesmen otomatis. Tidak dikirim ke siswa.
+    concepts = models.JSONField("konsep kunci", default=list, blank=True)
     required_task = models.ForeignKey(
         "tasks.Task",
         verbose_name="syarat tugas",

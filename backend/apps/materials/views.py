@@ -2,7 +2,7 @@ from django.db import transaction
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import viewsets
+from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from apps.academics.models import TeachingAssignment
 from apps.accounts.models import Role
 from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStudent, IsTeacher
+from apps.assessments import ai_generate, auto_assessment
 from apps.common.files import file_response
 from apps.schools.context import active_school
 
@@ -142,6 +143,51 @@ class MaterialViewSet(viewsets.ModelViewSet):
             progress.updated_by = self.request.user
             progress.save()
 
+    @action(
+        detail=True, methods=["get", "post"], url_path="generate-assessment", permission_classes=[IsTeacher]
+    )
+    def generate_assessment(self, request, pk=None):
+        """Guru pengampu: buat asesmen "Cek Pemahaman" otomatis (draf, langsung jadi syarat materi).
+        GET = sumber yang tersedia. POST {source: "concepts" (gratis, bawaan) | "ai", question_count}."""
+        material = self.get_object()
+        if material.teaching_assignment.teacher_id != request.user.id:
+            raise PermissionDenied("Hanya guru pengampu yang dapat membuat asesmen untuk materi ini.")
+        if request.method == "GET":
+            return Response(
+                {
+                    "concepts": len(auto_assessment.parse_concepts(material.concepts)),
+                    "min_concepts": auto_assessment.MIN_CONCEPTS,
+                    "objectives": len(material.objectives),
+                    "ai_enabled": ai_generate.ai_enabled(),
+                }
+            )
+        params = GenerateAssessmentSerializer(data=request.data)
+        params.is_valid(raise_exception=True)
+        try:
+            if params.validated_data["source"] == "ai":
+                if not ai_generate.ai_enabled():
+                    raise ValidationError(
+                        {"detail": "Fitur AI belum diaktifkan di server (ANTHROPIC_API_KEY kosong)."}
+                    )
+                assessment, skipped = ai_generate.generate_for_material(
+                    material, request, params.validated_data["question_count"]
+                )
+            else:
+                assessment, skipped = auto_assessment.generate_from_concepts(material, request)
+        except auto_assessment.AutoAssessmentError as error:
+            raise ValidationError({"detail": str(error)})
+        except ai_generate.AIGenerationError as error:
+            return Response({"detail": str(error)}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response(
+            {
+                "assessment": assessment.id,
+                "title": assessment.title,
+                "question_count": assessment.questions.count(),
+                "skipped": skipped,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
     @action(detail=False, methods=["post"], permission_classes=[IsTeacher])
     def reorder(self, request):
         """{teaching_assignment, materials: [id urut]} - atur urutan materi kelas-mapel milik guru."""
@@ -161,3 +207,10 @@ class MaterialViewSet(viewsets.ModelViewSet):
             for number, material_id in enumerate(ids, start=1):
                 Material.objects.filter(pk=material_id).update(order=number)
         return Response({"detail": "Urutan materi disimpan."})
+
+
+class GenerateAssessmentSerializer(serializers.Serializer):
+    source = serializers.ChoiceField(choices=["concepts", "ai"], default="concepts")
+    question_count = serializers.IntegerField(
+        min_value=ai_generate.MIN_QUESTIONS, max_value=ai_generate.MAX_QUESTIONS, default=10
+    )

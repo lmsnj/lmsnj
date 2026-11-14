@@ -36,6 +36,7 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
     url: material?.url ?? '',
     is_published: material?.is_published ?? false,
     objectives: (material?.objectives ?? []).join('\n'),
+    concepts: (material?.concepts ?? []).join('\n'),
     required_task: material?.required_task ? String(material.required_task) : '',
     min_task_score: material?.min_task_score ?? '',
     required_assessment: material?.required_assessment ? String(material.required_assessment) : '',
@@ -55,6 +56,7 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
       ...form,
       // Dikirim sebagai teks JSON agar tetap terbaca saat form berisi file (multipart).
       objectives: JSON.stringify(parseObjectives(form.objectives)),
+      concepts: JSON.stringify(parseObjectives(form.concepts)),
       required_task: form.required_task ? Number(form.required_task) : null,
       min_task_score:
         form.required_task && form.min_task_score !== '' ? Number(form.min_task_score) : null,
@@ -189,6 +191,18 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
           rows={3}
           placeholder={
             'Saya bisa menyebutkan 5 tag HTML dasar\nSaya bisa membuat halaman web sederhana'
+          }
+        />
+        <TextAreaField
+          label="Konsep kunci untuk asesmen otomatis (opsional, satu per baris: istilah = penjelasan)"
+          name="concepts"
+          value={form.concepts}
+          onChange={handleChange}
+          error={errors.concepts}
+          rows={4}
+          hint="Minimal 4 konsep. Dipakai tombol “Asesmen Otomatis” untuk membuat soal jodohkan, pilihan ganda, isian, dan benar/salah. Tidak terlihat oleh siswa."
+          placeholder={
+            'Algoritma = Urutan langkah logis untuk menyelesaikan masalah\nBerhingga = Algoritma harus berhenti setelah sejumlah langkah'
           }
         />
         <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">

@@ -22,6 +22,12 @@ export const materialsApi = {
   progress: (id) => api.get(`/materials/${id}/progress/`).then((res) => res.data),
   saveProgress: (id, records) =>
     api.put(`/materials/${id}/progress/`, { records }).then((res) => res.data),
+  // Asesmen "Cek Pemahaman" otomatis. Status: { concepts, min_concepts, objectives, ai_enabled }.
+  // data: { source: 'concepts' (gratis) | 'ai', question_count }.
+  autoAssessmentStatus: (id) =>
+    api.get(`/materials/${id}/generate-assessment/`).then((res) => res.data),
+  generateAssessment: (id, data) =>
+    api.post(`/materials/${id}/generate-assessment/`, data).then((res) => res.data),
   reorder: (teachingAssignment, materialIds) =>
     api
       .post('/materials/reorder/', {

@@ -467,6 +467,15 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   `remedial: true` (token kartu diminta lagi jika ada `exam_event`). Kunci jawaban baru dibuka setelah
   `last_due_at` (tenggat remedial). Siswa melihat popup hasil (`pages/siswa/AssessmentResult.jsx`)
   langsung setelah mengumpulkan; tampilan status di `utils/assessments.js::resultDisplay`.
+- **Asesmen otomatis** (tombol "Asesmen Otomatis" di `MaterialsManager`, `pages/guru/GenerateAssessmentModal.jsx`):
+  sumber utama GRATIS = `Material.concepts` ("istilah = penjelasan" per baris, min. 4, maks. 12, TIDAK dikirim
+  ke siswa) -> `apps/assessments/auto_assessment.py::build_questions` (fungsi murni, seed = id materi): jodohkan,
+  PG dua arah per konsep, 2 isian, 1 benar/salah; kunci pasti benar. Opsional berbayar: AI dari capaian
+  (`ai_generate.py`, Claude API; aktif hanya jika `ANTHROPIC_API_KEY` diisi di `.env`, `AI_MODEL`; hanya judul,
+  deskripsi, capaian yang dikirim). Keduanya lewat `create_check_assessment`: setiap soal diperiksa jalur impor
+  (`normalize_item` + `QuestionSerializer`, yang gagal dibuang, min. 3 lolos), asesmen DRAF (KKM 75, remedial 2,
+  20 menit) langsung jadi `required_assessment` materi; guru memeriksa lalu menerbitkan. Test AI memalsukan
+  `ask_claude` / `anthropic.Anthropic` (tanpa biaya & internet).
 - **Soal interaktif** (`apps/assessments/interactive.py`, frontend `utils/interactive.js` +
   `components/interactive/`): `fill_blank` (isian, `[[jawaban|alternatif]]`), `drag_drop` (tarik & lepas,
   `[[jawaban]]` + pengecoh teks/gambar), `matching` (pasangan kiri-kanan + pengecoh kanan),
@@ -541,6 +550,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET    | `/api/materials/{id}/download/`   | Sama dengan hak baca materi |
 | POST   | `/api/materials/{id}/open/`, `.../objectives/` (`checked`) | Siswa (materi tidak terkunci) |
 | GET/PUT | `/api/materials/{id}/progress/` (PUT `records: [{student, teacher_approved, unlocked, note}]`) | GET guru pengampu/admin, PUT guru pengampu |
+| GET/POST | `/api/materials/{id}/generate-assessment/` (POST `source`, `question_count` 5-20 untuk AI) | Guru pengampu: buat asesmen "Cek Pemahaman" (`source` = `concepts` gratis / `ai`); GET = jumlah konsep, `ai_enabled` |
 | POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu |
 | CRUD   | `/api/tasks/` (multipart; filter `teaching_assignment`, `is_published`, `due_at__gte`, `due_at__lte`) | Sama dengan materi. Untuk siswa ada `my_submission`; untuk guru `ungraded_count` |
 | GET    | `/api/tasks/{id}/attachment/`     | Sama dengan hak baca tugas |

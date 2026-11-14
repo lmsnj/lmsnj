@@ -164,6 +164,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "10"))
 # Django membatasi body request non-file; beri ruang untuk file + field lain.
 DATA_UPLOAD_MAX_MEMORY_SIZE = (MAX_UPLOAD_SIZE_MB + 1) * 1024 * 1024
+
+# Pembuat soal otomatis (AI). Kosong = fitur "Buat Asesmen Otomatis" nonaktif.
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+AI_MODEL = os.getenv("AI_MODEL", "claude-opus-5-5")
 # Batas ukuran file video soal video interaktif (MB). Video diputar lewat streaming, bukan diunduh utuh.
 MAX_VIDEO_UPLOAD_MB = int(os.getenv("MAX_VIDEO_UPLOAD_MB", "100"))
 

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ListChecks } from 'lucide-react'
+import { ArrowDown, ArrowUp, ListChecks, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { materialsApi } from '../../api/materials'
 import Alert from '../../components/Alert'
@@ -10,6 +10,7 @@ import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
 import { getErrorMessage } from '../../utils/errors'
 import { moveItem } from '../../utils/learningPath'
+import GenerateAssessmentModal from './GenerateAssessmentModal'
 import MaterialFormModal from './MaterialFormModal'
 import MaterialProgressModal from './MaterialProgressModal'
 
@@ -29,7 +30,7 @@ export default function MaterialsManager({
   summary,
 }) {
   const [notice, setNotice] = useState({ type: 'success', text: '' })
-  // { type: 'form' | 'view' | 'delete' | 'progress', material }
+  // { type: 'form' | 'view' | 'delete' | 'progress' | 'ai', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
   const materials = useFetch(materialsApi.list, {
     ...ALL,
@@ -132,6 +133,16 @@ export default function MaterialsManager({
             >
               <ListChecks className="size-4" aria-hidden="true" /> Progres
             </Button>
+            {(material.concepts?.length > 0 || material.objectives?.length > 0) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDialog({ type: 'ai', material })}
+                title="Buat asesmen cek pemahaman otomatis dari konsep kunci materi"
+              >
+                <Sparkles className="size-4" aria-hidden="true" /> Asesmen Otomatis
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={() => togglePublish(material)}>
               {material.is_published ? 'Jadikan Draf' : 'Terbitkan'}
             </Button>
@@ -167,6 +178,13 @@ export default function MaterialsManager({
       )}
       {dialog?.type === 'progress' && (
         <MaterialProgressModal material={dialog.material} onClose={closeDialog} />
+      )}
+      {dialog?.type === 'ai' && (
+        <GenerateAssessmentModal
+          material={dialog.material}
+          onClose={closeDialog}
+          onCreated={() => materials.reload()}
+        />
       )}
       {dialog?.type === 'view' && (
         <MaterialViewer material={dialog.material} onClose={closeDialog} />
