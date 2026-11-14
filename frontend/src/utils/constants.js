@@ -1,10 +1,10 @@
 // Identitas BAWAAN (dipakai sebelum data dari server termuat atau jika gagal dimuat).
-// Nilai sebenarnya: identitas yayasan/aplikasi (menu "Identitas Yayasan") dan identitas tiap
+// Nilai sebenarnya: identitas aplikasi (menu "Identitas Aplikasi") dan identitas tiap
 // sekolah (menu "Identitas Sekolah") — lihat context/BrandingProvider.jsx.
 export const SCHOOL = {
-  name: 'Biro Pendidikan Pondok Pesantren Nurul Jadid',
+  name: 'Sigma Teknologi',
   slogan: '',
-  app: 'LMS Nurul Jadid',
+  app: 'LMS Sigma',
 }
 
 export const ROLES = {

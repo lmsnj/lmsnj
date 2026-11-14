@@ -1,7 +1,9 @@
-# Panduan Deploy ke Server Sekolah
+# Panduan Deploy ke Server (sigmateknologi.my.id)
 
-Panduan ini memasang LMS di satu server, contohnya **Ubuntu Server 24.04** dengan **Nginx**
-dan **Gunicorn**. Catatan untuk server Windows ada di bagian akhir.
+Panduan ini memasang LMS Sigma di satu server, contohnya **Ubuntu Server 24.04** dengan **Nginx**
+dan **Gunicorn**, untuk domain `sigmateknologi.my.id`: setiap sekolah di `<kode>.sigmateknologi.my.id`
+dan Super Admin di `admin.sigmateknologi.my.id` (lihat bagian 9). Catatan untuk server Windows ada
+di bagian akhir.
 
 ## Gambaran
 
@@ -44,9 +46,9 @@ Isi `.env` minimal:
 ```ini
 SECRET_KEY=<hasil: python3 -c "import secrets; print(secrets.token_urlsafe(50))">
 DEBUG=False
-ALLOWED_HOSTS=lms.smknj.sch.id
-CORS_ALLOWED_ORIGINS=https://lms.smknj.sch.id
-CSRF_TRUSTED_ORIGINS=https://lms.smknj.sch.id
+ALLOWED_HOSTS=sigmateknologi.my.id,.sigmateknologi.my.id
+CORS_ALLOWED_ORIGINS=https://admin.sigmateknologi.my.id
+CSRF_TRUSTED_ORIGINS=https://admin.sigmateknologi.my.id
 HTTPS=True            # False jika belum memakai sertifikat SSL (mis. hanya di jaringan lokal)
 ```
 
@@ -80,7 +82,7 @@ Buat `/etc/systemd/system/lms.service`:
 
 ```ini
 [Unit]
-Description=LMS Nurul Jadid (Gunicorn)
+Description=LMS Sigma (Gunicorn)
 After=network.target
 
 [Service]
@@ -106,9 +108,8 @@ sudo systemctl status lms
 
 ```bash
 cd /srv/lms/app/frontend
+# Contoh sudah berisi VITE_API_URL=/api (satu domain) dan VITE_BASE_DOMAIN=sigmateknologi.my.id.
 sudo -u lms cp .env.production.example .env.production
-# Karena satu domain, cukup pakai alamat relatif:
-echo "VITE_API_URL=/api" | sudo -u lms tee .env.production
 sudo -u lms npm ci
 sudo -u lms npm run build        # hasil di frontend/dist/
 ```
@@ -120,7 +121,7 @@ Buat `/etc/nginx/sites-available/lms`:
 ```nginx
 server {
     listen 80;
-    server_name lms.smknj.sch.id;
+    server_name sigmateknologi.my.id .sigmateknologi.my.id;
 
     # Harus sedikit di atas MAX_UPLOAD_SIZE_MB (10 MB). Bawaan Nginx hanya 1 MB,
     # sehingga upload materi/tugas akan gagal jika baris ini tidak ada.
@@ -181,10 +182,10 @@ internet dan punya domain:
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d lms.smknj.sch.id
 ```
 
-Lalu pastikan `.env` berisi `HTTPS=True` dan restart: `sudo systemctl restart lms`.
+Karena setiap sekolah memakai subdomain sendiri, buat sertifikat **wildcard**
+(`*.sigmateknologi.my.id`) sesuai langkah 3 di bagian 9. Lalu pastikan `.env` berisi `HTTPS=True` dan restart: `sudo systemctl restart lms`.
 Setelah yakin HTTPS berjalan stabil, `SECURE_HSTS_SECONDS=31536000` boleh ditambahkan.
 
 ## 6. Pindah ke PostgreSQL (Opsional)

@@ -282,7 +282,7 @@ class Command(BaseCommand):
             User.objects.create_user(
                 username="yayasan",
                 password=PASSWORDS[Role.FOUNDATION],
-                full_name="Pengurus Biro Pendidikan",
+                full_name="Super Admin Sigma",
                 role=Role.FOUNDATION,
             )
             self.count("pengguna", True)

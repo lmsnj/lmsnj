@@ -1,15 +1,17 @@
-# LMS Nurul Jadid
+# LMS Sigma
 
-Learning Management System (LMS) untuk sekolah-sekolah di bawah **Biro Pendidikan Pondok Pesantren
-Nurul Jadid** (SD/MI, SMP/MTs, SMA/MA/SMK): tempat guru membagikan materi dan tugas, siswa
-mengumpulkan jawaban, dan guru memberi nilai. Dikembangkan oleh guru RPL SMKS Nurul Jadid dan
-dapat dipakai sebagai contoh proyek pembelajaran bagi siswa.
+Learning Management System (LMS) dari **Sigma Teknologi** untuk banyak sekolah (SD/MI, SMP/MTs,
+SMA/MA/SMK) di `sigmateknologi.my.id`: setiap sekolah punya alamat sendiri
+(`<kode>.sigmateknologi.my.id`), tempat guru membagikan materi dan tugas, siswa mengumpulkan
+jawaban, dan guru memberi nilai. Super Admin mengelola semua sekolah di
+`admin.sigmateknologi.my.id`. Awalnya dikembangkan oleh guru RPL SMKS Nurul Jadid dan dapat dipakai
+sebagai contoh proyek pembelajaran bagi siswa.
 
 ## Fitur
 
 | Peran | Yang bisa dilakukan |
 |-------|---------------------|
-| **Admin Yayasan** | Menambah, mengubah, dan menonaktifkan **sekolah** (jenjang menentukan tingkat kelas: I–VI, VII–IX, X–XII), melihat ringkasan semua sekolah, mengatur identitas yayasan (halaman login), dan membuka sekolah mana pun sebagai admin. |
+| **Super Admin** | Menambah (sekaligus akun admin sekolahnya), mengubah, dan menonaktifkan **sekolah** (jenjang menentukan tingkat kelas: I–VI, VII–IX, X–XII; kode = alamat subdomain), melihat ringkasan semua sekolah, mengatur identitas aplikasi (halaman login), dan membuka sekolah mana pun sebagai admin. |
 | **Admin** (per sekolah) | Mengelola akun guru & siswa (termasuk **impor massal dari Excel**), kelas, mata pelajaran, dan pengampu. Pengumuman sekolah, laporan nilai per kelas (+ CSV), dan dashboard statistik. |
 | **Guru** | Membagikan materi (PDF, video YouTube, link), tugas dengan tenggat, **lembar asesmen/kuis** (pilihan ganda, PG kompleks, kategori Benar/Salah — dinilai otomatis — dan esai; soal grup dengan stimulus bersama, tabel), menilai dengan umpan balik, rekap nilai + CSV, jadwal **sesi mengajar** (tatap muka/online), pengumuman kelas, dan laporan kelas wali. |
 | **Siswa** | Membaca materi, mengumpulkan tugas, mengerjakan lembar asesmen dengan tampilan bergaya simulasi TKA (nomor soal, ragu-ragu, timer, ukuran huruf), melihat nilai & progres, jadwal sesi, dan pengumuman. |

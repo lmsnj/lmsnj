@@ -1,8 +1,11 @@
-# LMS Nurul Jadid
+# LMS Sigma
 
-Learning Management System untuk sekolah-sekolah di bawah Biro Pendidikan Pondok Pesantren Nurul Jadid
-(SD/MI, SMP/MTs, SMA/MA/SMK; awalnya hanya SMKS Nurul Jadid). Dikembangkan oleh guru RPL, sekaligus dapat
-dipakai sebagai contoh proyek pembelajaran bagi siswa.
+Learning Management System dari Sigma Teknologi untuk banyak sekolah pelanggan (SD/MI, SMP/MTs, SMA/MA/SMK),
+dipasang di `sigmateknologi.my.id`: sekolah di `<kode>.sigmateknologi.my.id`, Super Admin di
+`admin.sigmateknologi.my.id`. Awalnya untuk sekolah Biro Pendidikan Pondok Pesantren Nurul Jadid (dimulai
+dari SMKS Nurul Jadid). Dikembangkan oleh guru RPL, sekaligus dapat dipakai sebagai contoh proyek
+pembelajaran bagi siswa. Identitas aplikasi bawaan: "Sigma Teknologi" / "LMS Sigma" (`DEFAULT_*` di
+`apps/branding/models.py` dan `SCHOOL` di `utils/constants.js`; nilai sebenarnya diatur Super Admin).
 
 **Bahasa komunikasi:** selalu jawab dan jelaskan dalam Bahasa Indonesia.
 

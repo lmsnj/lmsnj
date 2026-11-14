@@ -241,7 +241,7 @@ export default function BrandingPage() {
               onChange={(event) => update('app_name', event.target.value)}
               error={errors.app_name}
               maxLength={100}
-              hint="Tampil sebagai judul tab browser, mis. “LMS Nurul Jadid”."
+              hint="Tampil sebagai judul tab browser, mis. “LMS Sigma”."
               required
             />
           )}

@@ -25,7 +25,7 @@ function Option({ title, subtitle, active, icon: Icon, onClick }) {
 
 // Tombol "Ganti Sekolah" di header. Tampil untuk user yang boleh membuka lebih dari satu sekolah
 // (guru yang mengajar di beberapa sekolah) dan admin yayasan. Admin yayasan juga bisa kembali ke
-// mode yayasan (Biro Pendidikan) yang menampilkan ringkasan semua sekolah.
+// mode Super Admin yang menampilkan ringkasan semua sekolah.
 export default function SchoolSwitcher() {
   const { user, schools, school, selectSchool } = useAuth()
   const { app } = useBranding()
