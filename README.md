@@ -83,7 +83,7 @@ Tersedia setelah menjalankan `python manage.py seed_demo`:
 
 | Peran | Username | Password |
 |-------|----------|----------|
-| Admin Yayasan | `yayasan` | `Yayasan#Nj2026` |
+| Super Admin | `yayasan` | `Yayasan#Nj2026` |
 | Admin sekolah | `admin` (SMKS), `admin.mts` (MTs), `admin.mi` (MI) | `AdminSmknj#2026` |
 | Guru | `guru.rpl`, `pak.budi` (SMKS), `bu.siti` (SMKS **dan** MTs), `ustadz.ali` (MTs), `ustadzah.aminah` (MI) | `Belajar#Koding26` |
 | Siswa | `rizki`, `aisyah`, `hafiz`, dll. (SMKS), `zaki` (MTs), `hasan` (MI) | `Siswa#Smknj26` |
@@ -97,7 +97,7 @@ server sekolah yang asli.
 
 ### Mulai Tanpa Data Demo
 
-1. `python manage.py createsuperuser` — akun ini otomatis menjadi **Admin Yayasan**.
+1. `python manage.py createsuperuser` — akun ini otomatis menjadi **Super Admin**.
 2. Login, buka menu **Daftar Sekolah**, lalu tambahkan sekolah (nama, kode, jenjang).
 3. Klik **Ganti Sekolah** di header untuk membuka sekolah itu, lalu buat akun **admin sekolah**
    di menu Pengguna (peran Admin). Admin sekolah yang melanjutkan mengisi kelas, mapel, guru,

@@ -155,6 +155,18 @@ Pola yang wajib dipakai ulang:
   admin disimpan di `impersonatorStore` (`api/client.js`) lalu dipulihkan saat kembali (token akun yang
   dimasuki di-blacklist). Pita kuning `layouts/ImpersonationBanner.jsx` + item "Kembali ke ..." di menu akun.
   Keluar saat menyamar = keluar dari kedua sesi. `DashboardLayout` diberi `key` = user + sekolah.
+- **Kartu akun** (cetak & WhatsApp; `apps/accounts/cards.py`, `components/AccountList.jsx`,
+  `hooks/useAccountCards.js`, `utils/accountCards.js`): password tersimpan sebagai hash, jadi password LAMA
+  tidak pernah bisa ditampilkan — kartu hanya berisi password jika password dibuat ulang. `POST
+  /api/users/account-cards/` (`user_ids` | `classroom` | `role`, `reset_password`) mengembalikan kartu;
+  reset massal memakai hash ringan seperti impor dan tidak pernah mengganti password akun sendiri (maks.
+  `MAX_CARDS`). Reset password satu akun boleh dikosongkan (dibuat otomatis, dikembalikan sekali).
+  Halaman Pengguna punya mode **Pilih** (centang per kartu lewat prop `selection` di `AdminCard`; pilihan
+  disimpan per id sehingga tetap ada saat pindah halaman/penyaring) -> bilah bawah "Cetak Kartu (N)" ->
+  `AccountCardsModal users=...` (`user_ids`). `AccountList` dipakai setelah reset, impor, dan "Cetak Kartu Akun": tombol WhatsApp
+  (`wa.me/?text=`, pilih kontak di WhatsApp) & Salin per akun + Cetak Kartu. Halaman cetak
+  `/cetak/kartu-akun` (`AccountCardsPrintPage`, di luar `DashboardLayout`, 10 kartu per A4) menerima data
+  lewat `cardStore` (sessionStorage, dihapus saat halaman ditinggalkan — password tidak dikirim balik ke server).
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan.
 - **Material** (materi): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `description`, `material_type` (`pdf`/`video`/`link`), `file` + `original_filename` (khusus PDF, maks. 10 MB), `url` (video/link), `is_published` (draf tidak terlihat siswa), `created_by`.
 - **Capaian & urutan materi** (`apps/materials/progress.py`): `Material.order` (urutan per kelas-mapel, materi
@@ -493,7 +505,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/auth/change-password/`      | Login (ditolak 403 saat "masuk sebagai") |
 | GET/POST | `/api/auth/impersonate/` (GET `search`, `role`, `schools`; POST `user`) | Admin Yayasan: daftar akun aktif non-yayasan semua sekolah / token akun itu |
 | CRUD   | `/api/users/` (filter `role`, `is_active`, `classroom`, `classroom__isnull`, `search`) | Admin |
-| POST   | `/api/users/{id}/reset-password/` | Admin            |
+| POST   | `/api/users/{id}/reset-password/` (`new_password` kosong = otomatis; respons `password` sekali + `account`) | Admin |
+| POST   | `/api/users/account-cards/` (`user_ids` / `classroom` / `role`, `reset_password`) | Admin: data kartu akun (password hanya jika dibuat ulang) |
 | POST   | `/api/users/join/` (`username`)   | Admin: daftarkan akun guru/admin yang sudah ada ke sekolah aktif. Hapus pengguna yang terdaftar di >1 sekolah = hanya keluar dari sekolah aktif |
 | GET    | `/api/users/import-template/`     | Admin: template Excel (.xlsx) dengan dropdown peran & kelas |
 | POST   | `/api/users/import/` (multipart `file`, `dry_run`) | Admin: `dry_run=true` hanya memeriksa; `false` menyimpan jika SEMUA baris benar (semua atau tidak sama sekali) |

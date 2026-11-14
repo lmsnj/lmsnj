@@ -33,6 +33,7 @@ const StudentAttendancePage = lazy(() => import('../pages/siswa/StudentAttendanc
 const ExamsPage = lazy(() => import('../pages/ExamsPage'))
 const ExamEventPage = lazy(() => import('../pages/ExamEventPage'))
 const ExamCardsPrintPage = lazy(() => import('../pages/ExamCardsPrintPage'))
+const AccountCardsPrintPage = lazy(() => import('../pages/AccountCardsPrintPage'))
 const ChatPage = lazy(() => import('../pages/ChatPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const ReportPage = lazy(() => import('../pages/ReportPage'))
@@ -82,6 +83,11 @@ export default function AppRoutes() {
           <Route element={<ProtectedRoute roles={[...ADMIN_ROLES, ROLES.TEACHER]} />}>
             <Route element={<SchoolRoute />}>
               <Route path="cetak/kartu-ujian/:id" element={<ExamCardsPrintPage />} />
+            </Route>
+          </Route>
+          <Route element={<ProtectedRoute roles={ADMIN_ROLES} />}>
+            <Route element={<SchoolRoute />}>
+              <Route path="cetak/kartu-akun" element={<AccountCardsPrintPage />} />
             </Route>
           </Route>
           <Route element={<DashboardLayout />}>

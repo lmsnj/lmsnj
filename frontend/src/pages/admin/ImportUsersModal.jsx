@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { usersApi } from '../../api/users'
+import AccountList from '../../components/AccountList'
 import Alert from '../../components/Alert'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
@@ -161,6 +162,8 @@ export default function ImportUsersModal({ onClose, onImported }) {
               menutup.
             </Alert>
           )}
+          {/* Kirim per akun lewat WhatsApp atau cetak semua sebagai kartu. */}
+          <AccountList accounts={accounts} />
         </div>
       ) : (
         <div className="space-y-6">

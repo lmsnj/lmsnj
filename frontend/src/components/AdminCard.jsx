@@ -9,15 +9,39 @@ import { STRIPES } from '../utils/constants'
  * - `badges`: elemen label di kanan judul
  * - `meta`: [{ icon, content }] baris info di bawah judul
  * - `actions`: tombol di bagian bawah kartu
+ * - `selection`: { checked, onChange } -> kotak centang di kiri (mode pilih, mis. cetak kartu akun)
  */
-export default function AdminCard({ icon, tone, title, subtitle, to, badges, meta = [], actions }) {
+export default function AdminCard({
+  icon,
+  tone,
+  title,
+  subtitle,
+  to,
+  badges,
+  meta = [],
+  actions,
+  selection,
+}) {
   return (
-    <article className="flex flex-col rounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md">
+    <article
+      className={`flex flex-col rounded-2xl bg-white p-2.5 shadow-sm transition hover:shadow-md ${
+        selection?.checked ? 'ring-2 ring-brand-600' : 'ring-1 ring-slate-200'
+      }`}
+    >
       <div className={`relative overflow-hidden rounded-xl p-4 ${tone ?? ''}`}>
         {tone && (
           <div className={`absolute inset-y-0 right-0 w-2/3 ${STRIPES}`} aria-hidden="true" />
         )}
         <div className="relative flex items-start gap-3">
+          {selection && (
+            <input
+              type="checkbox"
+              checked={selection.checked}
+              onChange={(event) => selection.onChange(event.target.checked)}
+              aria-label={`Pilih ${title}`}
+              className="mt-1 size-5 shrink-0 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-600"
+            />
+          )}
           {icon}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-start justify-between gap-2">

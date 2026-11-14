@@ -7,8 +7,11 @@ export const usersApi = {
   remove: (id) => api.delete(`/users/${id}/`),
   // Daftarkan akun guru/admin yang sudah ada (dari sekolah lain) ke sekolah yang sedang dibuka.
   join: (username) => api.post('/users/join/', { username }).then((res) => res.data),
+  // newPassword kosong = dibuat otomatis; respons berisi `password` (sekali) dan `account` (kartu).
   resetPassword: (id, newPassword) =>
     api.post(`/users/${id}/reset-password/`, { new_password: newPassword }).then((res) => res.data),
+  // Kartu akun: { user_ids | classroom | role, reset_password } -> { school, accounts }.
+  accountCards: (data) => api.post('/users/account-cards/', data).then((res) => res.data),
 
   // Impor dari Excel: dryRun=true hanya memeriksa, dryRun=false menyimpan (jika semua baris benar).
   importTemplate: () =>

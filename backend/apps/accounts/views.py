@@ -15,9 +15,11 @@ from apps.common.files import validate_upload
 from apps.common.mixins import ProtectedDeleteMixin
 from apps.schools.context import active_school, require_school
 
+from .cards import MAX_CARDS, build_cards, card_data
 from .models import ImpersonationLog, Role, User
 from .permissions import IsAdmin, IsFoundation
 from .serializers import (
+    AccountCardsSerializer,
     ChangePasswordSerializer,
     LoginSerializer,
     LogoutSerializer,
@@ -25,7 +27,7 @@ from .serializers import (
     UserSerializer,
     UserWriteSerializer,
 )
-from .user_import import build_template, create_users, read_rows, validate_rows
+from .user_import import build_template, create_users, generate_password, read_rows, validate_rows
 
 XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
@@ -214,9 +216,45 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         user = self.get_object()
         serializer = ResetPasswordSerializer(data=request.data, context={"target_user": user})
         serializer.is_valid(raise_exception=True)
-        user.set_password(serializer.validated_data["new_password"])
+        password = serializer.validated_data.get("new_password") or ""
+        generated = not password
+        if generated:
+            password = generate_password()
+        user.set_password(password)
         user.save(update_fields=["password"])
-        return Response({"detail": f"Password {user.full_name} berhasil direset."})
+        return Response(
+            {
+                "detail": f"Password {user.full_name} berhasil direset.",
+                # Hanya password buatan otomatis yang dikembalikan (sekali), untuk kartu/WhatsApp.
+                "password": password if generated else None,
+                "account": card_data(user, password),
+            }
+        )
+
+    @action(detail=False, methods=["post"], url_path="account-cards")
+    def account_cards(self, request):
+        """Data kartu akun untuk dicetak / dibagikan. reset_password=true membuat password baru untuk
+        SEMUA akun terpilih (password lama tidak berlaku lagi) dan mengembalikannya sekali."""
+        serializer = AccountCardsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        users = self.get_queryset().filter(is_active=True)
+        if "user_ids" in data:
+            users = users.filter(pk__in=data["user_ids"])
+        if "classroom" in data:
+            users = users.filter(classroom_id=data["classroom"], role=Role.STUDENT)
+        if "role" in data:
+            users = users.filter(role=data["role"])
+        if data["reset_password"]:
+            # Password akun sendiri diganti lewat Ganti Password, bukan lewat cetak kartu.
+            users = users.exclude(pk=request.user.pk)
+        if users.count() > MAX_CARDS:
+            raise ValidationError(f"Terlalu banyak akun sekaligus (maks. {MAX_CARDS}). Pilih per kelas.")
+        if not users.exists():
+            raise ValidationError("Tidak ada akun aktif yang cocok.")
+        school = require_school(request)
+        cards = build_cards(users, reset_password=data["reset_password"])
+        return Response({"school": {"name": school.name, "code": school.code}, "accounts": cards})
 
     @action(detail=False, url_path="import-template")
     def import_template(self, request):

@@ -154,8 +154,24 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class ResetPasswordSerializer(serializers.Serializer):
-    new_password = serializers.CharField(style={"input_type": "password"})
+    # Kosong = password dibuat otomatis lalu dikembalikan sekali (untuk kartu akun / WhatsApp).
+    new_password = serializers.CharField(required=False, allow_blank=True, style={"input_type": "password"})
 
     def validate_new_password(self, value):
-        validate_password(value, user=self.context.get("target_user"))
+        if value:
+            validate_password(value, user=self.context.get("target_user"))
         return value
+
+
+class AccountCardsSerializer(serializers.Serializer):
+    """Pilihan akun untuk kartu: id tertentu, siswa satu kelas, atau semua akun satu peran."""
+
+    user_ids = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=False)
+    classroom = serializers.IntegerField(required=False)
+    role = serializers.ChoiceField(choices=[Role.ADMIN, Role.TEACHER, Role.STUDENT], required=False)
+    reset_password = serializers.BooleanField(default=False)
+
+    def validate(self, attrs):
+        if not any(key in attrs for key in ("user_ids", "classroom", "role")):
+            raise serializers.ValidationError("Pilih akun, kelas, atau peran yang akan dibuatkan kartu.")
+        return attrs

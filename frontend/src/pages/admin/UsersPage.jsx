@@ -4,12 +4,14 @@ import {
   Contact,
   FileSpreadsheet,
   GraduationCap,
+  IdCard,
   KeyRound,
   Link2,
   Mail,
   Pencil,
   School,
   ShieldCheck,
+  SquareCheckBig,
   Trash2,
   UserCog,
   UserPlus,
@@ -39,6 +41,7 @@ import useFormSubmit from '../../hooks/useFormSubmit'
 import useQueryFlag from '../../hooks/useQueryFlag'
 import { ALL } from '../../utils/academic'
 import { ROLE_LABELS, ROLES } from '../../utils/constants'
+import AccountCardsModal from './AccountCardsModal'
 import ImportUsersModal from './ImportUsersModal'
 import ResetPasswordModal from './ResetPasswordModal'
 import UserFormModal from './UserFormModal'
@@ -215,6 +218,29 @@ export default function UsersPage() {
   ].filter(Boolean)
   const list = users.data?.results ?? []
 
+  // Mode pilih (cetak kartu akun): pilihan disimpan per id agar tetap ada saat pindah halaman
+  // atau mengganti penyaring. Super Admin tidak bisa dipilih (tidak punya kartu sekolah).
+  const [selecting, setSelecting] = useState(false)
+  const [selected, setSelected] = useState({}) // { [id]: user }
+  const selectedCount = Object.keys(selected).length
+  const selectable = list.filter((user) => user.role !== ROLES.FOUNDATION)
+  const toggleUser = (user, checked) =>
+    setSelected((current) => {
+      const next = { ...current }
+      if (checked) next[user.id] = user
+      else delete next[user.id]
+      return next
+    })
+  const selectPage = () =>
+    setSelected((current) => ({
+      ...current,
+      ...Object.fromEntries(selectable.map((user) => [user.id, user])),
+    }))
+  const stopSelecting = () => {
+    setSelecting(false)
+    setSelected({})
+  }
+
   return (
     <>
       <PageHero
@@ -238,6 +264,9 @@ export default function UsersPage() {
             </HeroButton>
             <HeroButton icon={Link2} onClick={() => setDialog({ type: 'join' })}>
               Dari Sekolah Lain
+            </HeroButton>
+            <HeroButton icon={IdCard} onClick={() => setDialog({ type: 'cards' })}>
+              Cetak Kartu Akun
             </HeroButton>
           </>
         }
@@ -322,7 +351,22 @@ export default function UsersPage() {
               </button>
             ))}
           </div>
+          <Button
+            variant={selecting ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+            aria-pressed={selecting}
+          >
+            <SquareCheckBig className="size-4" aria-hidden="true" />
+            {selecting ? 'Selesai Memilih' : 'Pilih'}
+          </Button>
         </div>
+        {selecting && (
+          <p className="mb-3 text-sm text-slate-600">
+            Centang pengguna yang akan dibuatkan kartu akun. Pilihan tetap tersimpan saat pindah
+            halaman atau mengganti penyaring.
+          </p>
+        )}
 
         <div className="mb-3 space-y-3">
           <Alert type="success">{notice}</Alert>
@@ -342,6 +386,14 @@ export default function UsersPage() {
             {list.map((user) => (
               <AdminCard
                 key={user.id}
+                selection={
+                  selecting && user.role !== ROLES.FOUNDATION
+                    ? {
+                        checked: Boolean(selected[user.id]),
+                        onChange: (checked) => toggleUser(user, checked),
+                      }
+                    : undefined
+                }
                 icon={<Avatar name={user.full_name} className="size-12 text-lg" />}
                 title={user.full_name}
                 subtitle={`@${user.username}`}
@@ -408,6 +460,30 @@ export default function UsersPage() {
         <div className="mt-4">
           <Pagination page={page} count={users.data?.count ?? 0} onChange={setPage} />
         </div>
+
+        {/* Bilah aksi mode pilih: menempel di bawah layar selama memilih. */}
+        {selecting && (
+          <div className="sticky bottom-4 z-10 mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-white p-3 shadow-lg ring-1 ring-slate-200">
+            <p className="mr-auto text-sm text-slate-700">
+              <strong className="text-slate-900">{selectedCount}</strong> pengguna dipilih
+            </p>
+            <Button variant="ghost" size="sm" onClick={selectPage} disabled={!selectable.length}>
+              Pilih semua di halaman ini
+            </Button>
+            {selectedCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => setSelected({})}>
+                Kosongkan
+              </Button>
+            )}
+            <Button
+              size="sm"
+              disabled={!selectedCount}
+              onClick={() => setDialog({ type: 'cards', users: Object.values(selected) })}
+            >
+              <IdCard className="size-4" aria-hidden="true" /> Cetak Kartu ({selectedCount})
+            </Button>
+          </div>
+        )}
       </SplitExplorer>
 
       {dialog?.type === 'form' && (
@@ -440,6 +516,9 @@ export default function UsersPage() {
             reloadCounts()
           }}
         />
+      )}
+      {dialog?.type === 'cards' && (
+        <AccountCardsModal users={dialog.users} onClose={closeDialog} onDone={setNotice} />
       )}
       {dialog?.type === 'reset' && (
         <ResetPasswordModal
