@@ -262,12 +262,10 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
 ### Tata letak (`layouts/DashboardLayout.jsx`)
 - Header putih: logo + nama sekolah (tebal) + slogan; kanan: lonceng pemberitahuan, pilihan
   bahasa, menu avatar (Profil, Ganti Password, Keluar).
-- Bar menu hijau (`rounded-xl bg-brand-600`) di bawah header. Item aktif: `bg-white text-brand-700`.
-  Di layar < `lg` bar disembunyikan dan diganti menu hamburger.
 - Menu per peran **hanya** diatur di `layouts/navigation.js`. Halaman baru = tambahkan item di sana.
-- **Admin Yayasan & admin sekolah** memakai `layouts/SidebarLayout.jsx` (peran di `SIDEBAR_ROLES`, `DashboardLayout.jsx`):
+- **Semua peran** (Super Admin, admin, guru, siswa) memakai `layouts/SidebarLayout.jsx` lewat `DashboardLayout.jsx`:
   sidebar hijau tua `bg-brand-900` di kiri (logo + nama, menu utama, bagian "Lainnya", tombol Keluar
-  di bawah; item aktif `bg-brand-600`), bar atas putih (Ganti Sekolah, lonceng, menu akun). Di < `lg`
+  di bawah; item aktif `bg-brand-600`), bar atas putih (Ganti Sekolah, lonceng, pilihan bahasa, menu akun). Di < `lg`
   sidebar jadi laci hamburger. Beranda yayasan bergaya panel admin: judul "Dashboard" + tombol
   "Tambah Sekolah" (`/admin/sekolah?baru=1`), kartu angka putih (`NumberCard`), daftar sekolah.
 - Setiap halaman di `routes/AppRoutes.jsx` dimuat dengan `lazy()` (code splitting) kecuali halaman login.

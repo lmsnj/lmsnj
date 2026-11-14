@@ -6,7 +6,7 @@ import { SoonBadge } from '../components/Dropdown'
 import useAuth from '../hooks/useAuth'
 import useBranding from '../hooks/useBranding'
 import { ROLE_HOME } from '../utils/constants'
-import { NotificationBell, UserMenu } from './HeaderMenus'
+import { LanguageMenu, NotificationBell, UserMenu } from './HeaderMenus'
 import SchoolSwitcher from './SchoolSwitcher'
 
 /**
@@ -173,6 +173,7 @@ export default function SidebarLayout({ nav, badges, chat, banner, notice, child
           <SchoolSwitcher />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <NotificationBell chat={chat} />
+            <LanguageMenu />
             <UserMenu />
           </div>
         </div>
