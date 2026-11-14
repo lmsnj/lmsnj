@@ -1,6 +1,6 @@
 import TemplatePicker from '../components/TemplatePicker'
 import { SESSION_TEMPLATES } from '../utils/formTemplates'
-import { MapPin, Video } from 'lucide-react'
+import { CalendarDays, MapPin, Video } from 'lucide-react'
 import { useState } from 'react'
 import { sessionsApi } from '../api/sessions'
 import AttendanceSheetModal from '../components/AttendanceSheetModal'
@@ -11,6 +11,7 @@ import Button from '../components/Button'
 import DeleteDialog from '../components/DeleteDialog'
 import EmptyState from '../components/EmptyState'
 import FormModal from '../components/FormModal'
+import Modal from '../components/Modal'
 import PageHeader from '../components/PageHeader'
 import SelectField from '../components/SelectField'
 import Spinner from '../components/Spinner'
@@ -23,7 +24,9 @@ import useQueryFlag from '../hooks/useQueryFlag'
 import { ALL } from '../utils/academic'
 import { ROLES } from '../utils/constants'
 import { formatDate } from '../utils/media'
+import { getErrorMessage, getFieldErrors } from '../utils/errors'
 import { dueLabel, fromDatetimeLocal, toDatetimeLocal } from '../utils/tasks'
+import { weekAhead } from '../utils/timetable'
 
 const STATUS = {
   upcoming: { label: 'Akan datang', color: 'blue' },
@@ -155,6 +158,124 @@ function SessionFormModal({ session, onClose, onSaved }) {
   )
 }
 
+// Guru: buat sesi untuk semua jam mengajarnya di jadwal pelajaran pada rentang tanggal.
+// Periksa dulu (tidak ada yang disimpan), lalu buat. Sesi yang sudah ada dilewati.
+function FromTimetableModal({ onClose, onCreated }) {
+  const [range, setRange] = useState(() => weekAhead())
+  const [preview, setPreview] = useState(null)
+  const [busy, setBusy] = useState(null)
+  const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
+
+  const run = async (dryRun) => {
+    setBusy(dryRun ? 'check' : 'create')
+    setError('')
+    setFieldErrors({})
+    try {
+      const data = await sessionsApi.fromTimetable({ ...range, dry_run: dryRun })
+      if (dryRun) setPreview(data)
+      else onCreated(data)
+    } catch (err) {
+      setPreview(null)
+      const fields = getFieldErrors(err)
+      setFieldErrors(fields)
+      // Kesalahan tanggal tampil di bawah kolomnya; selain itu (mis. belum ada jadwal) di atas.
+      if (!fields.date_from && !fields.date_to) setError(getErrorMessage(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+  const handleChange = (event) => {
+    setRange({ ...range, [event.target.name]: event.target.value })
+    setPreview(null)
+  }
+
+  return (
+    <Modal
+      open
+      size="lg"
+      title="Buat Sesi dari Jadwal"
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Tutup
+          </Button>
+          <Button
+            variant={preview?.created ? 'secondary' : 'primary'}
+            loading={busy === 'check'}
+            onClick={() => run(true)}
+          >
+            Periksa
+          </Button>
+          {preview?.created > 0 && (
+            <Button loading={busy === 'create'} onClick={() => run(false)}>
+              Buat {preview.created} Sesi
+            </Button>
+          )}
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-slate-600">
+          Setiap jam mengajar Anda di jadwal pelajaran menjadi satu sesi (jam berurutan digabung).
+          Topik berisi nama mapel dan bisa diubah nanti. Sesi yang sudah ada tidak dibuat dua kali.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            label="Dari tanggal"
+            name="date_from"
+            type="date"
+            value={range.date_from}
+            onChange={handleChange}
+            error={fieldErrors.date_from}
+            required
+          />
+          <TextField
+            label="Sampai tanggal"
+            name="date_to"
+            type="date"
+            value={range.date_to}
+            onChange={handleChange}
+            error={fieldErrors.date_to}
+            required
+          />
+        </div>
+        <Alert type="error">{error}</Alert>
+        {preview && (
+          <div className="space-y-2">
+            <p className="text-sm text-slate-700">
+              <strong>{preview.created}</strong> sesi akan dibuat
+              {preview.skipped > 0 && `, ${preview.skipped} sudah ada (dilewati)`}.
+            </p>
+            {preview.sessions.length > 0 ? (
+              <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-lg ring-1 ring-slate-200">
+                {preview.sessions.map((s) => (
+                  <li
+                    key={`${s.starts_at}-${s.classroom_name}-${s.title}`}
+                    className="px-3 py-2 text-sm"
+                  >
+                    <p className="font-medium text-slate-900">
+                      {s.title} · {s.classroom_name}
+                    </p>
+                    <p className="text-slate-500">
+                      {formatDate(s.starts_at)} · {s.duration_minutes} menit
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-500">
+                Tidak ada jam mengajar baru pada rentang tanggal ini.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
 function SessionItem({ session: s, actions }) {
   const status = STATUS[s.status]
   return (
@@ -241,7 +362,14 @@ export default function SessionsPage() {
         }
         actions={
           isTeacher && (
-            <Button onClick={() => setDialog({ type: 'form', session: null })}>+ Buat Sesi</Button>
+            <>
+              <Button variant="secondary" onClick={() => setDialog({ type: 'timetable' })}>
+                <CalendarDays className="size-4" aria-hidden="true" /> Buat dari Jadwal
+              </Button>
+              <Button onClick={() => setDialog({ type: 'form', session: null })}>
+                + Buat Sesi
+              </Button>
+            </>
           )
         }
       />
@@ -321,6 +449,16 @@ export default function SessionsPage() {
           onClose={closeDialog}
           onSaved={(saved, isEdit) =>
             done(`Sesi "${saved.title}" ${isEdit ? 'diperbarui' : 'dijadwalkan'}.`)
+          }
+        />
+      )}
+      {dialog?.type === 'timetable' && (
+        <FromTimetableModal
+          onClose={closeDialog}
+          onCreated={(data) =>
+            done(
+              `${data.created} sesi dibuat dari jadwal${data.skipped ? ` (${data.skipped} sudah ada)` : ''}.`,
+            )
           }
         />
       )}

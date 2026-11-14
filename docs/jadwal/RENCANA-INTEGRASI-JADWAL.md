@@ -1,7 +1,7 @@
 # Rencana Integrasi Jadwal KBM & Distribusi JP ke LMSNJ
 
 Disusun dari kajian repo `lmsnj/lmsnj` (commit `a9bc552`) dan `data-akademik-ganjil-2026-2027.json`.
-**Status:** Fase 1–3 sudah dikerjakan (termasuk tab "Jadwal Hari Ini" di Beranda guru & siswa) (lihat `README.md` di folder ini); Fase 4 belum. Perbedaan dari rancangan: `TimetableEntry` memakai CASCADE (seperti `TeachingSession`), dan `TimeSlot` tidak dibatasi unik per kelas di database, tetapi diperiksa saat impor.
+**Status:** Fase 1–4 sudah dikerjakan (lihat `README.md` di folder ini), termasuk tab "Jadwal Hari Ini" di Beranda guru & siswa, impor Excel di menu admin, dan "Buat sesi dari jadwal". Perbedaan dari rancangan: `TimetableEntry` memakai CASCADE (seperti `TeachingSession`), dan `TimeSlot` tidak dibatasi unik per kelas di database, tetapi diperiksa saat impor.
 
 ## 1. Kondisi LMSNJ saat ini
 

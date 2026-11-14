@@ -6,11 +6,14 @@ import {
   dayRows,
   daysOf,
   defaultDay,
+  importSummary,
+  isoDate,
   loadGap,
   optionsFrom,
   periodLabel,
   timeRange,
   todayLessons,
+  weekAhead,
   weekdayOf,
 } from './timetable.js'
 
@@ -172,4 +175,32 @@ test('periodLabel', () => {
   assert.equal(periodLabel([]), '')
   assert.equal(periodLabel([3]), 'Jam 3')
   assert.equal(periodLabel([1, 2, 3]), 'Jam 1-3')
+})
+
+test('isoDate memakai tanggal lokal dan weekAhead = tujuh hari', () => {
+  assert.equal(isoDate(new Date(2026, 0, 5, 23, 30)), '2026-01-05')
+  assert.deepEqual(weekAhead(new Date(2026, 11, 29, 8)), {
+    date_from: '2026-12-29',
+    date_to: '2027-01-04',
+  })
+})
+
+test('importSummary', () => {
+  const lines = importSummary({
+    subjects: { created: ['MTK'], matched: [], existing: 2 },
+    classrooms: { created: [], matched: ['X-RPL -> X RPL 1'], existing: 3 },
+    teachers: { created: [{}, {}], linked: [], existing: 0 },
+    assignments: { created: 4, existing: 1, hours_set: 0 },
+    timetable: { code: 'JDW-1', created: true, slots: 10, entries: 20, active: true },
+  })
+  assert.deepEqual(
+    lines.map((line) => line.value),
+    [
+      '1 baru, 2 sudah ada',
+      '0 baru, 3 sudah ada, 1 dicocokkan',
+      '2 akun baru, 0 sudah ada',
+      '4 baru, 1 sudah ada',
+      'versi baru · 10 slot waktu, 20 jam pelajaran · jadi jadwal aktif',
+    ],
+  )
 })

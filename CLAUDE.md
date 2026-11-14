@@ -181,6 +181,13 @@ Pola yang wajib dipakai ulang:
   guru baru otomatis terdaftar di sekolah itu; aman diulang). File JSON berisi nama guru: simpan lokal
   (`docs/jadwal/*.json` di-.gitignore). `GET /api/timetable/` (jadwal aktif sekolah aktif, isi sesuai peran; admin
   bisa `?classroom=`/`?teacher=`) dan `GET /api/timetable/teacher-loads/` (admin).
+  Impor Excel di menu admin (`timetable_excel.py`: lembar Info, Slot Waktu, Jadwal, Guru, Mapel, Distribusi JP
+  opsional -> diubah ke bentuk JSON lalu `import_timetable` yang sama; kelas diambil dari kolom Kelas,
+  tingkat = kata pertama; contoh template diuji lolos impor). `TimetableImportModal` (Periksa -> Impor, akun
+  guru baru lewat `AccountList`). **Buat sesi dari jadwal** (`services.sessions_from_timetable`): guru memilih
+  rentang tanggal (maks. 31 hari), satu `TeachingSession` per pengampu per blok jam berurutan (dipisah
+  istirahat/kegiatan), judul "Mapel (Jam 1-2)", sesi yang sudah ada (pengampu + jam mulai sama) dilewati,
+  tanggal sebelum `effective_from` dilewati. Tombol "Buat dari Jadwal" di halaman Sesi Mengajar.
 - **Material** (materi): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `description`, `material_type` (`pdf`/`video`/`link`), `file` + `original_filename` (khusus PDF, maks. 10 MB), `url` (video/link), `is_published` (draf tidak terlihat siswa), `created_by`.
 - **Capaian & urutan materi** (`apps/materials/progress.py`): `Material.order` (urutan per kelas-mapel, materi
   baru = terakhir, ubah lewat `reorder`), `objectives` (daftar capaian, dicentang siswa; multipart dikirim
@@ -567,6 +574,9 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET    | `/api/assessments/question-template/` | Guru/admin: template Excel soal |
 | POST   | `/api/assessments/{id}/import-questions/` (`mode` excel/text, `file`/`text`, `images` ZIP, `dry_run`) | Guru pengampu |
 | GET/POST | `/api/{subjects,classrooms,teaching-assignments}/import-template/` dan `.../import/` | Admin |
+| GET    | `/api/timetable/` (`?classroom=`, `?teacher=` untuk admin), `/api/timetable/teacher-loads/` | Login (isi sesuai peran); beban mengajar: admin |
+| GET/POST | `/api/timetable/import-template/`, `/api/timetable/import/` (multipart `file`, `dry_run`) | Admin: impor jadwal dari Excel (semua atau tidak sama sekali) |
+| POST   | `/api/sessions/from-timetable/` (`date_from`, `date_to`, `dry_run`) | Guru: buat sesi dari jadwal mengajarnya |
 | GET/POST | `/api/academic-years/promotion/` (GET: pratinjau `from_year`, `to_year`; POST: jalankan, + `hold_back`, `graduate`, `copy_homeroom`, `copy_assignments`, `recreate_first_grade`) | Admin |
 | GET/PATCH | `/api/branding/` (multipart `school_name`, `slogan`, `app_name`, `logo`, `remove_logo`) | GET publik (halaman login), PATCH admin yayasan. Isinya identitas yayasan/aplikasi |
 | GET    | `/api/branding/logo/` | Publik; alamat diberi `?v=` (cache lama aman) |

@@ -1,12 +1,14 @@
 from django.db.models import Count
-from rest_framework import viewsets
+from rest_framework import serializers, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.academics.selectors import teaching_assignments_for
 from apps.accounts.models import User
-from apps.accounts.permissions import ContentPermission, IsAdmin
+from apps.accounts.permissions import ContentPermission, IsAdmin, IsTeacher
+from apps.common.excel import is_dry_run, template_response
 from apps.common.mixins import ProtectedDeleteMixin
 from apps.schools.context import active_school, require_school
 
@@ -17,7 +19,9 @@ from .serializers import (
     TimetableEntrySerializer,
     TimetableSerializer,
 )
-from .services import teacher_loads
+from .services import MAX_SESSION_DAYS, sessions_from_timetable, teacher_loads
+from .timetable_excel import build_template, read_workbook
+from .timetable_import import TimetableImportError, import_timetable
 
 
 class TeachingSessionViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
@@ -49,6 +53,55 @@ class TeachingSessionViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    @action(detail=False, methods=["post"], url_path="from-timetable", permission_classes=[IsTeacher])
+    def from_timetable(self, request):
+        """Guru: buat sesi untuk semua jam mengajarnya di jadwal aktif pada rentang tanggal."""
+        params = SessionsFromTimetableSerializer(data=request.data)
+        params.is_valid(raise_exception=True)
+        school = require_school(request)
+        timetable = active_timetable(school)
+        if timetable is None:
+            raise ValidationError({"detail": "Sekolah ini belum punya jadwal pelajaran yang aktif."})
+        assignments = teaching_assignments_for(request.user, school).filter(teacher=request.user)
+        result = sessions_from_timetable(
+            timetable,
+            assignments,
+            params.validated_data["date_from"],
+            params.validated_data["date_to"],
+            created_by=request.user,
+            dry_run=params.validated_data["dry_run"],
+        )
+        return Response(
+            {
+                "created": len(result["created"]),
+                "skipped": result["skipped"],
+                "sessions": [
+                    {
+                        "title": session.title,
+                        "classroom_name": session.teaching_assignment.classroom.name,
+                        "starts_at": session.starts_at,
+                        "duration_minutes": session.duration_minutes,
+                    }
+                    for session in result["created"]
+                ],
+            },
+            status=status.HTTP_200_OK if params.validated_data["dry_run"] else status.HTTP_201_CREATED,
+        )
+
+
+class SessionsFromTimetableSerializer(serializers.Serializer):
+    date_from = serializers.DateField(label="Dari tanggal")
+    date_to = serializers.DateField(label="Sampai tanggal")
+    dry_run = serializers.BooleanField(default=False)
+
+    def validate(self, attrs):
+        days = (attrs["date_to"] - attrs["date_from"]).days
+        if days < 0:
+            raise serializers.ValidationError({"date_to": "Tanggal akhir tidak boleh sebelum tanggal awal."})
+        if days >= MAX_SESSION_DAYS:
+            raise serializers.ValidationError({"date_to": f"Rentang maksimal {MAX_SESSION_DAYS} hari."})
+        return attrs
 
 
 def active_timetable(school):
@@ -122,3 +175,35 @@ class TeacherLoadView(APIView):
                 for teacher in teachers
             ]
         )
+
+
+class TimetableImportTemplateView(APIView):
+    """Template Excel impor jadwal (khusus admin)."""
+
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        return template_response(build_template(require_school(request)), "Template Impor Jadwal.xlsx")
+
+
+class TimetableImportView(APIView):
+    """Impor jadwal dari Excel (khusus admin). `dry_run=true` (bawaan) hanya memeriksa; aturannya
+    sama dengan perintah import_timetable: semua atau tidak sama sekali."""
+
+    permission_classes = [IsAdmin]
+
+    def post(self, request):
+        school = require_school(request)
+        dry_run = is_dry_run(request)
+        try:
+            report = import_timetable(read_workbook(request.data.get("file")), school=school, dry_run=dry_run)
+        except TimetableImportError as error:
+            return Response(
+                {"detail": "Impor dibatalkan, tidak ada data yang disimpan.", "errors": error.messages},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if dry_run:
+            # Password saat uji coba tidak pernah dipakai; jangan dikirim agar tidak membingungkan.
+            for teacher in report["teachers"]["created"]:
+                teacher["password"] = None
+        return Response(report, status=status.HTTP_200_OK if dry_run else status.HTTP_201_CREATED)

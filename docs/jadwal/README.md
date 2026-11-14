@@ -38,6 +38,20 @@ kode tidak dikenal), impor dibatalkan seluruhnya dan masalahnya ditampilkan.
 
 Pilihan lain: `--all-teachers` membuat akun juga untuk guru yang tidak punya jam mengajar di file.
 
+## Impor lewat Excel (menu admin)
+
+Admin juga bisa mengimpor dari aplikasi: **Jadwal Pelajaran → Impor Excel**. Unduh template, isi
+lembar Info (kode jadwal, tahun ajaran, semester, berlaku sejak), Slot Waktu, Jadwal (Hari + Jam Ke +
+Kelas + Kode Mapel + Kode Guru), Guru, Mapel, dan Distribusi JP (opsional), lalu **Periksa** →
+**Impor Jadwal**. Aturannya sama dengan perintah di atas (memakai kode yang sama). Password akun guru
+baru ditampilkan sekali setelah impor dan bisa dicetak sebagai kartu atau dikirim lewat WhatsApp.
+
+## Buat sesi mengajar dari jadwal
+
+Di halaman **Sesi Mengajar**, guru menekan **Buat dari Jadwal**, memilih rentang tanggal (maks. 31
+hari), Periksa, lalu Buat. Setiap blok jam berurutan untuk satu kelas-mapel menjadi satu sesi (kelas
+gabungan tetap satu sesi per kelas agar presensinya terpisah). Sesi yang sudah ada tidak dibuat dua kali.
+
 ## Aturan bentrok
 
 - Satu kelas hanya boleh punya satu pelajaran per jam.

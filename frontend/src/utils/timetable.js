@@ -134,3 +134,44 @@ export function periodLabel(periods) {
   const last = periods[periods.length - 1]
   return first === last ? `Jam ${first}` : `Jam ${first}-${last}`
 }
+
+// Tanggal lokal "YYYY-MM-DD" (untuk input type="date"; toISOString bisa mundur sehari di WIB).
+export function isoDate(date) {
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+// Rentang bawaan "Buat dari Jadwal": hari ini sampai 6 hari ke depan (satu pekan).
+export function weekAhead(date = new Date()) {
+  const end = new Date(date)
+  end.setDate(end.getDate() + 6)
+  return { date_from: isoDate(date), date_to: isoDate(end) }
+}
+
+// Ringkasan laporan impor jadwal dari server, untuk ditampilkan sebagai daftar.
+export function importSummary(report) {
+  const { subjects, classrooms, teachers, assignments, timetable } = report
+  const matched = (count) => (count ? `, ${count} dicocokkan` : '')
+  return [
+    {
+      label: 'Mapel',
+      value: `${subjects.created.length} baru, ${subjects.existing} sudah ada${matched(subjects.matched.length)}`,
+    },
+    {
+      label: 'Kelas',
+      value: `${classrooms.created.length} baru, ${classrooms.existing} sudah ada${matched(classrooms.matched.length)}`,
+    },
+    {
+      label: 'Guru',
+      value: `${teachers.created.length} akun baru, ${teachers.existing} sudah ada${matched(teachers.linked.length)}`,
+    },
+    {
+      label: 'Pengampu',
+      value: `${assignments.created} baru, ${assignments.existing} sudah ada`,
+    },
+    {
+      label: `Jadwal ${timetable.code}`,
+      value: `${timetable.created ? 'versi baru' : 'mengganti isi versi ini'} · ${timetable.slots} slot waktu, ${timetable.entries} jam pelajaran${timetable.active ? ' · jadi jadwal aktif' : ''}`,
+    },
+  ]
+}

@@ -1,15 +1,25 @@
-import { CalendarDays, Clock, Coffee, GraduationCap, School, Users } from 'lucide-react'
+import {
+  CalendarDays,
+  Clock,
+  Coffee,
+  FileSpreadsheet,
+  GraduationCap,
+  School,
+  Users,
+} from 'lucide-react'
 import { useState } from 'react'
 import { timetableApi } from '../api/timetable'
 import Alert from '../components/Alert'
 import Badge from '../components/Badge'
 import DataTable from '../components/DataTable'
 import EmptyState from '../components/EmptyState'
-import PageHero from '../components/PageHero'
+import PageHero, { HeroButton } from '../components/PageHero'
 import SelectField from '../components/SelectField'
 import Spinner from '../components/Spinner'
+import TimetableImportModal from '../components/TimetableImportModal'
 import useAuth from '../hooks/useAuth'
 import useFetch from '../hooks/useFetch'
+import useQueryFlag from '../hooks/useQueryFlag'
 import { useTabs } from '../hooks/useTabs'
 import { isAdminRole, ROLES } from '../utils/constants'
 import {
@@ -234,13 +244,16 @@ function AdminTimetable({ slots, entries }) {
 
 export default function TimetablePage() {
   const { user } = useAuth()
-  const { data, loading, error } = useFetch(timetableApi.get)
+  const { data, loading, error, reload } = useFetch(timetableApi.get)
   const timetable = data?.timetable
   const entries = data?.entries ?? []
   const slots = data?.slots ?? []
   // Super Admin yang membuka sekolah bertindak sebagai admin sekolah itu.
   const isAdmin = isAdminRole(user.role)
   const isTeacher = user.role === ROLES.TEACHER
+  // ?impor=1 dari tombol lain langsung membuka jendela impor (khusus admin).
+  const importFlag = useQueryFlag('impor')
+  const [importing, setImporting] = useState(importFlag === '1' && isAdmin)
 
   const stats = []
   if (timetable) {
@@ -275,7 +288,7 @@ export default function TimetablePage() {
     content = (
       <EmptyState title="Jadwal pelajaran belum tersedia">
         {isAdmin
-          ? 'Impor jadwal dengan perintah import_timetable di server (lihat docs/jadwal/README.md).'
+          ? 'Tekan "Impor Excel" di atas untuk mengisi jadwal dari template Excel.'
           : 'Jadwal akan tampil di sini setelah diatur oleh admin sekolah.'}
       </EmptyState>
     )
@@ -310,8 +323,18 @@ export default function TimetablePage() {
         icons={[CalendarDays, Clock, GraduationCap, School]}
         centerIcon={CalendarDays}
         stats={stats}
+        actions={
+          isAdmin && (
+            <HeroButton icon={FileSpreadsheet} onClick={() => setImporting(true)}>
+              Impor Excel
+            </HeroButton>
+          )
+        }
       />
       {content}
+      {importing && (
+        <TimetableImportModal onClose={() => setImporting(false)} onImported={reload} />
+      )}
     </div>
   )
 }

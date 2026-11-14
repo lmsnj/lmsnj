@@ -6,4 +6,6 @@ export const sessionsApi = {
   create: (data) => api.post('/sessions/', data).then((res) => res.data),
   update: (id, data) => api.patch(`/sessions/${id}/`, data).then((res) => res.data),
   remove: (id) => api.delete(`/sessions/${id}/`),
+  // Guru: buat sesi dari jadwal pelajaran ({ date_from, date_to, dry_run }).
+  fromTimetable: (data) => api.post('/sessions/from-timetable/', data).then((res) => res.data),
 }
