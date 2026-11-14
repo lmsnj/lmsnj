@@ -6,6 +6,7 @@ from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.academics.models import TeachingAssignment
@@ -15,6 +16,7 @@ from apps.assessments import ai_generate, auto_assessment
 from apps.common.files import file_response
 from apps.schools.context import active_school
 
+from . import objective_quiz
 from . import progress as learning
 from .models import Material, MaterialProgress
 from .selectors import materials_for
@@ -93,12 +95,71 @@ class MaterialViewSet(viewsets.ModelViewSet):
         self.unlocked_for_student(material)
         serializer = CheckObjectivesSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        checked = sorted({i for i in serializer.validated_data["checked"] if i < len(material.objectives)})
         progress = self._my_progress(material)
+        # Capaian yang punya kuis hanya tercentang lewat kuis (lihat objective_quiz.py), jadi
+        # statusnya tidak bisa diubah dari sini.
+        with_quiz = {i for i, count in enumerate(objective_quiz.quiz_counts(material)) if count}
+        requested = {i for i in serializer.validated_data["checked"] if i < len(material.objectives)}
+        kept = set(progress.checked_objectives) & with_quiz
+        checked = sorted((requested - with_quiz) | kept)
         progress.checked_objectives = checked
         progress.opened_at = progress.opened_at or timezone.now()
         progress.save()
         return self._material_response(material)
+
+    # Siswa juga boleh POST (mengirim jawaban); hak akses diperiksa di dalam action.
+    @action(
+        detail=True,
+        methods=["get", "post", "put"],
+        url_path="objective-quiz",
+        permission_classes=[IsAuthenticated],
+    )
+    def objective_quiz(self, request, pk=None):
+        """Kuis kecil per capaian.
+        GET ?index=   : soal (tanpa kunci) untuk dikerjakan / dipratinjau.
+        POST {index, answers}: periksa; siswa yang benar semua -> capaian itu tercentang.
+        PUT {quizzes: {indeks: [rancangan soal]}}: guru pengampu mengatur kuis."""
+        material = self.get_object()
+        user = request.user
+        is_owner = material.teaching_assignment.teacher_id == user.id
+        if request.method == "PUT":
+            if not is_owner:
+                raise PermissionDenied("Hanya guru pengampu yang dapat mengatur kuis capaian.")
+            objective_quiz.set_quizzes(material, request.data.get("quizzes"))
+            return Response({"counts": objective_quiz.quiz_counts(material)})
+
+        if user.role == Role.STUDENT:
+            self.unlocked_for_student(material)
+        elif not (is_owner or user.is_admin_role):
+            raise PermissionDenied("Hanya guru pengampu yang dapat mencoba kuis ini.")
+        raw_index = (
+            request.query_params.get("index") if request.method == "GET" else request.data.get("index")
+        )
+        index = int(raw_index) if str(raw_index).isdigit() else -1
+        quiz = objective_quiz.quiz_for(material, index)
+        if quiz is None:
+            raise ValidationError({"index": "Capaian ini tidak punya kuis."})
+
+        if request.method == "GET":
+            # Seed berubah setiap kali dibuka agar urutan pilihan saat mencoba ulang berbeda.
+            seed = f"{user.id}-{timezone.now().timestamp()}"
+            return Response(
+                {
+                    "index": index,
+                    "objective": material.objectives[index],
+                    "items": objective_quiz.student_items(quiz, seed),
+                }
+            )
+
+        result = objective_quiz.grade(quiz, request.data.get("answers") or {})
+        if user.role == Role.STUDENT and result["passed"]:
+            progress = self._my_progress(material)
+            progress.checked_objectives = sorted(set(progress.checked_objectives) | {index})
+            progress.opened_at = progress.opened_at or timezone.now()
+            progress.save()
+        if user.role == Role.STUDENT:
+            result["material"] = self._material_response(material).data
+        return Response(result)
 
     @action(detail=True, methods=["get", "put"], permission_classes=[IsAdminOrTeacher])
     def progress(self, request, pk=None):

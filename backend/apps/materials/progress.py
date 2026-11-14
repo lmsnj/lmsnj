@@ -36,7 +36,9 @@ def material_checks(material, progress, task_done, assessment_done):
     if material.objectives:
         checked = set(progress.checked_objectives) if progress else set()
         done = all(index in checked for index in range(len(material.objectives)))
-        label = f"Mencentang {len(material.objectives)} capaian"
+        # Capaian berkuis dibuktikan lewat kuis, bukan sekadar dicentang.
+        verb = "Menuntaskan" if material.objective_quizzes else "Mencentang"
+        label = f"{verb} {len(material.objectives)} capaian"
         checks.append({"key": "objectives", "label": label, "done": done})
     if material.required_task_id:
         title = material.required_task.title

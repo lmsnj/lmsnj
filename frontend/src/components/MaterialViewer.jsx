@@ -8,6 +8,7 @@ import { saveBlob, youtubeEmbedUrl } from '../utils/media'
 import Alert from './Alert'
 import Button from './Button'
 import Modal from './Modal'
+import ObjectiveQuiz from './ObjectiveQuiz'
 import Spinner from './Spinner'
 
 function PdfViewer({ material }) {
@@ -108,6 +109,8 @@ function checkLink(material, check) {
 
 // Syarat capaian versi guru (tanpa progres): daftar capaian & syarat yang dipilih.
 function TeacherRequirements({ material }) {
+  const [preview, setPreview] = useState(null)
+  const quizCounts = material.objective_quiz ?? []
   const items = []
   if (material.required_task_title) {
     items.push(
@@ -127,9 +130,30 @@ function TeacherRequirements({ material }) {
         <Target className="size-4" aria-hidden="true" /> Capaian & syarat lanjut
       </h3>
       {material.objectives?.length > 0 && (
-        <ol className="mt-2 list-decimal space-y-0.5 pl-5 text-sm text-slate-700">
-          {material.objectives.map((text) => (
-            <li key={text}>{text}</li>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-700">
+          {material.objectives.map((text, index) => (
+            <li key={text}>
+              {text}
+              {quizCounts[index] > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setPreview(preview === index ? null : index)}
+                  className="ml-2 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-800 hover:bg-sky-200"
+                >
+                  Kuis {quizCounts[index]} soal &middot; {preview === index ? 'Tutup' : 'Coba'}
+                </button>
+              )}
+              {preview === index && (
+                <div className="mt-2">
+                  <ObjectiveQuiz
+                    material={material}
+                    index={index}
+                    preview
+                    onClose={() => setPreview(null)}
+                  />
+                </div>
+              )}
+            </li>
           ))}
         </ol>
       )}
@@ -149,6 +173,8 @@ function LearningPanel({ material, onChange }) {
   const progress = material.progress
   const [saving, setSaving] = useState(null)
   const [error, setError] = useState('')
+  const [quizOpen, setQuizOpen] = useState(null)
+  const quizCounts = material.objective_quiz ?? []
   const { done, total } = countChecks(progress.checks)
 
   const toggle = async (index) => {
@@ -182,23 +208,63 @@ function LearningPanel({ material, onChange }) {
       {material.objectives?.length > 0 && (
         <fieldset className="mt-3">
           <legend className="text-xs text-slate-600">
-            Centang capaian yang sudah Anda kuasai (jujur pada diri sendiri):
+            {quizCounts.some(Boolean)
+              ? 'Capaian bertombol “Uji” tercapai setelah kuisnya dijawab benar semua; capaian lain dicentang sendiri (jujur pada diri sendiri):'
+              : 'Centang capaian yang sudah Anda kuasai (jujur pada diri sendiri):'}
           </legend>
           <ul className="mt-1 space-y-1">
-            {material.objectives.map((text, index) => (
-              <li key={index}>
-                <label className="flex cursor-pointer items-start gap-2 rounded-lg bg-white p-2 text-sm text-slate-800 ring-1 ring-slate-200">
-                  <input
-                    type="checkbox"
-                    checked={progress.checked_objectives.includes(index)}
-                    disabled={saving !== null}
-                    onChange={() => toggle(index)}
-                    className="mt-0.5 size-4 rounded text-brand-600"
-                  />
-                  {text}
-                </label>
-              </li>
-            ))}
+            {material.objectives.map((text, index) => {
+              const checked = progress.checked_objectives.includes(index)
+              if (!quizCounts[index]) {
+                return (
+                  <li key={index}>
+                    <label className="flex cursor-pointer items-start gap-2 rounded-lg bg-white p-2 text-sm text-slate-800 ring-1 ring-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={saving !== null}
+                        onChange={() => toggle(index)}
+                        className="mt-0.5 size-4 rounded text-brand-600"
+                      />
+                      {text}
+                    </label>
+                  </li>
+                )
+              }
+              const Icon = checked ? CircleCheck : Circle
+              return (
+                <li key={index} className="space-y-2">
+                  <div className="flex items-start gap-2 rounded-lg bg-white p-2 text-sm text-slate-800 ring-1 ring-slate-200">
+                    <Icon
+                      className={`mt-0.5 size-4 shrink-0 ${checked ? 'text-brand-600' : 'text-slate-400'}`}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1">{text}</span>
+                    {checked ? (
+                      <span className="shrink-0 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-800">
+                        Lulus
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant={quizOpen === index ? 'secondary' : 'primary'}
+                        onClick={() => setQuizOpen(quizOpen === index ? null : index)}
+                      >
+                        Uji ({quizCounts[index]} soal)
+                      </Button>
+                    )}
+                  </div>
+                  {quizOpen === index && (
+                    <ObjectiveQuiz
+                      material={material}
+                      index={index}
+                      onPassed={onChange}
+                      onClose={() => setQuizOpen(null)}
+                    />
+                  )}
+                </li>
+              )
+            })}
           </ul>
         </fieldset>
       )}

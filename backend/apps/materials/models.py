@@ -36,6 +36,9 @@ class Material(models.Model):
     objectives = models.JSONField("capaian", default=list, blank=True)
     # Konsep kunci "istilah = penjelasan" (satu per baris), bahan asesmen otomatis. Tidak dikirim ke siswa.
     concepts = models.JSONField("konsep kunci", default=list, blank=True)
+    # Kuis kecil per capaian: {teks capaian: {"content": [...], "key": {...}, "spec": [...]}}. Dikunci dengan
+    # teks capaian agar tidak tertukar saat urutan capaian diubah. Lihat objective_quiz.py.
+    objective_quizzes = models.JSONField("kuis capaian", default=dict, blank=True)
     required_task = models.ForeignKey(
         "tasks.Task",
         verbose_name="syarat tugas",

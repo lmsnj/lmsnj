@@ -364,6 +364,10 @@ def _checkpoint_part(table, kind):
     return CHOICE_PARTS[table] if kind == "choice" else REGISTRY[table][kind]
 
 
+# Dipakai juga oleh kuis capaian materi (apps/materials/objective_quiz.py).
+checkpoint_part = _checkpoint_part
+
+
 def _first_message(error):
     detail = error.detail.get("spec") if isinstance(error.detail, dict) else error.detail
     message = str(detail[0] if isinstance(detail, list) else detail)

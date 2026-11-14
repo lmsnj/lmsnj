@@ -28,6 +28,11 @@ export const materialsApi = {
     api.get(`/materials/${id}/generate-assessment/`).then((res) => res.data),
   generateAssessment: (id, data) =>
     api.post(`/materials/${id}/generate-assessment/`, data).then((res) => res.data),
+  // Kuis kecil per capaian: soal (tanpa kunci) dan pemeriksaan jawaban { id_soal: jawaban }.
+  objectiveQuiz: ({ id, index }) =>
+    api.get(`/materials/${id}/objective-quiz/`, { params: { index } }).then((res) => res.data),
+  submitObjectiveQuiz: (id, index, answers) =>
+    api.post(`/materials/${id}/objective-quiz/`, { index, answers }).then((res) => res.data),
   reorder: (teachingAssignment, materialIds) =>
     api
       .post('/materials/reorder/', {

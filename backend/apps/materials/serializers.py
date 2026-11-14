@@ -11,6 +11,7 @@ from apps.common.files import delete_file, validate_upload
 from apps.tasks.models import Task
 
 from .models import Material, MaterialType
+from .objective_quiz import quiz_counts
 from .progress import progress_for_request
 
 PDF_SIGNATURE = b"%PDF-"
@@ -73,6 +74,8 @@ class MaterialSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source="created_by.full_name", read_only=True, default=None)
     objectives = ObjectivesField(required=False)
     concepts = ConceptsField(required=False)
+    # Jumlah soal kuis per capaian (urut capaian; 0 = dicentang sendiri oleh siswa).
+    objective_quiz = serializers.SerializerMethodField()
     required_task = serializers.PrimaryKeyRelatedField(
         queryset=Task.objects.all(), required=False, allow_null=True
     )
@@ -104,6 +107,7 @@ class MaterialSerializer(serializers.ModelSerializer):
             "order",
             "objectives",
             "concepts",
+            "objective_quiz",
             "required_task",
             "required_task_title",
             "min_task_score",
@@ -136,6 +140,9 @@ class MaterialSerializer(serializers.ModelSerializer):
 
     def get_progress(self, obj):
         return self._student_progress(obj)
+
+    def get_objective_quiz(self, obj):
+        return quiz_counts(obj)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

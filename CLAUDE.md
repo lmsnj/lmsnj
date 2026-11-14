@@ -467,6 +467,14 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   `remedial: true` (token kartu diminta lagi jika ada `exam_event`). Kunci jawaban baru dibuka setelah
   `last_due_at` (tenggat remedial). Siswa melihat popup hasil (`pages/siswa/AssessmentResult.jsx`)
   langsung setelah mengumpulkan; tampilan status di `utils/assessments.js::resultDisplay`.
+- **Kuis per capaian** (`apps/materials/objective_quiz.py`, `components/ObjectiveQuiz.jsx`): `Material.objective_quizzes`
+  = {teks capaian: {spec, content, key}} (dikunci teks capaian agar tidak tertukar saat urutan diubah); soal = sub-soal
+  checkpoint video (choice/fill_blank/drag_drop/matching, 1-5 per capaian) sehingga build/clean/grade memakai
+  `interactive.py` (`checkpoint_part`). Capaian berkuis TIDAK bisa dicentang sendiri: tercentang di
+  `checked_objectives` saat semua soal benar (boleh mengulang; pembahasan hanya setelah lulus). Serializer materi
+  mengirim `objective_quiz` (jumlah soal per capaian). Guru pengampu mengatur lewat PUT atau
+  `python manage.py load_objective_quiz <id_materi> <file.json> [--dry-run]` (contoh: kuis Flowgorithm, simpan lokal).
+  Panel siswa: tombol "Uji (N soal)" / "Lulus"; guru: "Kuis N soal · Coba" (pratinjau, tidak disimpan).
 - **Asesmen otomatis** (tombol "Asesmen Otomatis" di `MaterialsManager`, `pages/guru/GenerateAssessmentModal.jsx`):
   sumber utama GRATIS = `Material.concepts` ("istilah = penjelasan" per baris, min. 4, maks. 12, TIDAK dikirim
   ke siswa) -> `apps/assessments/auto_assessment.py::build_questions` (fungsi murni, seed = id materi): jodohkan,
@@ -551,6 +559,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/materials/{id}/open/`, `.../objectives/` (`checked`) | Siswa (materi tidak terkunci) |
 | GET/PUT | `/api/materials/{id}/progress/` (PUT `records: [{student, teacher_approved, unlocked, note}]`) | GET guru pengampu/admin, PUT guru pengampu |
 | GET/POST | `/api/materials/{id}/generate-assessment/` (POST `source`, `question_count` 5-20 untuk AI) | Guru pengampu: buat asesmen "Cek Pemahaman" (`source` = `concepts` gratis / `ai`); GET = jumlah konsep, `ai_enabled` |
+| GET/POST/PUT | `/api/materials/{id}/objective-quiz/` (GET `?index=`; POST `index`, `answers`; PUT `quizzes: {indeks: [soal]}`) | Siswa (materi terbuka): kerjakan; guru pengampu/admin: pratinjau; PUT guru pengampu |
 | POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu |
 | CRUD   | `/api/tasks/` (multipart; filter `teaching_assignment`, `is_published`, `due_at__gte`, `due_at__lte`) | Sama dengan materi. Untuk siswa ada `my_submission`; untuk guru `ungraded_count` |
 | GET    | `/api/tasks/{id}/attachment/`     | Sama dengan hak baca tugas |
