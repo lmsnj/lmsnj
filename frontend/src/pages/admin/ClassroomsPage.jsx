@@ -34,6 +34,8 @@ import { ALL, gradeFilterOptions } from '../../utils/academic'
 import { countWith, filterClassrooms, sumOf } from '../../utils/adminFilters'
 import { subjectStyle } from '../../utils/subjectStyles'
 import ClassroomFormModal from './ClassroomFormModal'
+import SplitExplorer from '../../components/SplitExplorer'
+import { revealResults } from '../../utils/results'
 
 const EMPTY = { search: '', grade: '', year: '' }
 const GRADE_STYLES = [
@@ -61,6 +63,11 @@ export default function ClassroomsPage() {
     tile: index === 0 ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-600',
   }))
   const set = (changes) => setFilters((current) => ({ ...current, ...changes }))
+  // Klik panel penyaring: terapkan lalu pastikan daftar hasil terlihat (di HP ada di bawah).
+  const pick = (changes) => {
+    set(changes)
+    revealResults()
+  }
   const closeDialog = () => setDialog(null)
   const done = (message) => {
     closeDialog()
@@ -75,71 +82,70 @@ export default function ClassroomsPage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <PageHero
-          title="Ruang Kelas"
-          description="Kelola kelas, wali kelas, dan siswanya. Klik nama kelas untuk mengatur siswa dan mapel."
-          icons={HERO_ICONS}
-          centerIcon={School}
-          search={{
-            value: filters.search,
-            onChange: (search) => set({ search }),
-            onSubmit: () =>
-              document.getElementById('daftar-hasil')?.scrollIntoView({ behavior: 'smooth' }),
-            placeholder: 'Cari nama kelas, jurusan, atau wali kelas...',
-          }}
-          actions={
-            <>
-              <HeroButton icon={Plus} onClick={() => setDialog({ type: 'form', classroom: null })}>
-                Tambah Kelas
-              </HeroButton>
-              <HeroButton icon={FileSpreadsheet} onClick={() => setDialog({ type: 'import' })}>
-                Impor Excel
-              </HeroButton>
-            </>
-          }
-          stats={[
-            {
-              icon: School,
-              content: (
-                <>
-                  <strong className="text-white">{all.length} kelas</strong> di {years.length} tahun
-                  ajaran
-                </>
-              ),
-            },
-            {
-              icon: Users,
-              content: (
-                <>
-                  <strong className="text-white">{sumOf(all, 'student_count')} siswa</strong> sudah
-                  masuk kelas
-                </>
-              ),
-            },
-          ]}
-        />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <OptionPanel
-            title="Tingkat Kelas"
-            options={gradeFilterOptions(grades, GRADE_STYLES)}
-            counts={countWith(all, (c) => c.grade)}
-            selected={filters.grade}
-            onSelect={(grade) => set({ grade })}
-            resetLabel="Semua"
-          />
-          <OptionPanel
-            title="Tahun Ajaran"
-            options={yearOptions}
-            counts={countWith(all, (c) => c.academic_year)}
-            selected={filters.year}
-            onSelect={(year) => set({ year })}
-            resetLabel="Semua"
-          />
-        </div>
-      </div>
-
-      <section id="daftar-hasil" className="mt-8 scroll-mt-4">
+      <PageHero
+        title="Ruang Kelas"
+        description="Kelola kelas, wali kelas, dan siswanya. Klik nama kelas untuk mengatur siswa dan mapel."
+        icons={HERO_ICONS}
+        centerIcon={School}
+        search={{
+          value: filters.search,
+          onChange: (search) => set({ search }),
+          onSubmit: revealResults,
+          placeholder: 'Cari nama kelas, jurusan, atau wali kelas...',
+        }}
+        actions={
+          <>
+            <HeroButton icon={Plus} onClick={() => setDialog({ type: 'form', classroom: null })}>
+              Tambah Kelas
+            </HeroButton>
+            <HeroButton icon={FileSpreadsheet} onClick={() => setDialog({ type: 'import' })}>
+              Impor Excel
+            </HeroButton>
+          </>
+        }
+        stats={[
+          {
+            icon: School,
+            content: (
+              <>
+                <strong className="text-white">{all.length} kelas</strong> di {years.length} tahun
+                ajaran
+              </>
+            ),
+          },
+          {
+            icon: Users,
+            content: (
+              <>
+                <strong className="text-white">{sumOf(all, 'student_count')} siswa</strong> sudah
+                masuk kelas
+              </>
+            ),
+          },
+        ]}
+      />
+      <SplitExplorer
+        filters={
+          <>
+            <OptionPanel
+              title="Tingkat Kelas"
+              options={gradeFilterOptions(grades, GRADE_STYLES)}
+              counts={countWith(all, (c) => c.grade)}
+              selected={filters.grade}
+              onSelect={(grade) => pick({ grade })}
+              resetLabel="Semua"
+            />
+            <OptionPanel
+              title="Tahun Ajaran"
+              options={yearOptions}
+              counts={countWith(all, (c) => c.academic_year)}
+              selected={filters.year}
+              onSelect={(year) => pick({ year })}
+              resetLabel="Semua"
+            />
+          </>
+        }
+      >
         <FilterChips
           count={shown.length}
           chips={chips}
@@ -207,7 +213,7 @@ export default function ClassroomsPage() {
             ))}
           </CardGrid>
         )}
-      </section>
+      </SplitExplorer>
 
       {dialog?.type === 'form' && (
         <ClassroomFormModal

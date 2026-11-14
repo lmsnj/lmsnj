@@ -292,7 +292,10 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
   pengumpulan untuk guru, tombol Kerjakan/Lanjutkan/Lihat Hasil untuk siswa).
 - Halaman admin (Pengguna, Ruang Kelas, Mata Pelajaran, Pengampu) memakai pola yang sama:
   `PageHero` (tombol Tambah + Impor Excel), panel penyaring, lalu kartu `components/AdminCard.jsx`
-  dalam `CardGrid` (bukan tabel). Kelas, mapel, pengampu dimuat `ALL` dan disaring di browser
+  dalam `CardGrid` (bukan tabel). Halaman yang punya panel penyaring (Pengguna, Ruang Kelas, Pengampu) memakai
+  `components/SplitExplorer.jsx`: panel di kolom kiri (menempel saat digulir), hasil di kanan; klik panel
+  memanggil `revealResults()` (`utils/results.js`) agar hasil terlihat di HP. `CardGrid` memakai container
+  query (`@container`), jadi jumlah kolomnya mengikuti lebar tempatnya. Kelas, mapel, pengampu dimuat `ALL` dan disaring di browser
   (`utils/adminFilters.js`); Pengguna tetap dicari & dipaginasi di server karena jumlahnya bisa
   ribuan (angka per peran diambil dengan `page_size: 1`).
 

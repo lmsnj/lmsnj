@@ -42,6 +42,8 @@ import { ROLE_LABELS, ROLES } from '../../utils/constants'
 import ImportUsersModal from './ImportUsersModal'
 import ResetPasswordModal from './ResetPasswordModal'
 import UserFormModal from './UserFormModal'
+import SplitExplorer from '../../components/SplitExplorer'
+import { revealResults } from '../../utils/results'
 
 const ROLE_COLORS = {
   [ROLES.FOUNDATION]: 'green',
@@ -169,6 +171,11 @@ export default function UsersPage() {
     setFilters((current) => ({ ...current, ...changes }))
     setPage(1)
   }
+  // Klik panel penyaring: terapkan lalu pastikan daftar hasil terlihat (di HP ada di bawah).
+  const pick = (changes) => {
+    change(changes)
+    revealResults()
+  }
   const closeDialog = () => setDialog(null)
   const handleSaved = (saved, isEdit) => {
     closeDialog()
@@ -210,83 +217,82 @@ export default function UsersPage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <PageHero
-          title="Pengguna"
-          description="Kelola akun admin, guru, dan siswa. Tambahkan satu per satu atau impor sekaligus dari Excel."
-          icons={HERO_ICONS}
-          centerIcon={Users}
-          search={{
-            value: filters.search,
-            onChange: (value) => change({ search: value }),
-            onSubmit: () =>
-              document.getElementById('daftar-hasil')?.scrollIntoView({ behavior: 'smooth' }),
-            placeholder: 'Cari nama, username, NIS, atau NIP...',
-          }}
-          actions={
-            <>
-              <HeroButton icon={UserPlus} onClick={() => setDialog({ type: 'form', user: null })}>
-                Tambah Pengguna
-              </HeroButton>
-              <HeroButton icon={FileSpreadsheet} onClick={() => setDialog({ type: 'import' })}>
-                Impor Excel
-              </HeroButton>
-              <HeroButton icon={Link2} onClick={() => setDialog({ type: 'join' })}>
-                Dari Sekolah Lain
-              </HeroButton>
-            </>
-          }
-          stats={[
-            {
-              icon: Users,
-              content: (
-                <>
-                  <strong className="text-white">{total} pengguna</strong> terdaftar
-                </>
-              ),
-            },
-            {
-              icon: GraduationCap,
-              content: (
-                <>
-                  <strong className="text-white">{counts.guru} guru</strong> ·{' '}
-                  <strong className="text-white">{counts.siswa} siswa</strong>
-                </>
-              ),
-            },
-          ]}
-        />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <OptionPanel
-            title="Peran Pengguna"
-            options={GROUPS}
-            counts={counts}
-            selected={filters.group}
-            onSelect={(id) =>
-              change({ group: id, classroom: id === 'tanpa-kelas' ? '' : filters.classroom })
-            }
-            resetLabel="Semua"
-          />
-          <SubjectPanel
-            title="Siswa per Kelas"
-            emptyText="Belum ada kelas."
-            assignments={classroomItems}
-            counts={Object.fromEntries(classroomItems.map((c) => [c.id, c.student_count]))}
-            unit="siswa"
-            selected={filters.classroom}
-            onSelect={(id) =>
-              change({
-                classroom: id,
-                group: id && filters.group === 'tanpa-kelas' ? '' : filters.group,
-              })
-            }
-            label={(c) => c.name}
-            sublabel={(c) => c.academic_year}
-          />
-        </div>
-      </div>
-
-      <section id="daftar-hasil" className="mt-8 scroll-mt-4">
+      <PageHero
+        title="Pengguna"
+        description="Kelola akun admin, guru, dan siswa. Tambahkan satu per satu atau impor sekaligus dari Excel."
+        icons={HERO_ICONS}
+        centerIcon={Users}
+        search={{
+          value: filters.search,
+          onChange: (value) => change({ search: value }),
+          onSubmit: revealResults,
+          placeholder: 'Cari nama, username, NIS, atau NIP...',
+        }}
+        actions={
+          <>
+            <HeroButton icon={UserPlus} onClick={() => setDialog({ type: 'form', user: null })}>
+              Tambah Pengguna
+            </HeroButton>
+            <HeroButton icon={FileSpreadsheet} onClick={() => setDialog({ type: 'import' })}>
+              Impor Excel
+            </HeroButton>
+            <HeroButton icon={Link2} onClick={() => setDialog({ type: 'join' })}>
+              Dari Sekolah Lain
+            </HeroButton>
+          </>
+        }
+        stats={[
+          {
+            icon: Users,
+            content: (
+              <>
+                <strong className="text-white">{total} pengguna</strong> terdaftar
+              </>
+            ),
+          },
+          {
+            icon: GraduationCap,
+            content: (
+              <>
+                <strong className="text-white">{counts.guru} guru</strong> ·{' '}
+                <strong className="text-white">{counts.siswa} siswa</strong>
+              </>
+            ),
+          },
+        ]}
+      />
+      <SplitExplorer
+        filters={
+          <>
+            <OptionPanel
+              title="Peran Pengguna"
+              options={GROUPS}
+              counts={counts}
+              selected={filters.group}
+              onSelect={(id) =>
+                pick({ group: id, classroom: id === 'tanpa-kelas' ? '' : filters.classroom })
+              }
+              resetLabel="Semua"
+            />
+            <SubjectPanel
+              title="Siswa per Kelas"
+              emptyText="Belum ada kelas."
+              assignments={classroomItems}
+              counts={Object.fromEntries(classroomItems.map((c) => [c.id, c.student_count]))}
+              unit="siswa"
+              selected={filters.classroom}
+              onSelect={(id) =>
+                pick({
+                  classroom: id,
+                  group: id && filters.group === 'tanpa-kelas' ? '' : filters.group,
+                })
+              }
+              label={(c) => c.name}
+              sublabel={(c) => c.academic_year}
+            />
+          </>
+        }
+      >
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <FilterChips
             className=""
@@ -402,7 +408,7 @@ export default function UsersPage() {
         <div className="mt-4">
           <Pagination page={page} count={users.data?.count ?? 0} onChange={setPage} />
         </div>
-      </section>
+      </SplitExplorer>
 
       {dialog?.type === 'form' && (
         <UserFormModal

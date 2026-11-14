@@ -36,6 +36,8 @@ import { countWith, filterAssignments } from '../../utils/adminFilters'
 import { ROLES } from '../../utils/constants'
 import { subjectStyle } from '../../utils/subjectStyles'
 import AssignmentFormModal from './AssignmentFormModal'
+import SplitExplorer from '../../components/SplitExplorer'
+import { revealResults } from '../../utils/results'
 
 const EMPTY = { search: '', subject: '', grade: '', teacher: '' }
 const GRADE_STYLES = [
@@ -72,6 +74,11 @@ export default function AssignmentsPage() {
   const teacherCount = new Set(all.map((a) => a.teacher)).size
 
   const set = (changes) => setFilters((current) => ({ ...current, ...changes }))
+  // Klik panel penyaring: terapkan lalu pastikan daftar hasil terlihat (di HP ada di bawah).
+  const pick = (changes) => {
+    set(changes)
+    revealResults()
+  }
   const closeDialog = () => setDialog(null)
   const done = (message) => {
     closeDialog()
@@ -89,70 +96,69 @@ export default function AssignmentsPage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <PageHero
-          title="Pengampu"
-          description="Tetapkan guru yang mengajar suatu mapel di suatu kelas. Materi, tugas, dan asesmen menempel ke pengampu ini."
-          icons={HERO_ICONS}
-          centerIcon={GraduationCap}
-          search={{
-            value: filters.search,
-            onChange: (search) => set({ search }),
-            onSubmit: () =>
-              document.getElementById('daftar-hasil')?.scrollIntoView({ behavior: 'smooth' }),
-            placeholder: 'Cari mapel, kelas, atau nama guru...',
-          }}
-          actions={
-            <>
-              <HeroButton icon={Plus} onClick={() => setDialog({ type: 'form', assignment: null })}>
-                Tambah Pengampu
-              </HeroButton>
-              <HeroButton icon={FileSpreadsheet} onClick={() => setDialog({ type: 'import' })}>
-                Impor Excel
-              </HeroButton>
-            </>
-          }
-          stats={[
-            {
-              icon: ClipboardList,
-              content: (
-                <>
-                  <strong className="text-white">{all.length} pengampu</strong> kelas-mapel
-                </>
-              ),
-            },
-            {
-              icon: Users,
-              content: (
-                <>
-                  oleh <strong className="text-white">{teacherCount} guru</strong>
-                </>
-              ),
-            },
-          ]}
-        />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <SubjectPanel
-            assignments={subjectItems}
-            counts={countWith(all, (a) => a.subject)}
-            unit="kelas"
-            selected={filters.subject}
-            onSelect={(id) => set({ subject: id })}
-            label={(s) => s.name}
-            sublabel={(s) => s.code}
-          />
-          <OptionPanel
-            title="Tingkat Kelas"
-            options={gradeFilterOptions(grades, GRADE_STYLES, 'Pengampu di')}
-            counts={countWith(all, (a) => gradeOf(a.classroom))}
-            selected={filters.grade}
-            onSelect={(grade) => set({ grade })}
-            resetLabel="Semua"
-          />
-        </div>
-      </div>
-
-      <section id="daftar-hasil" className="mt-8 scroll-mt-4">
+      <PageHero
+        title="Pengampu"
+        description="Tetapkan guru yang mengajar suatu mapel di suatu kelas. Materi, tugas, dan asesmen menempel ke pengampu ini."
+        icons={HERO_ICONS}
+        centerIcon={GraduationCap}
+        search={{
+          value: filters.search,
+          onChange: (search) => set({ search }),
+          onSubmit: revealResults,
+          placeholder: 'Cari mapel, kelas, atau nama guru...',
+        }}
+        actions={
+          <>
+            <HeroButton icon={Plus} onClick={() => setDialog({ type: 'form', assignment: null })}>
+              Tambah Pengampu
+            </HeroButton>
+            <HeroButton icon={FileSpreadsheet} onClick={() => setDialog({ type: 'import' })}>
+              Impor Excel
+            </HeroButton>
+          </>
+        }
+        stats={[
+          {
+            icon: ClipboardList,
+            content: (
+              <>
+                <strong className="text-white">{all.length} pengampu</strong> kelas-mapel
+              </>
+            ),
+          },
+          {
+            icon: Users,
+            content: (
+              <>
+                oleh <strong className="text-white">{teacherCount} guru</strong>
+              </>
+            ),
+          },
+        ]}
+      />
+      <SplitExplorer
+        filters={
+          <>
+            <SubjectPanel
+              assignments={subjectItems}
+              counts={countWith(all, (a) => a.subject)}
+              unit="kelas"
+              selected={filters.subject}
+              onSelect={(id) => pick({ subject: id })}
+              label={(s) => s.name}
+              sublabel={(s) => s.code}
+            />
+            <OptionPanel
+              title="Tingkat Kelas"
+              options={gradeFilterOptions(grades, GRADE_STYLES, 'Pengampu di')}
+              counts={countWith(all, (a) => gradeOf(a.classroom))}
+              selected={filters.grade}
+              onSelect={(grade) => pick({ grade })}
+              resetLabel="Semua"
+            />
+          </>
+        }
+      >
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <FilterChips
             className=""
@@ -239,7 +245,7 @@ export default function AssignmentsPage() {
             ))}
           </CardGrid>
         )}
-      </section>
+      </SplitExplorer>
 
       {dialog?.type === 'form' && (
         <AssignmentFormModal

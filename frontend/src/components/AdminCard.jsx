@@ -56,7 +56,13 @@ export default function AdminCard({ icon, tone, title, subtitle, to, badges, met
   )
 }
 
-// Grid kartu admin: 1 kolom di HP, 2 di tablet, 3 di layar lebar.
+// Grid kartu admin.
+// Jumlah kolom mengikuti LEBAR TEMPATNYA (container query), bukan lebar layar: di kolom hasil yang
+// sempit (samping panel penyaring) 1–2 kolom, di halaman penuh sampai 3.
 export function CardGrid({ children }) {
-  return <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
+  return (
+    <div className="@container">
+      <div className="grid gap-4 @xl:grid-cols-2 @5xl:grid-cols-3">{children}</div>
+    </div>
+  )
 }
