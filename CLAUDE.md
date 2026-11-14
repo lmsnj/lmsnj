@@ -220,7 +220,8 @@ Pola yang wajib dipakai ulang:
 - Pesan error yang tampil ke pengguna harus berbahasa Indonesia. 404 bawaan Django diganti otomatis oleh `apps/common/exceptions.py`.
 - Pengaturan yang berbeda antar lingkungan dibaca dari `.env` (lihat `backend/.env.example`); `DEBUG=False` tanpa `SECRET_KEY` sengaja gagal dijalankan.
 - Queryset yang memakai `annotate(Count(...))` wajib diberi `.order_by(...)` eksplisit: Django tidak menerapkan `Meta.ordering` pada query GROUP BY.
-- Impor pengguna: password kosong dibuat otomatis (kata + 4 angka) dan hanya dikembalikan sekali; password awal di-hash dengan iterasi ringan (`IMPORT_HASH_ITERATIONS`) lalu otomatis di-upgrade Django saat login pertama. Username siswa kosong = NIS.
+- Impor pengguna hanya MEMBUAT akun; melengkapi data akun lama lewat "Lengkapi NIS/NIP" (`apps/accounts/user_update.py`,
+  `UpdateUsersModal`). Impor pengguna: password kosong dibuat otomatis (kata + 4 angka) dan hanya dikembalikan sekali; password awal di-hash dengan iterasi ringan (`IMPORT_HASH_ITERATIONS`) lalu otomatis di-upgrade Django saat login pertama. Username siswa kosong = NIS.
 - Permission konten kelas (materi, tugas) memakai `ContentPermission`; action khusus peran menimpa `permission_classes` di `@action`.
 - **Hak akses wajib dicek di backend** (permission class per peran + filter queryset), jangan hanya mengandalkan frontend:
   - Admin: kelola semua data.
@@ -528,6 +529,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/users/account-cards/` (`user_ids` / `classroom` / `role`, `reset_password`) | Admin: data kartu akun (password hanya jika dibuat ulang) |
 | POST   | `/api/users/join/` (`username`)   | Admin: daftarkan akun guru/admin yang sudah ada ke sekolah aktif. Hapus pengguna yang terdaftar di >1 sekolah = hanya keluar dari sekolah aktif |
 | GET    | `/api/users/import-template/`     | Admin: template Excel (.xlsx) dengan dropdown peran & kelas |
+| GET/POST | `/api/users/update-template/?role=student\|teacher&kosong=1`, `/api/users/update-import/` (multipart `file`, `role`, `dry_run`) | Admin: lengkapi NIS / NIP / kode guru akun yang SUDAH ADA (`user_update.py`; dicocokkan lewat username, sel kosong = tidak diubah) |
 | POST   | `/api/users/import/` (multipart `file`, `dry_run`) | Admin: `dry_run=true` hanya memeriksa; `false` menyimpan jika SEMUA baris benar (semua atau tidak sama sekali) |
 | CRUD   | `/api/classrooms/` (filter `grade`, `major`, `academic_year`, `homeroom_teacher`) | Tulis: admin. Baca: admin semua, guru kelas yang diajar/diwalikan, siswa kelasnya |
 | GET    | `/api/classrooms/academic-years/` | Login            |

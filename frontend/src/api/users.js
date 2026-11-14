@@ -22,4 +22,20 @@ export const usersApi = {
     formData.append('dry_run', dryRun ? 'true' : 'false')
     return api.post('/users/import/', formData).then((res) => res.data)
   },
+
+  // Perbarui NIS/NIP/kode guru akun yang sudah ada (role: 'student' | 'teacher').
+  updateTemplate: (role, onlyMissing) =>
+    api
+      .get('/users/update-template/', {
+        params: { role, kosong: onlyMissing ? 1 : 0 },
+        responseType: 'blob',
+      })
+      .then((res) => res.data),
+  updateFile: (file, role, dryRun) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('role', role)
+    formData.append('dry_run', dryRun ? 'true' : 'false')
+    return api.post('/users/update-import/', formData).then((res) => res.data)
+  },
 }

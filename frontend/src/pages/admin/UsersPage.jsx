@@ -1,5 +1,6 @@
 import {
   BadgeCheck,
+  BookUser,
   Building2,
   Contact,
   FileSpreadsheet,
@@ -43,6 +44,7 @@ import { ALL } from '../../utils/academic'
 import { ROLE_LABELS, ROLES } from '../../utils/constants'
 import AccountCardsModal from './AccountCardsModal'
 import ImportUsersModal from './ImportUsersModal'
+import UpdateUsersModal from './UpdateUsersModal'
 import ResetPasswordModal from './ResetPasswordModal'
 import UserFormModal from './UserFormModal'
 import SplitExplorer from '../../components/SplitExplorer'
@@ -261,6 +263,9 @@ export default function UsersPage() {
             </HeroButton>
             <HeroButton icon={FileSpreadsheet} onClick={() => setDialog({ type: 'import' })}>
               Impor Excel
+            </HeroButton>
+            <HeroButton icon={BookUser} onClick={() => setDialog({ type: 'update' })}>
+              Lengkapi NIS/NIP
             </HeroButton>
             <HeroButton icon={Link2} onClick={() => setDialog({ type: 'join' })}>
               Dari Sekolah Lain
@@ -503,6 +508,16 @@ export default function UsersPage() {
             users.reload()
             reloadCounts()
             classrooms.reload()
+          }}
+        />
+      )}
+      {dialog?.type === 'update' && (
+        <UpdateUsersModal
+          onClose={closeDialog}
+          onUpdated={(count) => {
+            closeDialog()
+            setNotice(`Data ${count} akun diperbarui dari Excel.`)
+            users.reload()
           }}
         />
       )}

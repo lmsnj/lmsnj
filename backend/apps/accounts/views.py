@@ -11,10 +11,12 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.files import validate_upload
 from apps.common.mixins import ProtectedDeleteMixin
 from apps.schools.context import active_school, require_school
 
+from . import user_update
 from .cards import MAX_CARDS, build_cards, card_data
 from .models import ImpersonationLog, Role, User
 from .permissions import IsAdmin, IsFoundation
@@ -255,6 +257,32 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         school = require_school(request)
         cards = build_cards(users, reset_password=data["reset_password"])
         return Response({"school": {"name": school.name, "code": school.code}, "accounts": cards})
+
+    @staticmethod
+    def _update_role(value):
+        # Hanya siswa (NIS) dan guru (NIP, kode guru) yang punya data untuk diperbarui.
+        role = {"student": Role.STUDENT, "teacher": Role.TEACHER}.get(value)
+        if role is None:
+            raise ValidationError({"role": "Pilih peran siswa atau guru."})
+        return role
+
+    @action(detail=False, url_path="update-template")
+    def update_template(self, request):
+        """Daftar akun (siswa/guru) sekolah aktif untuk diisi NIS/NIP/kode guru. `kosong=1` = hanya
+        akun yang datanya masih kosong."""
+        role = self._update_role(request.query_params.get("role"))
+        only_missing = request.query_params.get("kosong") == "1"
+        content = user_update.build_template(require_school(request), role, only_missing)
+        return template_response(content, f"Perbarui Data {role.label}.xlsx")
+
+    @action(detail=False, methods=["post"], url_path="update-import")
+    def update_import(self, request):
+        """Perbarui akun yang sudah ada dari Excel. dry_run=true (bawaan) hanya memeriksa."""
+        role = self._update_role(request.data.get("role"))
+        results = user_update.check_rows(request.FILES.get("file"), require_school(request), role)
+        return import_response(
+            user_update.preview(results), is_dry_run(request), lambda: user_update.save_updates(results)
+        )
 
     @action(detail=False, url_path="import-template")
     def import_template(self, request):
