@@ -1,5 +1,5 @@
 import { LogOut, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import SchoolLogo from '../components/brand/SchoolLogo'
 import { SoonBadge } from '../components/Dropdown'
@@ -10,9 +10,9 @@ import { LanguageMenu, NotificationBell, UserMenu } from './HeaderMenus'
 import SchoolSwitcher from './SchoolSwitcher'
 
 /**
- * Tata letak bergaya panel admin: sidebar hijau tua di kiri (semua menu tampil, tanpa "Lainnya"),
- * bar atas putih berisi pilihan sekolah, lonceng, dan menu akun. Dipakai admin yayasan.
- * Di layar < lg sidebar disembunyikan dan dibuka lewat tombol hamburger.
+ * Tata letak semua peran: sidebar hijau tua di kiri (menu utama + bagian "Lainnya" + tombol
+ * Keluar), bar atas putih berisi pilihan sekolah, lonceng, pilihan bahasa, dan menu akun.
+ * Di layar < lg sidebar disembunyikan dan dibuka sebagai laci lewat tombol hamburger.
  */
 
 function CountBadge({ count }) {
@@ -62,7 +62,7 @@ function SidebarItem({ item, badges, onNavigate }) {
   )
 }
 
-function Sidebar({ nav, badges, onNavigate }) {
+function Sidebar({ nav, badges, onNavigate, inDrawer = false }) {
   const { user, logout } = useAuth()
   const { branding } = useBranding()
   const navigate = useNavigate()
@@ -77,7 +77,8 @@ function Sidebar({ nav, badges, onNavigate }) {
       <Link
         to={ROLE_HOME[user.role]}
         onClick={onNavigate}
-        className="flex items-center gap-3 px-5 py-5"
+        // Di laci HP, ruang kanan dikosongkan untuk tombol tutup agar tidak menimpa nama sekolah.
+        className={`flex items-center gap-3 py-5 pl-5 ${inDrawer ? 'pr-12' : 'pr-5'}`}
       >
         <SchoolLogo className="size-11 shrink-0" />
         <span className="min-w-0">
@@ -129,6 +130,21 @@ function Sidebar({ nav, badges, onNavigate }) {
 export default function SidebarLayout({ nav, badges, chat, banner, notice, children }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
+  // Laci terbuka: tombol Escape menutupnya dan halaman di belakangnya tidak ikut tergulir.
+  useEffect(() => {
+    if (!menuOpen) return undefined
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [menuOpen])
+
   return (
     <div className="min-h-screen bg-surface lg:pl-72">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 lg:block">
@@ -136,18 +152,24 @@ export default function SidebarLayout({ nav, badges, chat, banner, notice, child
       </aside>
 
       {menuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div
+          className="fixed inset-0 z-50 lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
+        >
           <div
             className="absolute inset-0 bg-slate-900/40"
             onClick={() => setMenuOpen(false)}
             aria-hidden="true"
           />
           <div className="relative h-full w-72 max-w-[85vw] shadow-xl">
-            <Sidebar nav={nav} badges={badges} onNavigate={() => setMenuOpen(false)} />
+            <Sidebar nav={nav} badges={badges} onNavigate={() => setMenuOpen(false)} inDrawer />
             <button
               type="button"
               onClick={() => setMenuOpen(false)}
               aria-label="Tutup menu"
+              autoFocus
               className="absolute top-3 right-3 rounded-lg p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
             >
               <X className="size-5" aria-hidden="true" />

@@ -31,7 +31,7 @@ import { ROLES } from '../utils/constants'
  * - `soon`  : fitur belum dibuat -> tampil nonaktif dengan label "Segera" (jangan diberi `to`).
  * - `end`   : aktif hanya jika alamatnya persis sama (untuk Beranda).
  * - `badge` : 'chat' = tampilkan jumlah pesan belum dibaca.
- * - `more`  : item yang dimasukkan ke dropdown "Lainnya".
+ * - `more`  : item di bagian "Lainnya" pada sidebar.
  */
 const PROFILE = { label: 'Profil Saya', icon: UserRound, to: '/profil' }
 const CHAT = { label: 'Ruang Obrolan', icon: MessagesSquare, to: '/obrolan', badge: 'chat' }
