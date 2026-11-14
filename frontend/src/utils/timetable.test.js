@@ -8,7 +8,9 @@ import {
   defaultDay,
   loadGap,
   optionsFrom,
+  periodLabel,
   timeRange,
+  todayLessons,
   weekdayOf,
 } from './timetable.js'
 
@@ -99,4 +101,75 @@ test('selisih jam terjadwal dan JP resmi', () => {
   assert.equal(loadGap({ scheduled_periods: 11, official_hours: 12, unscheduled_hours: 0 }), -1)
   assert.equal(loadGap({ scheduled_periods: 16, official_hours: 28, unscheduled_hours: 12 }), 0)
   assert.equal(loadGap({ scheduled_periods: 4, official_hours: null, unscheduled_hours: 0 }), null)
+})
+
+// Senin 16 November 2026 (hari 0).
+const MONDAY = (hour, minute = 0) => new Date(2026, 10, 16, hour, minute)
+const lessonSlot = (id, period, starts_at, ends_at, extra = {}) => ({
+  id,
+  day: 0,
+  day_display: 'Senin',
+  period,
+  starts_at,
+  ends_at,
+  kind: 'lesson',
+  label: '',
+  ...extra,
+})
+const TODAY_SLOTS = [
+  lessonSlot(10, 1, '07:00:00', '07:45:00'),
+  lessonSlot(11, 2, '07:45:00', '08:30:00'),
+  lessonSlot(12, null, '08:30:00', '08:45:00', { kind: 'activity', label: 'Istirahat' }),
+  lessonSlot(13, 3, '08:45:00', '09:30:00'),
+  lessonSlot(14, 4, '09:30:00', '10:15:00'),
+  lessonSlot(15, 5, '10:15:00', '11:00:00'),
+  lessonSlot(16, 6, '11:00:00', '11:45:00'),
+  { ...lessonSlot(17, 1, '07:00:00', '07:45:00'), day: 1, day_display: 'Selasa' },
+]
+const TODAY_ENTRIES = [
+  { ...entry(10, 1, 'X RPL 1', 'M'), teaching_assignment: 5 },
+  { ...entry(11, 1, 'X RPL 1', 'M'), teaching_assignment: 5 },
+  // Setelah istirahat pelajaran yang sama tetap blok baru.
+  { ...entry(13, 1, 'X RPL 1', 'M'), teaching_assignment: 5 },
+  { ...entry(14, 1, 'X RPL 1'), teaching_assignment: 6 },
+  // Jam 5 kosong memutus blok.
+  { ...entry(16, 1, 'X RPL 1'), teaching_assignment: 6 },
+  { ...entry(17, 1, 'X RPL 1'), teaching_assignment: 6 },
+]
+
+test('todayLessons menggabung jam berurutan dan tidak melewati istirahat atau jam kosong', () => {
+  const blocks = todayLessons(TODAY_SLOTS, TODAY_ENTRIES, MONDAY(6))
+  assert.deepEqual(
+    blocks.map((block) => [
+      block.periods,
+      block.startsAt,
+      block.endsAt,
+      block.lessons[0].subjectCode,
+    ]),
+    [
+      [[1, 2], '07:00:00', '08:30:00', 'M'],
+      [[3], '08:45:00', '09:30:00', 'M'],
+      [[4], '09:30:00', '10:15:00', 'G'],
+      [[6], '11:00:00', '11:45:00', 'G'],
+    ],
+  )
+  assert.deepEqual(blocks[0].lessons[0].assignments, [5])
+})
+
+test('todayLessons menandai pelajaran yang sudah lewat, sedang, dan akan datang', () => {
+  const status = (date) => todayLessons(TODAY_SLOTS, TODAY_ENTRIES, date).map((b) => b.status)
+  assert.deepEqual(status(MONDAY(6)), ['upcoming', 'upcoming', 'upcoming', 'upcoming'])
+  assert.deepEqual(status(MONDAY(8)), ['now', 'upcoming', 'upcoming', 'upcoming'])
+  assert.deepEqual(status(MONDAY(8, 30)), ['done', 'upcoming', 'upcoming', 'upcoming'])
+  assert.deepEqual(status(MONDAY(12)), ['done', 'done', 'done', 'done'])
+})
+
+test('todayLessons kosong pada hari tanpa jadwal (Jumat libur)', () => {
+  assert.deepEqual(todayLessons(TODAY_SLOTS, TODAY_ENTRIES, new Date(2026, 10, 20, 8)), [])
+})
+
+test('periodLabel', () => {
+  assert.equal(periodLabel([]), '')
+  assert.equal(periodLabel([3]), 'Jam 3')
+  assert.equal(periodLabel([1, 2, 3]), 'Jam 1-3')
 })

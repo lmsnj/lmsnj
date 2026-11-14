@@ -282,7 +282,8 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
 - Banner sapaan (`PageHero` di `components/home/HomeTop.jsx`): "Halo, [nama depan]! 👋", sapaan
   sesuai jam (`utils/greeting.js`) + "Apa langkah pertama Anda hari ini?", tanggal, nama sekolah, dan
   info per peran (`stats`). Lalu grid 2×2 kartu (`components/home/ActionCard.jsx`: kotak judul
-  berwarna lembut + ikon besar di pojok), panel tab `HomePanel` (Papan Pengumuman, Tugas Hari Ini,
+  berwarna lembut + ikon besar di pojok), panel tab `HomePanel` (guru & siswa: Jadwal Hari Ini dari `/api/timetable/` lewat
+  `utils/timetable.js::todayLessons`; lalu Papan Pengumuman, Tugas Hari Ini,
   Tugas Mendatang — data dari API), lalu bagian "Ringkasan" (`StatCard` berikon, `Panel`).
 - Halaman login: dua kolom di layar lebar (panel hijau identitas sekolah + keunggulan aplikasi,
   lalu kartu formulir dengan ikon & tombol tampilkan password); di HP hanya pita logo + formulir.

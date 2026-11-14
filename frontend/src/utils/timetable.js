@@ -50,9 +50,11 @@ export function dayRows(slots, entries, day) {
         subjectName: entry.subject_name,
         teacherName: entry.teacher_name,
         classrooms: [],
+        assignments: [],
       })
     }
     lessons.get(key).classrooms.push(entry.classroom_name)
+    lessons.get(key).assignments.push(entry.teaching_assignment)
   }
   return slots
     .filter((slot) => slot.day === day)
@@ -78,4 +80,57 @@ export function optionsFrom(entries, idKey, nameKey) {
 export function loadGap(load) {
   if (load.official_hours == null) return null
   return load.scheduled_periods - (load.official_hours - load.unscheduled_hours)
+}
+
+// "HH:MM:SS" dari jam perangkat, agar bisa dibandingkan langsung dengan jam slot.
+function clockOf(date) {
+  return [date.getHours(), date.getMinutes(), date.getSeconds()]
+    .map((part) => String(part).padStart(2, '0'))
+    .join(':')
+}
+
+function sameLessons(a, b) {
+  return a.map((lesson) => lesson.key).join('|') === b.map((lesson) => lesson.key).join('|')
+}
+
+/**
+ * Pelajaran hari ini untuk Beranda. Jam berurutan dengan pelajaran yang sama digabung menjadi satu
+ * blok (mis. Jam 1-2), tetapi tidak melewati istirahat/kegiatan atau jam kosong.
+ * `status`: 'done' (sudah lewat), 'now' (sedang berlangsung), 'upcoming'.
+ */
+export function todayLessons(slots, entries, date = new Date()) {
+  const now = clockOf(date)
+  const blocks = []
+  let previous = null
+  for (const { slot, lessons } of dayRows(slots, entries, weekdayOf(date))) {
+    if (slot.kind === 'activity' || lessons.length === 0) {
+      previous = null
+      continue
+    }
+    if (previous && sameLessons(previous.lessons, lessons)) {
+      previous.endsAt = slot.ends_at
+      if (slot.period != null) previous.periods.push(slot.period)
+    } else {
+      previous = {
+        key: slot.id,
+        startsAt: slot.starts_at,
+        endsAt: slot.ends_at,
+        periods: slot.period != null ? [slot.period] : [],
+        lessons,
+      }
+      blocks.push(previous)
+    }
+  }
+  return blocks.map((block) => ({
+    ...block,
+    status: now >= block.endsAt ? 'done' : now >= block.startsAt ? 'now' : 'upcoming',
+  }))
+}
+
+// "Jam 3" atau "Jam 3-4"; kosong jika slot tidak bernomor.
+export function periodLabel(periods) {
+  if (periods.length === 0) return ''
+  const first = periods[0]
+  const last = periods[periods.length - 1]
+  return first === last ? `Jam ${first}` : `Jam ${first}-${last}`
 }

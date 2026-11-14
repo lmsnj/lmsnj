@@ -1,13 +1,15 @@
-import { CalendarClock, CalendarDays, Megaphone } from 'lucide-react'
+import { CalendarClock, CalendarDays, Clock, Megaphone } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { announcementsApi } from '../../api/announcements'
 import { tasksApi } from '../../api/tasks'
+import { timetableApi } from '../../api/timetable'
 import useAuth from '../../hooks/useAuth'
 import useFetch from '../../hooks/useFetch'
 import { ROLES } from '../../utils/constants'
 import { formatDate } from '../../utils/media'
 import { dueLabel, studentTaskStatus } from '../../utils/tasks'
+import { clock, periodLabel, todayLessons } from '../../utils/timetable'
 import Alert from '../Alert'
 import Badge from '../Badge'
 import AnnouncementCard from '../AnnouncementCard'
@@ -15,11 +17,17 @@ import Spinner from '../Spinner'
 
 const UPCOMING_DAYS = 14
 
+const SCHEDULE_TAB = { id: 'schedule', label: 'Jadwal Hari Ini', icon: Clock }
 const TABS = [
   { id: 'announcements', label: 'Papan Pengumuman', icon: Megaphone },
   { id: 'today', label: 'Tugas Hari Ini', icon: CalendarClock },
   { id: 'upcoming', label: 'Tugas Mendatang', icon: CalendarDays },
 ]
+
+// Guru & siswa: jadwal hari ini tampil pertama. Admin tidak (jadwal semua kelas terlalu banyak).
+function tabsFor(role) {
+  return role === ROLES.TEACHER || role === ROLES.STUDENT ? [SCHEDULE_TAB, ...TABS] : TABS
+}
 
 // Rentang waktu lokal (WIB di perangkat pengguna): hari ini, atau besok s.d. 14 hari ke depan.
 function dueRange(tab) {
@@ -110,6 +118,86 @@ function TaskRows({ tab }) {
   )
 }
 
+const CLASS_LINK = {
+  [ROLES.TEACHER]: (id) => `/guru/kelas/${id}`,
+  [ROLES.STUDENT]: (id) => `/siswa/mapel/${id}`,
+}
+
+const LESSON_STYLE = {
+  done: 'opacity-60',
+  now: 'bg-brand-50 ring-1 ring-brand-200',
+  upcoming: '',
+}
+
+function ScheduleRows() {
+  const { user } = useAuth()
+  const schedule = useFetch(timetableApi.get)
+  if (schedule.error) return <Alert type="error">{schedule.error}</Alert>
+  if (!schedule.data) {
+    return (
+      <div className="py-8 text-center text-brand-600">
+        <Spinner />
+      </div>
+    )
+  }
+  const blocks = todayLessons(schedule.data.slots, schedule.data.entries)
+  const isTeacher = user.role === ROLES.TEACHER
+  const schedulePage = isTeacher ? '/guru/jadwal' : '/siswa/jadwal'
+
+  return (
+    <div className="space-y-1 py-3">
+      {blocks.length === 0 ? (
+        <div className="py-5 text-center">
+          <Clock className="mx-auto size-10 text-slate-300" aria-hidden="true" />
+          <p className="mt-2 text-sm text-slate-500">
+            {schedule.data.timetable
+              ? isTeacher
+                ? 'Tidak ada jam mengajar hari ini.'
+                : 'Tidak ada pelajaran hari ini.'
+              : 'Jadwal pelajaran belum tersedia.'}
+          </p>
+        </div>
+      ) : (
+        <ul className="space-y-1">
+          {blocks.flatMap((block) =>
+            block.lessons.map((lesson) => (
+              <li key={`${block.key}-${lesson.key}`}>
+                <Link
+                  to={CLASS_LINK[user.role](lesson.assignments[0])}
+                  className={`-mx-2 flex items-center gap-4 rounded-lg px-2 py-2.5 hover:bg-slate-50 ${LESSON_STYLE[block.status]}`}
+                >
+                  <div className="w-24 shrink-0 text-sm">
+                    <p className="font-semibold text-slate-900 tabular-nums">
+                      {clock(block.startsAt)} - {clock(block.endsAt)}
+                    </p>
+                    <p className="text-xs text-slate-500">{periodLabel(block.periods)}</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-slate-900">{lesson.subjectName}</p>
+                    <p className="truncate text-xs text-slate-500">
+                      {isTeacher ? lesson.classrooms.join(', ') : lesson.teacherName}
+                    </p>
+                  </div>
+                  {block.status === 'now' && <Badge color="green">Sedang berlangsung</Badge>}
+                  {block.status === 'done' && (
+                    <span className="text-xs text-slate-400">Selesai</span>
+                  )}
+                </Link>
+              </li>
+            )),
+          )}
+        </ul>
+      )}
+      <Link
+        to={schedulePage}
+        className="block pt-2 text-right text-sm font-medium text-brand-700 hover:underline"
+      >
+        Lihat jadwal seminggu →
+      </Link>
+    </div>
+  )
+}
+
 const ANNOUNCEMENT_LIMIT = 5
 
 function AnnouncementRows() {
@@ -145,7 +233,9 @@ function AnnouncementRows() {
 
 // Panel putih bertab di bawah kartu Beranda. Data tugas diambil langsung dari API.
 export default function HomePanel() {
-  const [tab, setTab] = useState('announcements')
+  const { user } = useAuth()
+  const tabs = tabsFor(user.role)
+  const [tab, setTab] = useState(tabs[0].id)
 
   return (
     <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -153,7 +243,7 @@ export default function HomePanel() {
         className="flex gap-1 overflow-x-auto border-b border-slate-200 px-3 sm:gap-3"
         role="tablist"
       >
-        {TABS.map((item) => (
+        {tabs.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -178,7 +268,9 @@ export default function HomePanel() {
         ))}
       </div>
       <div className="px-5 py-2">
-        {tab === 'announcements' ? <AnnouncementRows /> : <TaskRows key={tab} tab={tab} />}
+        {tab === 'schedule' && <ScheduleRows />}
+        {tab === 'announcements' && <AnnouncementRows />}
+        {(tab === 'today' || tab === 'upcoming') && <TaskRows key={tab} tab={tab} />}
       </div>
     </section>
   )
