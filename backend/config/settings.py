@@ -219,8 +219,13 @@ SIMPLE_JWT = {
 
 # CORS: alamat frontend yang boleh mengakses API (pengembangan: Vite di port 5173).
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
-# Header X-School = sekolah aktif yang dipilih pengguna (lihat apps/schools/context.py).
-CORS_ALLOW_HEADERS = (*default_headers, "x-school")
+# Pola alamat frontend, untuk subdomain per sekolah saat API berada di alamat lain. Contoh
+# pengembangan: ^http://[a-z0-9-]+\.localhost:5173$ (smknj.localhost:5173, admin.localhost:5173).
+# Di produksi API biasanya satu alamat dengan frontend (/api), jadi tidak perlu diisi.
+CORS_ALLOWED_ORIGIN_REGEXES = env_list("CORS_ALLOWED_ORIGIN_REGEXES")
+# Header X-School = sekolah aktif yang dipilih pengguna; X-School-Code = kode sekolah dari
+# subdomain (lihat apps/schools/context.py dan domains.py).
+CORS_ALLOW_HEADERS = (*default_headers, "x-school", "x-school-code")
 # Diperlukan agar form login halaman /admin/ Django berfungsi di domain produksi.
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 

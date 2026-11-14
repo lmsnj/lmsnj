@@ -3,8 +3,11 @@ import {
   Building2,
   CalendarDays,
   ClipboardCheck,
+  Copy,
+  ExternalLink,
   GraduationCap,
   Hash,
+  KeyRound,
   Pencil,
   Plus,
   School,
@@ -12,6 +15,7 @@ import {
   Users,
 } from 'lucide-react'
 import { useState } from 'react'
+import { BASE_DOMAIN } from '../../api/client'
 import { schoolsApi } from '../../api/schools'
 import AdminCard, { CardGrid } from '../../components/AdminCard'
 import Alert from '../../components/Alert'
@@ -22,6 +26,7 @@ import DeleteDialog from '../../components/DeleteDialog'
 import EmptyState from '../../components/EmptyState'
 import FileInput from '../../components/FileInput'
 import FormModal from '../../components/FormModal'
+import Modal from '../../components/Modal'
 import PageHero, { HeroButton } from '../../components/PageHero'
 import SelectField from '../../components/SelectField'
 import Spinner from '../../components/Spinner'
@@ -31,9 +36,20 @@ import useFetch from '../../hooks/useFetch'
 import useFormSubmit from '../../hooks/useFormSubmit'
 import useQueryFlag from '../../hooks/useQueryFlag'
 import { SCHOOL_LEVELS } from '../../utils/constants'
+import { schoolAddress } from '../../utils/tenant'
 
 const HERO_ICONS = [Building2, School, GraduationCap, Users, BookOpen, ClipboardCheck]
 const LOGO_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif'
+
+// Alamat subdomain sekolah, mengikuti protokol & port alamat yang sedang dibuka (laptop: http + 5173).
+function addressOf(code) {
+  return schoolAddress(code, BASE_DOMAIN, {
+    protocol: window.location.protocol,
+    port: window.location.port,
+  })
+}
+
+const withoutProtocol = (url) => url?.replace(/^https?:\/\//, '')
 
 function SchoolFormModal({ school, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -42,10 +58,19 @@ function SchoolFormModal({ school, onClose, onSaved }) {
     level: school?.level ?? 'smk',
     slogan: school?.slogan ?? '',
     is_active: school?.is_active ?? true,
+    // Akun admin pertama, hanya saat membuat sekolah baru (opsional).
+    admin_username: '',
+    admin_full_name: '',
+    admin_password: '',
   })
   const [logo, setLogo] = useState(null)
   const { submit, submitting, errors, generalError } = useFormSubmit(async () => {
     const data = { ...form, logo: logo ?? undefined }
+    if (school) {
+      delete data.admin_username
+      delete data.admin_full_name
+      delete data.admin_password
+    }
     const saved = school ? await schoolsApi.update(school.id, data) : await schoolsApi.create(data)
     onSaved(saved, Boolean(school))
   })
@@ -78,7 +103,13 @@ function SchoolFormModal({ school, onClose, onSaved }) {
           value={form.code}
           onChange={handleChange}
           error={errors.code}
-          hint="Singkatan unik, huruf kecil, mis. mtsnj."
+          hint={
+            BASE_DOMAIN
+              ? `Menjadi alamat sekolah: ${withoutProtocol(addressOf(form.code.toLowerCase() || 'kode'))}`
+              : 'Huruf kecil, angka, dan tanda hubung, mis. mtsnj.'
+          }
+          // Kode = alamat sekolah; mengubahnya memutus alamat yang sudah dibagikan ke pengguna.
+          disabled={Boolean(school)}
           required
         />
         <SelectField
@@ -106,8 +137,46 @@ function SchoolFormModal({ school, onClose, onSaved }) {
         accept={LOGO_ACCEPT}
         onChange={setLogo}
         error={errors.logo}
-        hint="PNG, JPG, WEBP, atau GIF, maks. 2 MB. Kosong = memakai logo yayasan."
+        hint="PNG, JPG, WEBP, atau GIF, maks. 2 MB. Kosong = memakai logo aplikasi."
       />
+      {!school && (
+        <fieldset className="space-y-4 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
+          <legend className="px-1 text-sm font-semibold text-slate-800">
+            Akun admin sekolah (opsional)
+          </legend>
+          <p className="-mt-2 text-xs text-slate-500">
+            Isi agar sekolah langsung bisa dipakai. Admin sekolah yang mengelola guru, siswa, dan
+            kelas.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              label="Username admin"
+              name="admin_username"
+              value={form.admin_username}
+              onChange={handleChange}
+              error={errors.admin_username}
+              autoComplete="off"
+            />
+            <TextField
+              label="Nama lengkap admin"
+              name="admin_full_name"
+              value={form.admin_full_name}
+              onChange={handleChange}
+              error={errors.admin_full_name}
+            />
+          </div>
+          <TextField
+            label="Password admin"
+            name="admin_password"
+            type="password"
+            value={form.admin_password}
+            onChange={handleChange}
+            error={errors.admin_password}
+            autoComplete="new-password"
+            hint="Kosongkan agar dibuat otomatis (ditampilkan sekali setelah disimpan)."
+          />
+        </fieldset>
+      )}
       {school && (
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input
@@ -124,7 +193,74 @@ function SchoolFormModal({ school, onClose, onSaved }) {
   )
 }
 
-// Daftar Sekolah (khusus admin yayasan): tambah/ubah/nonaktifkan sekolah + ringkasan tiap sekolah.
+// Ditampilkan sekali setelah sekolah baru dibuat bersama akun adminnya: alamat + data masuk.
+function NewSchoolCredentials({ school, onClose }) {
+  const [copied, setCopied] = useState(false)
+  const address = addressOf(school.code)
+  const { admin } = school
+  const lines = [
+    `Sekolah: ${school.name}`,
+    address && `Alamat: ${address}`,
+    `Username: ${admin.username}`,
+    admin.password && `Password: ${admin.password}`,
+  ].filter(Boolean)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'))
+      setCopied(true)
+    } catch {
+      setCopied(false) // browser menolak akses clipboard; data tetap terlihat untuk disalin manual
+    }
+  }
+
+  return (
+    <Modal
+      open
+      title="Sekolah siap dipakai"
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onClick={copy}>
+            <Copy className="size-4" aria-hidden="true" /> {copied ? 'Tersalin' : 'Salin'}
+          </Button>
+          <Button onClick={onClose}>Selesai</Button>
+        </>
+      }
+    >
+      <div className="space-y-3 text-sm text-slate-700">
+        <p>
+          Berikan data berikut kepada admin <strong>{school.name}</strong>.
+        </p>
+        <dl className="space-y-2 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
+          {address && (
+            <div>
+              <dt className="text-xs text-slate-500">Alamat</dt>
+              <dd className="font-semibold break-all text-slate-900">{withoutProtocol(address)}</dd>
+            </div>
+          )}
+          <div>
+            <dt className="text-xs text-slate-500">Username</dt>
+            <dd className="font-semibold text-slate-900">{admin.username}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-slate-500">Password</dt>
+            <dd className="font-mono font-semibold text-slate-900">
+              {admin.password ?? 'Sesuai yang Anda isi di formulir'}
+            </dd>
+          </div>
+        </dl>
+        {admin.password && (
+          <p className="flex gap-2 rounded-lg bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200">
+            <KeyRound className="size-4 shrink-0" aria-hidden="true" />
+            Password ini hanya tampil sekali. Minta admin menggantinya setelah masuk pertama kali.
+          </p>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+// Daftar Sekolah (khusus Super Admin): tambah/ubah/nonaktifkan sekolah + ringkasan tiap sekolah.
 export default function SchoolsPage() {
   const { reloadSchools } = useAuth()
   const [notice, setNotice] = useState('')
@@ -147,7 +283,7 @@ export default function SchoolsPage() {
     <>
       <PageHero
         title="Daftar Sekolah"
-        description="Sekolah-sekolah di bawah yayasan. Buka sebuah sekolah lewat tombol “Ganti Sekolah” di header untuk mengelola kelas, mapel, dan penggunanya."
+        description="Sekolah pengguna aplikasi. Setiap sekolah punya alamat sendiri (subdomain). Buka sebuah sekolah lewat “Ganti Sekolah” di header untuk mengelola kelas, mapel, dan penggunanya."
         icons={HERO_ICONS}
         centerIcon={Building2}
         actions={
@@ -209,7 +345,21 @@ export default function SchoolsPage() {
                   </>
                 }
                 meta={[
-                  { icon: Hash, content: `Kode: ${school.code}` },
+                  BASE_DOMAIN
+                    ? {
+                        icon: ExternalLink,
+                        content: (
+                          <a
+                            href={addressOf(school.code)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-medium break-all text-brand-700 hover:underline"
+                          >
+                            {withoutProtocol(addressOf(school.code))}
+                          </a>
+                        ),
+                      }
+                    : { icon: Hash, content: `Kode: ${school.code}` },
                   {
                     icon: CalendarDays,
                     content: school.academic_year
@@ -254,10 +404,14 @@ export default function SchoolsPage() {
         <SchoolFormModal
           school={dialog.school}
           onClose={closeDialog}
-          onSaved={(saved, isEdit) =>
+          onSaved={(saved, isEdit) => {
             done(`Sekolah ${saved.name} ${isEdit ? 'diperbarui' : 'ditambahkan'}.`)
-          }
+            if (saved.admin) setDialog({ type: 'credentials', school: saved })
+          }}
         />
+      )}
+      {dialog?.type === 'credentials' && (
+        <NewSchoolCredentials school={dialog.school} onClose={closeDialog} />
       )}
       <DeleteDialog
         item={dialog?.type === 'delete' ? dialog.school : null}

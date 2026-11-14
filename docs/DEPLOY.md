@@ -250,6 +250,86 @@ sudo -u lms npm ci && sudo -u lms npm run build
 
 Backup database dan folder media **sebelum** memperbarui.
 
+## 9. Subdomain per Sekolah (Banyak Sekolah Pelanggan)
+
+Satu server melayani banyak sekolah. Setiap sekolah punya alamat sendiri, dan Super Admin punya
+alamat khusus untuk membuat dan mengelola sekolah:
+
+| Alamat | Isi |
+|--------|-----|
+| `admin.sigmateknologi.my.id` | Super Admin: Daftar Sekolah, tambah/nonaktifkan sekolah, ringkasan semua sekolah |
+| `smknj.sigmateknologi.my.id` | Sekolah berkode `smknj` (guru, siswa, admin sekolah itu saja) |
+| `<kode>.sigmateknologi.my.id` | Sekolah baru langsung bisa dibuka setelah dibuat Super Admin |
+
+Kode sekolah = subdomain (huruf kecil, angka, tanda hubung). Kode `admin`, `www`, `api`, dll.
+dicadangkan. Di subdomain sekolah hanya anggota sekolah itu (dan Super Admin) yang bisa masuk;
+sekolah yang dinonaktifkan langsung tidak bisa dipakai, datanya tetap tersimpan.
+
+**1. DNS** — di pengelola domain (registrar atau Cloudflare), arahkan dua rekaman `A` ke IP server:
+
+```
+sigmateknologi.my.id     A   <IP server>
+*.sigmateknologi.my.id   A   <IP server>
+```
+
+Rekaman `*` (wildcard) membuat semua subdomain, termasuk sekolah yang baru dibuat, langsung
+mengarah ke server tanpa perlu menambah DNS lagi.
+
+**2. Nginx** — pakai konfigurasi bagian 4, cukup ganti `server_name` (titik di depan = semua
+subdomain). Pastikan `proxy_set_header Host $host;` tetap ada.
+
+```nginx
+server_name sigmateknologi.my.id .sigmateknologi.my.id;
+```
+
+**3. HTTPS wildcard** — sertifikat untuk `*.sigmateknologi.my.id` hanya bisa dibuat lewat
+verifikasi DNS:
+
+```bash
+sudo certbot certonly --manual --preferred-challenges dns \
+  -d sigmateknologi.my.id -d '*.sigmateknologi.my.id'
+```
+
+Certbot meminta Anda menambah rekaman `TXT` `_acme-challenge` di DNS. Cara manual ini harus
+diulang setiap ±90 hari; agar otomatis, pakai plugin DNS pengelola domain Anda (mis.
+`python3-certbot-dns-cloudflare` jika memakai Cloudflare). Lalu tambahkan di blok `server` Nginx:
+
+```nginx
+listen 443 ssl;
+ssl_certificate     /etc/letsencrypt/live/sigmateknologi.my.id/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/sigmateknologi.my.id/privkey.pem;
+```
+
+**4. `backend/.env`**
+
+```
+ALLOWED_HOSTS=sigmateknologi.my.id,.sigmateknologi.my.id
+CSRF_TRUSTED_ORIGINS=https://admin.sigmateknologi.my.id
+HTTPS=True
+```
+
+**5. `frontend/.env`** lalu `npm run build`:
+
+```
+VITE_API_URL=/api
+VITE_BASE_DOMAIN=sigmateknologi.my.id
+```
+
+Karena frontend dan API berada di alamat yang sama (`/api`), CORS tidak perlu diatur.
+
+**6. Akun Super Admin pertama:** `python manage.py createsuperuser` (otomatis berperan Super
+Admin), lalu masuk di `https://admin.sigmateknologi.my.id`.
+
+**Menambah sekolah pelanggan:** Daftar Sekolah → **Tambah Sekolah** → isi nama, kode (menjadi
+alamat), jenjang, dan (opsional) akun admin sekolah. Password admin yang dikosongkan dibuat
+otomatis dan **hanya ditampilkan sekali** beserta alamat sekolahnya; tombol **Salin** menyalin
+semuanya untuk dikirim ke sekolah.
+
+**Mencoba di laptop:** browser mengarahkan `*.localhost` ke komputer sendiri, jadi tidak perlu
+DNS. Isi `frontend/.env` dengan `VITE_BASE_DOMAIN=localhost` dan `backend/.env` dengan
+`CORS_ALLOWED_ORIGIN_REGEXES=^http://[a-z0-9-]+\.localhost:5173$`, jalankan ulang keduanya, lalu
+buka `http://admin.localhost:5173` (Super Admin) atau `http://smknj.localhost:5173` (sekolah).
+
 ## Catatan untuk Server Windows
 
 Gunicorn tidak berjalan di Windows. Gunakan **Waitress**:

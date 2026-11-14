@@ -22,7 +22,7 @@ class IsAdmin(HasRole):
 
 class IsFoundation(HasRole):
     allowed_roles = (Role.FOUNDATION,)
-    message = "Hanya admin yayasan yang dapat melakukan ini."
+    message = "Hanya Super Admin yang dapat melakukan ini."
 
 
 class IsTeacher(HasRole):

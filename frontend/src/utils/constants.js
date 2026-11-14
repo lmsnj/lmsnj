@@ -15,7 +15,7 @@ export const ROLES = {
 }
 
 export const ROLE_LABELS = {
-  [ROLES.FOUNDATION]: 'Admin Yayasan',
+  [ROLES.FOUNDATION]: 'Super Admin',
   [ROLES.ADMIN]: 'Admin',
   [ROLES.TEACHER]: 'Guru',
   [ROLES.STUDENT]: 'Siswa',

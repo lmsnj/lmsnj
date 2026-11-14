@@ -125,7 +125,7 @@ export default function BrandingPage() {
     setRemoveLogo(false)
     setNotice(
       isApp
-        ? 'Identitas yayasan disimpan dan langsung tampil di halaman login.'
+        ? 'Identitas aplikasi disimpan dan langsung tampil di halaman login.'
         : 'Identitas sekolah disimpan dan langsung tampil di semua halaman.',
     )
   })
@@ -142,10 +142,10 @@ export default function BrandingPage() {
   return (
     <>
       <PageHeader
-        title={isApp ? 'Identitas Yayasan' : 'Identitas Sekolah'}
+        title={isApp ? 'Identitas Aplikasi' : 'Identitas Sekolah'}
         description={
           isApp
-            ? 'Nama, slogan, dan logo yayasan tampil di halaman login; nama aplikasi menjadi judul tab. Logo yayasan juga dipakai sekolah yang belum mengunggah logo.'
+            ? 'Nama, slogan, dan logo aplikasi tampil di halaman login Super Admin; nama aplikasi menjadi judul tab. Logo ini juga dipakai sekolah yang belum mengunggah logo.'
             : 'Atur nama, slogan, dan logo sekolah ini. Tampil di header dan Beranda saat sekolah ini dibuka.'
         }
       />
@@ -192,7 +192,7 @@ export default function BrandingPage() {
                       }}
                     >
                       <RotateCcw className="size-4" aria-hidden="true" />{' '}
-                      {isApp ? 'Pakai Logo Bawaan' : 'Pakai Logo Yayasan'}
+                      {isApp ? 'Pakai Logo Bawaan' : 'Pakai Logo Aplikasi'}
                     </Button>
                   )}
                 </div>
@@ -207,7 +207,7 @@ export default function BrandingPage() {
                 )}
                 {removeLogo && (
                   <p className="text-xs text-amber-700">
-                    Logo akan kembali ke logo {isApp ? 'bawaan' : 'yayasan'} setelah disimpan.
+                    Logo akan kembali ke logo {isApp ? 'bawaan' : 'aplikasi'} setelah disimpan.
                   </p>
                 )}
                 {(fileError || errors.logo) && (
@@ -218,7 +218,7 @@ export default function BrandingPage() {
           </section>
 
           <TextField
-            label={isApp ? 'Nama yayasan' : 'Nama sekolah'}
+            label={isApp ? 'Nama aplikasi/pengelola' : 'Nama sekolah'}
             value={shown.school_name}
             onChange={(event) => update('school_name', event.target.value)}
             error={errors.school_name || errors.name}

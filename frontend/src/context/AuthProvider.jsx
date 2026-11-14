@@ -4,6 +4,7 @@ import {
   impersonatorStore,
   refreshAccessToken,
   schoolStore,
+  TENANT,
   setSessionExpiredHandler,
   tokenStore,
 } from '../api/client'
@@ -13,11 +14,12 @@ import { pickSchool } from '../utils/schools'
 import { AuthContext } from './auth-context'
 
 // Daftar sekolah yang boleh dibuka + sekolah aktif (yang tersimpan, atau sekolah pertama).
-// Admin yayasan tidak otomatis membuka sekolah: tanpa pilihan ia berada di "mode yayasan".
+// Super Admin tidak otomatis membuka sekolah: tanpa pilihan ia berada di "mode Super Admin".
+// Di subdomain sekolah backend hanya mengembalikan sekolah itu, dan sekolah itu langsung dibuka.
 async function loadSchools(user) {
   const schools = await schoolsApi.list()
   const school = pickSchool(schools, schoolStore.get(), {
-    firstAsDefault: user.role !== ROLES.FOUNDATION,
+    firstAsDefault: user.role !== ROLES.FOUNDATION || TENANT.mode === 'school',
   })
   if (school) schoolStore.set(school.id)
   else schoolStore.clear()

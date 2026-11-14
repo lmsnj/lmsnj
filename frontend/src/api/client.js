@@ -1,9 +1,14 @@
 import axios from 'axios'
+import { tenantFromHost } from '../utils/tenant'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
 const REFRESH_KEY = 'lms_refresh_token'
 const SCHOOL_KEY = 'lms_school'
 const IMPERSONATOR_KEY = 'lms_impersonator'
+
+// Alamat yang sedang dibuka: subdomain sekolah, alamat Super Admin, atau mode lama (lihat utils/tenant.js).
+export const BASE_DOMAIN = import.meta.env.VITE_BASE_DOMAIN ?? ''
+export const TENANT = tenantFromHost(window.location.hostname, BASE_DOMAIN)
 
 // Access token hanya disimpan di memori (hilang saat tab ditutup) agar lebih aman.
 // Refresh token disimpan di localStorage supaya pengguna tetap login setelah reload.
@@ -56,8 +61,13 @@ const api = axios.create({ baseURL: BASE_URL })
 
 api.interceptors.request.use((config) => {
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`
-  const school = schoolStore.get()
-  if (school) config.headers['X-School'] = school
+  // Di subdomain sekolah, sekolah aktif ditentukan backend dari kode sekolah (X-School-Code);
+  // di alamat lain dipakai pilihan "Ganti Sekolah" (X-School).
+  if (TENANT.mode === 'school') config.headers['X-School-Code'] = TENANT.code
+  else {
+    const school = schoolStore.get()
+    if (school) config.headers['X-School'] = school
+  }
   return config
 })
 

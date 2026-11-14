@@ -5,7 +5,7 @@ from django.db import models
 class Role(models.TextChoices):
     ADMIN = "admin", "Admin"
     # Admin yayasan: mengelola daftar sekolah dan bisa membuka sekolah mana pun sebagai admin.
-    FOUNDATION = "foundation", "Admin Yayasan"
+    FOUNDATION = "foundation", "Super Admin"
     TEACHER = "teacher", "Guru"
     STUDENT = "student", "Siswa"
 
@@ -86,7 +86,7 @@ class ImpersonationLog(models.Model):
     Username disalin agar catatan tetap terbaca walaupun akunnya kemudian dihapus."""
 
     impersonator = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="admin yayasan"
+        User, on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="super admin"
     )
     impersonator_username = models.CharField("username admin", max_length=150)
     target = models.ForeignKey(

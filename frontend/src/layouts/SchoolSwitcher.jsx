@@ -1,5 +1,6 @@
 import { ArrowLeftRight, Building2, Check, Settings } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { TENANT } from '../api/client'
 import Dropdown, { DropdownItem } from '../components/Dropdown'
 import useAuth from '../hooks/useAuth'
 import useBranding from '../hooks/useBranding'
@@ -30,6 +31,8 @@ export default function SchoolSwitcher() {
   const { app } = useBranding()
   const navigate = useNavigate()
   const isFoundation = user.role === ROLES.FOUNDATION
+  // Di subdomain sekolah sekolahnya terkunci; pindah sekolah = buka alamat sekolah lain.
+  if (TENANT.mode === 'school') return null
   if (schools.length < 2 && !isFoundation) return null
 
   const choose = (next, close) => {

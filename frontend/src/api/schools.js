@@ -6,7 +6,10 @@ export const schoolsApi = {
   list: () => api.get('/schools/').then((res) => res.data),
   // Admin yayasan: jumlah siswa, guru, kelas, materi, tugas per sekolah.
   summary: () => api.get('/schools/summary/').then((res) => res.data),
-  // { code, name, level, slogan, is_active, logo (File), remove_logo }
+  // Identitas sekolah dari kode subdomain, untuk halaman login (publik).
+  public: (code) => api.get('/schools/public/', { params: { code } }).then((res) => res.data),
+  // { code, name, level, slogan, is_active, logo (File), remove_logo,
+  //   admin_username, admin_full_name, admin_password } -> respons + `admin` (password sekali tampil)
   create: (data) => api.post('/schools/', requestBody(data)).then((res) => res.data),
   // Admin sekolah hanya bisa mengubah name, slogan, logo.
   update: (id, data) => api.patch(`/schools/${id}/`, requestBody(data)).then((res) => res.data),

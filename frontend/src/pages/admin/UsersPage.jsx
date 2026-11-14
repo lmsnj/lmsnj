@@ -66,7 +66,7 @@ function JoinUserModal({ onClose, onJoined }) {
       error={generalError}
     >
       <p className="text-sm text-slate-600">
-        Untuk guru atau admin yang sudah punya akun di sekolah lain dalam yayasan. Akunnya tetap
+        Untuk guru atau admin yang sudah punya akun di sekolah lain di aplikasi ini. Akunnya tetap
         satu (username & password sama); ia bisa berpindah sekolah lewat tombol “Ganti Sekolah”.
       </p>
       <TextField

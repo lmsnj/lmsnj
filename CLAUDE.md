@@ -60,7 +60,8 @@ lms-smknj/
 │   │   │                    #   interactive.py = soal interaktif; videos.py = streaming video soal
 │   │   ├── exams/           # Acara ujian, syarat & pengecualian kartu ujian; services.py = aturan syarat
 │   │   ├── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
-│   │   └── schools/         # Sekolah (multi-sekolah yayasan); context.py = sekolah aktif (header X-School)
+│   │   └── schools/         # Sekolah (multi-sekolah); context.py = sekolah aktif (header X-School / X-School-Code),
+│   │                        #   domains.py = aturan kode subdomain sekolah
 │   └── media/               # File upload (tidak di-commit, TIDAK disajikan publik)
 └── frontend/
     ├── index.html
@@ -105,7 +106,22 @@ Pola yang wajib dipakai ulang:
   mengecek keanggotaan (bukan anggota = 403), tanpa header = sekolah pertama milik user. Serializer data
   milik sekolah mewarisi `SchoolOwnedSerializer` (field `school` terisi otomatis, tidak bisa dipindah);
   impor Excel menitipkan sekolah lewat `context["school"]`. Test memakai `apps/common/testing.py::default_school`.
-- **Admin Yayasan** (`Role.FOUNDATION`, `createsuperuser` otomatis peran ini): tidak perlu terdaftar di sekolah,
+- **Subdomain per sekolah** (Fase 10, untuk dijual ke banyak sekolah; `apps/schools/domains.py`,
+  `frontend/src/utils/tenant.js`): dengan `VITE_BASE_DOMAIN=sigmateknologi.my.id`, frontend membaca
+  alamat browser — `<kode>.domain` = sekolah (mode `school`), `admin.domain`/`www`/domain dasar =
+  Super Admin (mode `platform`), alamat lain atau tanpa `VITE_BASE_DOMAIN` = mode lama (`single`,
+  pilih sekolah lewat "Ganti Sekolah"). Mode `school` mengirim header `X-School-Code: <kode>` (bukan
+  `X-School`); backend (`context.school_from_code`) menolak kode tidak dikenal (404) / sekolah
+  nonaktif (403), mengunci sekolah aktif ke sekolah itu (header `X-School` diabaikan), `/api/schools/`
+  hanya mengembalikan sekolah itu, dan login hanya untuk anggotanya + Super Admin. Kode sekolah wajib
+  sah sebagai label DNS (`validate_school_code`; `RESERVED_CODES` mis. admin/www/api) dan tidak bisa
+  diubah di form (alamat yang sudah dibagikan akan putus). Halaman login: identitas dari
+  `/api/schools/public/?code=` (`BrandingProvider` → `tenant`), pesan khusus untuk alamat tidak
+  dikenal/nonaktif; di mode `platform` akun non-Super Admin ditolak dan diberi tautan alamat
+  sekolahnya. Tambah Sekolah (`NewSchoolSerializer`) boleh sekaligus membuat akun admin pertama
+  (`admin_username`, `admin_full_name`, `admin_password` kosong = dibuat otomatis, dikembalikan
+  sekali di `admin.password`). Panduan server (DNS wildcard, Nginx, sertifikat wildcard): `docs/DEPLOY.md` bagian 9.
+- **Super Admin** (dulu "Admin Yayasan"; nilai peran tetap `foundation`/`Role.FOUNDATION`, `createsuperuser` otomatis peran ini): tidak perlu terdaftar di sekolah,
   bisa membuka semua sekolah aktif dan di sana bertindak sebagai admin (`IsAdmin` mencakup yayasan). Khusus
   yayasan (`IsFoundation`): tambah/hapus/nonaktifkan sekolah, ubah jenjang (dikunci jika tingkatnya beda dan
   sudah ada kelas), identitas aplikasi (`/api/branding/`), memberi peran Admin Yayasan, ringkasan lintas sekolah.
@@ -464,7 +480,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/auth/refresh/`              | Publik           |
 | POST   | `/api/auth/logout/`               | Login            |
 | GET    | `/api/auth/me/`                   | Login (berisi `schools`) |
-| CRUD   | `/api/schools/` (multipart `logo`, `remove_logo`) | Baca: sekolah yang boleh dibuka (yayasan: semua, termasuk nonaktif). Tambah/hapus: yayasan. Ubah: yayasan, atau admin sekolah (nama/slogan/logo sekolahnya) |
+| CRUD   | `/api/schools/` (multipart `logo`, `remove_logo`; tambah: + `admin_username`, `admin_full_name`, `admin_password` opsional) | Baca: sekolah yang boleh dibuka (yayasan: semua, termasuk nonaktif; di subdomain: hanya sekolah itu). Tambah/hapus: yayasan. Ubah: yayasan, atau admin sekolah (nama/slogan/logo sekolahnya) |
+| GET    | `/api/schools/public/?code=<kode>` | Publik: identitas sekolah untuk halaman login subdomain (404 jika kode tidak dikenal) |
 | GET    | `/api/schools/summary/`           | Admin Yayasan: jumlah siswa/guru/kelas/materi/tugas per sekolah |
 | GET    | `/api/schools/{id}/logo/`         | Publik           |
 | POST   | `/api/auth/change-password/`      | Login (ditolak 403 saat "masuk sebagai") |
@@ -550,6 +567,9 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] 8c: peran Admin Yayasan (kelola sekolah & admin sekolah, ringkasan lintas sekolah)
   - [x] 8d: frontend (pilihan sekolah, identitas per sekolah, halaman yayasan, pilihan tingkat per jenjang)
   - [x] 8e: seed_demo beberapa sekolah, README/DEPLOY
+- [x] Fase 10: Subdomain per sekolah untuk dijual ke banyak sekolah (`<kode>.sigmateknologi.my.id`,
+      Super Admin di `admin.`), peran "Admin Yayasan" berganti nama tampilan menjadi "Super Admin",
+      Tambah Sekolah sekaligus akun admin pertama
 - [x] Tambahan: impor pengguna dari Excel, tampilan baru, pengumuman, laporan nilai, sesi mengajar,
       ruang obrolan, lembar asesmen
 - [x] Soal interaktif (lihat `docs/REQUIREMENTS.md` QA-INT-00..04): isian singkat, tarik & lepas,

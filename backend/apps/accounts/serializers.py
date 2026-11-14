@@ -4,7 +4,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.academics.models import Classroom
-from apps.schools.context import active_school
+from apps.schools.context import active_school, school_from_code
 from apps.schools.serializers import SchoolSerializer
 
 from .models import Role, User
@@ -82,7 +82,7 @@ class UserWriteSerializer(serializers.ModelSerializer):
         role = attrs.get("role", getattr(self.instance, "role", None))
         request = self.context.get("request")
         if role == Role.FOUNDATION and not (request and request.user.is_foundation):
-            raise serializers.ValidationError({"role": "Hanya admin yayasan yang dapat memberi peran ini."})
+            raise serializers.ValidationError({"role": "Hanya Super Admin yang dapat memberi peran ini."})
         if role != Role.STUDENT:
             attrs["nis"] = None
             attrs["classroom"] = None
@@ -119,10 +119,18 @@ class UserWriteSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(TokenObtainPairSerializer):
-    """Respons login berisi token sekaligus data user, agar frontend tidak perlu request tambahan."""
+    """Respons login berisi token sekaligus data user, agar frontend tidak perlu request tambahan.
+
+    Di subdomain sekolah (header X-School-Code) hanya anggota sekolah itu (dan Super Admin) yang
+    boleh masuk, agar akun sekolah lain tidak tersesat ke alamat yang salah."""
 
     def validate(self, attrs):
+        school = school_from_code(self.context["request"])  # alamat tidak dikenal/nonaktif ditolak
         data = super().validate(attrs)
+        if school and not (self.user.is_foundation or self.user.schools.filter(pk=school.pk).exists()):
+            raise serializers.ValidationError(
+                {"detail": f"Akun ini tidak terdaftar di {school.name}. Masuk lewat alamat sekolah Anda."}
+            )
         data["user"] = UserSerializer(self.user).data
         return data
 

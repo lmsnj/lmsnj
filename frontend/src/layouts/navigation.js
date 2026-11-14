@@ -69,7 +69,7 @@ const FOUNDATION_HOME = {
     IMPERSONATE,
     CHAT,
   ],
-  more: [{ ...IDENTITY, label: 'Identitas Yayasan' }, PROFILE],
+  more: [{ ...IDENTITY, label: 'Identitas Aplikasi' }, PROFILE],
 }
 
 /** Menu untuk user ini. `school` = sekolah yang sedang dibuka (null = mode yayasan). */

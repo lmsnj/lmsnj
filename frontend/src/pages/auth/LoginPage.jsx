@@ -14,14 +14,16 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { BASE_DOMAIN, TENANT } from '../../api/client'
 import Alert from '../../components/Alert'
 import SchoolLogo from '../../components/brand/SchoolLogo'
 import Button from '../../components/Button'
 import { FullPageSpinner } from '../../components/Spinner'
 import useAuth from '../../hooks/useAuth'
 import useBranding from '../../hooks/useBranding'
-import { ROLE_HOME } from '../../utils/constants'
+import { ROLE_HOME, ROLES } from '../../utils/constants'
 import { getErrorMessage } from '../../utils/errors'
+import { schoolAddress } from '../../utils/tenant'
 
 const FEATURES = [
   { icon: BookOpen, title: 'Materi Pembelajaran', text: 'Modul, video, dan tautan dari guru' },
@@ -36,6 +38,30 @@ const DECORATIONS = [
   { icon: Trophy, className: 'bottom-28 right-16 -rotate-6 bg-orange-400' },
   { icon: GraduationCap, className: 'top-1/2 right-4 rotate-6 bg-sky-500' },
 ]
+
+// Alamat sekolah untuk ditampilkan/ditautkan, mengikuti protokol & port alamat yang sedang dibuka.
+function addressOf(code) {
+  return schoolAddress(code, BASE_DOMAIN, {
+    protocol: window.location.protocol,
+    port: window.location.port,
+  })
+}
+
+// Pesan pengganti formulir jika subdomain tidak terdaftar atau sekolahnya dinonaktifkan.
+function TenantProblem({ status }) {
+  return (
+    <div className="mt-6 space-y-3 text-sm text-slate-600">
+      <Alert type="error">
+        {status === 'inactive'
+          ? 'Sekolah ini sedang tidak aktif, jadi belum bisa dipakai untuk masuk.'
+          : `Alamat sekolah “${TENANT.code}” tidak terdaftar.`}
+      </Alert>
+      <p>
+        Periksa kembali alamat yang Anda ketik, atau hubungi admin sekolah / pengelola aplikasi.
+      </p>
+    </div>
+  )
+}
 
 function InputWithIcon({ icon: Icon, label, id, trailing, ...props }) {
   return (
@@ -57,8 +83,8 @@ function InputWithIcon({ icon: Icon, label, id, trailing, ...props }) {
 }
 
 export default function LoginPage() {
-  const { user, initializing, login } = useAuth()
-  const { branding } = useBranding()
+  const { user, initializing, login, logout } = useAuth()
+  const { branding, tenant } = useBranding()
   const navigate = useNavigate()
   const location = useLocation()
   const [form, setForm] = useState({ username: '', password: '' })
@@ -77,6 +103,22 @@ export default function LoginPage() {
     setSubmitting(true)
     try {
       const loggedIn = await login(form.username.trim(), form.password)
+      // Alamat Super Admin khusus Super Admin; akun sekolah diarahkan ke alamat sekolahnya.
+      if (TENANT.mode === 'platform' && loggedIn.role !== ROLES.FOUNDATION) {
+        await logout()
+        const links = loggedIn.schools.filter((s) => s.is_active !== false)
+        setError(
+          <>
+            Halaman ini khusus Super Admin. Silakan masuk lewat alamat sekolah Anda:
+            {links.map((s) => (
+              <a key={s.id} href={addressOf(s.code)} className="mt-1 block font-semibold underline">
+                {addressOf(s.code)?.replace(/^https?:\/\//, '')} ({s.name})
+              </a>
+            ))}
+          </>,
+        )
+        return
+      }
       // Kembali ke halaman yang tadi dituju, jika ada.
       const from = location.state?.from?.pathname
       navigate(from ?? ROLE_HOME[loggedIn.role], { replace: true })
@@ -170,55 +212,73 @@ export default function LoginPage() {
           </span>
           <h2 className="mt-4 text-2xl font-extrabold text-slate-900">Selamat datang 👋</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Masuk ke <strong className="text-slate-700">{branding.app_name}</strong> dengan akun
-            dari sekolah Anda.
+            {TENANT.mode === 'platform' ? (
+              <>
+                Halaman masuk <strong className="text-slate-700">Super Admin</strong>{' '}
+                {branding.app_name}.
+              </>
+            ) : (
+              <>
+                Masuk ke <strong className="text-slate-700">{branding.app_name}</strong> dengan akun
+                dari sekolah Anda.
+              </>
+            )}
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <Alert type="error">{error}</Alert>
-            <InputWithIcon
-              icon={UserRound}
-              label="Username"
-              id="username"
-              name="username"
-              autoComplete="username"
-              placeholder="Username atau NIS"
-              value={form.username}
-              onChange={handleChange}
-              required
-              autoFocus
-            />
-            <InputWithIcon
-              icon={LockKeyhole}
-              label="Password"
-              id="password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              placeholder="Password"
-              value={form.password}
-              onChange={handleChange}
-              required
-              trailing={
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((shown) => !shown)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                  aria-pressed={showPassword}
-                >
-                  {showPassword ? (
-                    <EyeOff className="size-5" aria-hidden="true" />
-                  ) : (
-                    <Eye className="size-5" aria-hidden="true" />
-                  )}
-                </button>
-              }
-            />
-            <Button type="submit" loading={submitting} className="w-full">
-              Masuk
-            </Button>
-          </form>
+          {['unknown', 'inactive'].includes(tenant.status) ? (
+            <TenantProblem status={tenant.status} />
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <Alert type="error">{error}</Alert>
+              <InputWithIcon
+                icon={UserRound}
+                label="Username"
+                id="username"
+                name="username"
+                autoComplete="username"
+                placeholder="Username atau NIS"
+                value={form.username}
+                onChange={handleChange}
+                required
+                autoFocus
+              />
+              <InputWithIcon
+                icon={LockKeyhole}
+                label="Password"
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="Password"
+                value={form.password}
+                onChange={handleChange}
+                required
+                trailing={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((shown) => !shown)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-5" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-5" aria-hidden="true" />
+                    )}
+                  </button>
+                }
+              />
+              <Button
+                type="submit"
+                loading={submitting}
+                disabled={tenant.status === 'loading'}
+                className="w-full"
+              >
+                Masuk
+              </Button>
+            </form>
+          )}
 
           <p className="mt-6 rounded-xl bg-slate-50 p-3 text-center text-xs text-slate-500 ring-1 ring-slate-100">
             Lupa password? Hubungi <strong className="text-slate-700">admin sekolah</strong> untuk

@@ -113,7 +113,7 @@ class ImpersonationView(generics.ListAPIView):
     def post(self, request):
         # Dari akun yang sedang dimasuki tidak bisa masuk lagi ke akun lain (harus kembali dulu).
         if impersonator_id(request):
-            raise PermissionDenied("Kembali ke akun admin yayasan terlebih dahulu.")
+            raise PermissionDenied("Kembali ke akun Super Admin terlebih dahulu.")
         try:
             target = self.get_queryset().get(pk=int(request.data.get("user")))
         except (TypeError, ValueError, User.DoesNotExist):
@@ -203,7 +203,7 @@ class UserViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         if user.role == Role.STUDENT:
             raise ValidationError({"username": "Siswa hanya boleh terdaftar di satu sekolah."})
         if user.role == Role.FOUNDATION:
-            raise ValidationError({"username": "Admin yayasan sudah bisa membuka semua sekolah."})
+            raise ValidationError({"username": "Super Admin sudah bisa membuka semua sekolah."})
         if user.schools.filter(pk=school.pk).exists():
             raise ValidationError({"username": f"{user.full_name} sudah terdaftar di sekolah ini."})
         user.schools.add(school)

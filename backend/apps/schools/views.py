@@ -4,6 +4,7 @@ from datetime import timedelta
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -17,9 +18,14 @@ from apps.common.mixins import ProtectedDeleteMixin
 from apps.materials.models import Material
 from apps.tasks.models import Submission, Task
 
-from .context import schools_for
+from .context import school_from_code, schools_for
 from .models import School
-from .serializers import SchoolIdentitySerializer, SchoolSerializer
+from .serializers import (
+    NewSchoolSerializer,
+    PublicSchoolSerializer,
+    SchoolIdentitySerializer,
+    SchoolSerializer,
+)
 
 
 class SchoolViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
@@ -38,17 +44,23 @@ class SchoolViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             return [IsFoundation()]
         if self.action in ("update", "partial_update"):
             return [IsAdmin()]
-        if self.action == "logo":
+        if self.action in ("logo", "public"):
             return [AllowAny()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        # Admin yayasan juga perlu melihat sekolah nonaktif untuk mengaktifkannya kembali.
+        # Dibuka lewat subdomain sekolah: hanya sekolah itu (tidak bisa pindah ke sekolah lain).
+        by_code = school_from_code(self.request)
+        if by_code is not None:
+            return schools_for(self.request.user).filter(pk=by_code.pk)
+        # Super Admin juga perlu melihat sekolah nonaktif untuk mengaktifkannya kembali.
         if self.request.user.is_authenticated and self.request.user.is_foundation:
             return School.objects.all()
         return schools_for(self.request.user)
 
     def get_serializer_class(self):
+        if self.action == "create":
+            return NewSchoolSerializer
         if self.request.user.is_authenticated and self.request.user.is_foundation:
             return SchoolSerializer
         return SchoolIdentitySerializer
@@ -68,6 +80,17 @@ class SchoolViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         response["Cache-Control"] = "public, max-age=31536000, immutable"
         response["X-Content-Type-Options"] = "nosniff"
         return response
+
+    @action(detail=False)
+    def public(self, request):
+        """Identitas sekolah dari kode subdomain (`?code=smknj`) untuk halaman login sekolah.
+        Publik; sekolah nonaktif tetap dikembalikan (is_active=false) agar halaman login bisa
+        menampilkan pesan yang jelas."""
+        code = request.query_params.get("code", "").strip().lower()
+        school = School.objects.filter(code=code).first() if code else None
+        if school is None:
+            raise NotFound("Alamat sekolah tidak dikenal.")
+        return Response(PublicSchoolSerializer(school).data)
 
     @action(detail=False)
     def summary(self, request):
