@@ -50,11 +50,29 @@ export function toggleObjective(checked, index) {
 }
 
 /**
+ * Keadaan Latihan Pemahaman satu materi bagi siswa: { count, passed, ready, blocked }.
+ * ready = semua konten sudah dibuka (latihan boleh dikerjakan). blocked = Cerita Reflektif belum
+ * boleh ditulis karena latihan belum lulus. Aturannya di backend (views.practice / reflection).
+ */
+export function practiceState(material) {
+  const count = material.practice_count ?? 0
+  const progress = material.progress
+  const opened = progress?.checks?.find((check) => check.key === 'opened')
+  const passed = Boolean(progress?.practice_passed)
+  return {
+    count,
+    passed,
+    ready: Boolean(opened?.done),
+    blocked: count > 0 && !passed,
+  }
+}
+
+/**
  * Daftar aktivitas satu materi (tampilan modul siswa), urut seperti langkah belajar:
- * isi materi (konten utama + konten tambahan) -> capaian (Latihan Pemahaman jika berkuis) -> tugas ->
- * asesmen -> pengesahan guru. Cerita reflektif ditampilkan terpisah.
- * Setiap item: { key, kind, label, done, type?, contentItem?, index?, quizCount? }; untuk isi materi
- * `contentItem` = konten tambahan (null = konten utama materi).
+ * isi materi (konten utama + konten tambahan) -> Latihan Pemahaman -> capaian (uji capaian jika
+ * berkuis) -> tugas -> asesmen -> pengesahan guru. Cerita reflektif ditampilkan terpisah.
+ * Setiap item: { key, kind, label, done, type?, contentItem?, index?, quizCount?, ready? }; untuk isi
+ * materi `contentItem` = konten tambahan (null = konten utama materi).
  */
 export function moduleActivities(material) {
   const progress = material.progress
@@ -81,12 +99,23 @@ export function moduleActivities(material) {
       done: openedItems.includes(contentItem.id),
     })
   }
+  const practice = practiceState(material)
+  if (practice.count) {
+    items.push({
+      key: 'practice',
+      kind: 'practice',
+      label: 'Latihan Pemahaman',
+      quizCount: practice.count,
+      ready: practice.ready,
+      done: practice.passed,
+    })
+  }
   ;(material.objectives ?? []).forEach((text, index) => {
     const quizCount = quizCounts[index] ?? 0
     items.push({
       key: `objective-${index}`,
       kind: quizCount ? 'quiz' : 'objective',
-      label: quizCount ? `Latihan Pemahaman: ${text}` : text,
+      label: quizCount ? `Uji capaian: ${text}` : text,
       index,
       quizCount,
       done: checked.includes(index),

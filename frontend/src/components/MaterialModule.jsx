@@ -11,6 +11,7 @@ import {
   Lock,
   PencilLine,
   PlayCircle,
+  Target,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -20,6 +21,7 @@ import {
   countChecks,
   defaultModuleId,
   moduleActivities,
+  practiceState,
   progressStatus,
   toggleObjective,
 } from '../utils/learningPath'
@@ -27,13 +29,15 @@ import Alert from './Alert'
 import Badge from './Badge'
 import MaterialViewer from './MaterialViewer'
 import ObjectiveQuiz from './ObjectiveQuiz'
+import PracticeQuiz from './PracticeQuiz'
 import ProgressBar from './ProgressBar'
 import ReflectionBox from './ReflectionBox'
 
 const CONTENT_ICONS = { video: PlayCircle, pdf: FileText, link: Link2 }
 const TYPE_LABELS = { video: 'Video', pdf: 'PDF', link: 'Link' }
 const KIND_ICONS = {
-  quiz: PencilLine,
+  practice: PencilLine,
+  quiz: Target,
   objective: ListChecks,
   task: ClipboardList,
   assessment: ClipboardCheck,
@@ -129,7 +133,7 @@ function ActivityRow({ done, icon: Icon, children }) {
 
 const linkClass = 'text-left font-medium text-brand-700 hover:underline'
 
-function ActivityList({ material, onChange, onOpenContent }) {
+function ActivityList({ material, onChange, onOpenContent, onOpenPractice }) {
   const [quizOpen, setQuizOpen] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -163,6 +167,23 @@ function ActivityList({ material, onChange, onOpenContent }) {
                   {item.label}
                 </button>
                 <span className="ml-1 text-xs text-slate-500">({TYPE_LABELS[item.type]})</span>
+              </ActivityRow>
+            )
+          }
+          if (item.kind === 'practice') {
+            return (
+              <ActivityRow key={item.key} done={item.done} icon={KIND_ICONS.practice}>
+                {item.ready ? (
+                  <button type="button" onClick={onOpenPractice} className={linkClass}>
+                    {item.label}
+                  </button>
+                ) : (
+                  <span className="font-medium text-slate-500">{item.label}</span>
+                )}
+                <span className="ml-1 text-xs text-slate-500">
+                  ({item.quizCount} soal
+                  {item.done ? ', lulus' : item.ready ? '' : ', buka semua konten dulu'})
+                </span>
               </ActivityRow>
             )
           }
@@ -252,6 +273,8 @@ function ActivityList({ material, onChange, onOpenContent }) {
 function ModuleDetail({ material, next, onChange, onSelect }) {
   // null = penampil tertutup; { itemId } = konten yang dibuka (itemId null = konten utama).
   const [viewing, setViewing] = useState(null)
+  const [practicing, setPracticing] = useState(false)
+  const practice = practiceState(material)
   const progress = material.progress
   const { done, total } = countChecks(progress.checks)
   const reflectionCheck = progress.checks.find((check) => check.key === 'reflection')
@@ -310,6 +333,7 @@ function ModuleDetail({ material, next, onChange, onSelect }) {
                 material={material}
                 onChange={onChange}
                 onOpenContent={(itemId) => setViewing({ itemId })}
+                onOpenPractice={() => setPracticing(true)}
               />
             </div>
           </div>
@@ -323,8 +347,14 @@ function ModuleDetail({ material, next, onChange, onSelect }) {
             <div className="mt-2 flex items-start gap-3">
               <DoneIcon done={Boolean(progress.reflection)} className="mt-7" />
               <div className="min-w-0 flex-1">
-                {/* key: isi kotak diatur ulang saat pindah materi. */}
-                <ReflectionBox key={material.id} material={material} onSaved={onChange} />
+                {practice.blocked && !progress.reflection ? (
+                  <p className="mt-6 rounded-lg bg-slate-100 p-4 text-sm text-slate-500">
+                    Cerita reflektif bisa ditulis setelah Latihan Pemahaman dijawab benar semua.
+                  </p>
+                ) : (
+                  // key: isi kotak diatur ulang saat pindah materi.
+                  <ReflectionBox key={material.id} material={material} onSaved={onChange} />
+                )}
               </div>
             </div>
             {reflectionCheck && !reflectionCheck.done && (
@@ -351,6 +381,13 @@ function ModuleDetail({ material, next, onChange, onSelect }) {
         </section>
       )}
 
+      {practicing && (
+        <PracticeQuiz
+          material={material}
+          onPassed={onChange}
+          onClose={() => setPracticing(false)}
+        />
+      )}
       {viewing && (
         <MaterialViewer
           material={material}

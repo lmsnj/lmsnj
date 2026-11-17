@@ -47,6 +47,23 @@ export const materialsApi = {
     form.append('dry_run', dryRun ? 'true' : 'false')
     return api.post(`/materials/${id}/objective-quiz-import/`, form).then((res) => res.data)
   },
+  // Latihan Pemahaman satu materi: soal (tanpa kunci), periksa jawaban { id_soal: jawaban },
+  // simpan rancangan (guru; [] = hapus), dan impor dari Excel (template berisi soal yang ada).
+  practice: (id) => api.get(`/materials/${id}/practice/`).then((res) => res.data),
+  submitPractice: (id, answers) =>
+    api.post(`/materials/${id}/practice/`, { answers }).then((res) => res.data),
+  setPractice: (id, items) =>
+    api.put(`/materials/${id}/practice/`, { items }).then((res) => res.data),
+  practiceTemplate: (id) =>
+    api
+      .get(`/materials/${id}/practice-template/`, { responseType: 'blob' })
+      .then((res) => res.data),
+  importPractice: (id, file, dryRun) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('dry_run', dryRun ? 'true' : 'false')
+    return api.post(`/materials/${id}/practice-import/`, form).then((res) => res.data)
+  },
   reorder: (teachingAssignment, materialIds) =>
     api
       .post('/materials/reorder/', {

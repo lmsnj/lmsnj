@@ -5,7 +5,10 @@ untuk menambah maupun mengubah soal. Pola sama dengan impor lain: Periksa (tidak
 Impor jika SEMUA baris benar. Capaian yang muncul di file diganti seluruh soalnya; capaian yang
 tidak ada di file tidak berubah.
 
-Kolom: No Capaian, Jenis (pg / isian / seret / jodohkan), Pertanyaan, Kalimat [[...]] (isian/seret),
+Latihan Pemahaman (satu per materi) memakai format yang sama tanpa kolom No Capaian; isi file
+menggantikan seluruh soal latihan.
+
+Kolom: No Capaian (khusus kuis capaian), Jenis (pg / isian / seret / jodohkan), Pertanyaan, Kalimat [[...]] (isian/seret),
 Pilihan A-E, Kunci (huruf, khusus pg), Pembahasan.
 """
 
@@ -16,7 +19,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.common.excel import Column, build_template, cell_text, read_rows
 
-from .objective_quiz import MAX_QUESTIONS, build_quiz, quiz_for
+from .objective_quiz import MAX_QUESTIONS, PRACTICE_MAX_QUESTIONS, build_quiz, quiz_for
 
 SHEET = "Kuis"
 LETTERS = "ABCDE"
@@ -29,10 +32,12 @@ TEXT_TO_KIND = {
 }  # fmt: skip
 
 
-def columns_for(material):
-    numbers = [str(i) for i in range(1, len(material.objectives) + 1)]
+PRACTICE_SHEET = "Latihan"
+
+
+def question_columns():
+    """Kolom soal (sama untuk kuis capaian & Latihan Pemahaman)."""
     return [
-        Column("objective", "No Capaian", required=True, width=12, choices=numbers),
         Column("kind", "Jenis", required=True, width=12, choices=["pg", "isian", "seret", "jodohkan"]),
         Column("text", "Pertanyaan", width=50, text=True),
         Column("template", "Kalimat [[...]]", width=50, text=True),
@@ -40,6 +45,11 @@ def columns_for(material):
         Column("key", "Kunci", width=8, text=True),
         Column("explanation", "Pembahasan", width=40, text=True),
     ]
+
+
+def columns_for(material):
+    numbers = [str(i) for i in range(1, len(material.objectives) + 1)]
+    return [Column("objective", "No Capaian", required=True, width=12, choices=numbers), *question_columns()]
 
 
 def item_to_row(number, item):
@@ -71,11 +81,7 @@ def build_quiz_template(material):
         "Satu baris = satu soal. No Capaian = nomor capaian materi (lihat daftar di bawah).",
         f"Setiap capaian berisi 1-{MAX_QUESTIONS} soal. Capaian yang ada di file DIGANTI seluruh soalnya;",
         "capaian yang tidak ada di file tidak berubah. File ini sudah berisi kuis yang ada (jika ada).",
-        "pg       : Pertanyaan + Pilihan A-E (minimal 2) + Kunci huruf, mis. B.",
-        "isian    : Kalimat berisi jawaban dalam [[...]]; jawaban lain yang benar dipisah |,",
-        "           mis. Hasil 17 % 5 adalah [[2]]. Pertanyaan = petunjuk (boleh kosong).",
-        "seret    : Kalimat berisi [[jawaban]] (satu per celah); Pilihan A-E = pengecoh (boleh kosong).",
-        "jodohkan : Pertanyaan + Pilihan A-E berisi pasangan 'kiri = kanan'; pengecoh kanan ditulis '= teks'.",
+        *KIND_GUIDE,
         "Pembahasan tampil ke siswa setelah semua soal capaian itu dijawab benar.",
         "",
         "Daftar capaian materi ini:",
@@ -91,17 +97,88 @@ def build_quiz_template(material):
     content = build_template(
         SHEET, columns_for(material), f"Kuis Capaian - {material.title}", guide, examples, max_rows=200
     )
+    return fill_rows(content, SHEET, rows)
+
+
+def fill_rows(content, sheet_name, rows):
+    """Isi lembar soal template dengan soal yang sudah ada (agar bisa langsung diubah)."""
     if not rows:
         return content
-    # Isi lembar Kuis dengan soal yang sudah ada.
     workbook = load_workbook(io.BytesIO(content))
-    sheet = workbook[SHEET]
+    sheet = workbook[sheet_name]
     for row_number, values in enumerate(rows, start=2):
         for column, value in enumerate(values, start=1):
             sheet.cell(row=row_number, column=column, value=value or None)
     buffer = io.BytesIO()
     workbook.save(buffer)
     return buffer.getvalue()
+
+
+KIND_GUIDE = [
+    "pg       : Pertanyaan + Pilihan A-E (minimal 2) + Kunci huruf, mis. B.",
+    "isian    : Kalimat berisi jawaban dalam [[...]]; jawaban lain yang benar dipisah |,",
+    "           mis. Hasil 17 % 5 adalah [[2]]. Pertanyaan = petunjuk (boleh kosong).",
+    "seret    : Kalimat berisi [[jawaban]] (satu per celah); Pilihan A-E = pengecoh (boleh kosong).",
+    "jodohkan : Pertanyaan + Pilihan A-E berisi pasangan 'kiri = kanan'; pengecoh kanan ditulis '= teks'.",
+]
+
+
+def build_practice_template(material):
+    """Template Latihan Pemahaman, sudah berisi soal latihan yang ada."""
+    spec = (material.practice_quiz or {}).get("spec", [])
+    rows = [item_to_row(0, item)[1:] for item in spec]
+    guide = [
+        f"Satu baris = satu soal, ditampilkan ke siswa satu per layar sesuai urutan baris (1-{PRACTICE_MAX_QUESTIONS} soal).",
+        "Isi file ini MENGGANTI seluruh soal Latihan Pemahaman materi ini. File ini sudah berisi soal yang ada.",
+        *KIND_GUIDE,
+        "Siswa harus menjawab benar semua (boleh mengulang); pembahasan tampil setelah lulus.",
+    ]
+    examples = [
+        ["pg", "2 + 3 = ...", "", "4", "5", "6", "", "", "B", "Dua tambah tiga sama dengan lima."],
+        ["isian", "Lengkapi kalimat berikut.", "Ibu kota Indonesia adalah [[Jakarta]].", "", "", "", "", "", "", ""],
+    ]  # fmt: skip
+    content = build_template(
+        PRACTICE_SHEET,
+        question_columns(),
+        f"Latihan Pemahaman - {material.title}",
+        guide,
+        examples,
+        max_rows=PRACTICE_MAX_QUESTIONS * 2,
+    )
+    return fill_rows(content, PRACTICE_SHEET, rows)
+
+
+def check_practice_file(file):
+    """Baca & periksa file Latihan Pemahaman. Mengembalikan (baris pratinjau, [rancangan soal])."""
+    rows = read_rows(file, PRACTICE_SHEET, question_columns(), max_rows=PRACTICE_MAX_QUESTIONS)
+    preview, items = [], []
+    for row in rows:
+        data = row["data"]
+        item, errors = row_to_item(data)
+        if item and not errors:
+            errors += _build_errors(item)
+        if not errors:
+            items.append(item)
+        preview.append(
+            {
+                "row": row["row"],
+                "kind": data["kind"],
+                "text": data["text"] or data["template"],
+                "errors": errors,
+            }
+        )
+    return preview, items
+
+
+def _build_errors(item):
+    """Periksa satu soal dengan aturan yang sama dengan penyimpanan; daftar pesan error."""
+    try:
+        build_quiz([item])
+    except ValidationError as error:
+        detail = error.detail
+        message = detail.get("quizzes") if isinstance(detail, dict) else detail
+        return [str(message).replace("Soal nomor 1: ", "")]
+    return []
 
 
 def row_to_item(data):
@@ -155,12 +232,7 @@ def check_file(file, material):
         item, item_errors = row_to_item(data)
         errors += item_errors
         if item and not item_errors:
-            try:
-                build_quiz([item])  # periksa satu soal dengan aturan yang sama dengan penyimpanan
-            except ValidationError as error:
-                detail = error.detail
-                message = detail.get("quizzes") if isinstance(detail, dict) else detail
-                errors.append(str(message).replace("Soal nomor 1: ", ""))
+            errors += _build_errors(item)
         if not errors and index >= 0:
             grouped.setdefault(index, []).append(item)
         preview.append(

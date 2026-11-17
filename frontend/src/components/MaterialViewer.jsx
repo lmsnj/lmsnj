@@ -3,12 +3,13 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { materialItemsApi, materialsApi } from '../api/materials'
 import { getErrorMessage } from '../utils/errors'
-import { countChecks, toggleObjective } from '../utils/learningPath'
+import { countChecks, practiceState, toggleObjective } from '../utils/learningPath'
 import { saveBlob, youtubeEmbedUrl } from '../utils/media'
 import Alert from './Alert'
 import Button from './Button'
 import Modal from './Modal'
 import ObjectiveQuiz from './ObjectiveQuiz'
+import PracticeQuiz from './PracticeQuiz'
 import ReflectionBox from './ReflectionBox'
 import Spinner from './Spinner'
 
@@ -179,7 +180,9 @@ function checkLink(material, check) {
 // Syarat capaian versi guru (tanpa progres): daftar capaian & syarat yang dipilih.
 function TeacherRequirements({ material }) {
   const [preview, setPreview] = useState(null)
+  const [practicing, setPracticing] = useState(false)
   const quizCounts = material.objective_quiz ?? []
+  const practiceCount = material.practice_count ?? 0
   const items = []
   if (material.required_task_title) {
     items.push(
@@ -193,12 +196,27 @@ function TeacherRequirements({ material }) {
   }
   if (material.require_reflection) items.push('Menulis cerita reflektif')
   if (material.require_teacher_approval) items.push('Disahkan guru')
-  if (!material.objectives?.length && !items.length) return null
+  if (!material.objectives?.length && !items.length && !practiceCount) return null
   return (
     <section className="rounded-xl bg-sky-50 p-4 ring-1 ring-sky-200">
       <h3 className="flex items-center gap-2 text-sm font-semibold text-sky-900">
         <Target className="size-4" aria-hidden="true" /> Capaian & syarat lanjut
       </h3>
+      {practiceCount > 0 && (
+        <p className="mt-2 text-sm text-slate-700">
+          Latihan Pemahaman {practiceCount} soal (harus benar semua){' '}
+          <button
+            type="button"
+            onClick={() => setPracticing(true)}
+            className="ml-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-800 hover:bg-sky-200"
+          >
+            Coba
+          </button>
+        </p>
+      )}
+      {practicing && (
+        <PracticeQuiz material={material} preview onClose={() => setPracticing(false)} />
+      )}
       {material.objectives?.length > 0 && (
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-700">
           {material.objectives.map((text, index) => (
@@ -244,8 +262,10 @@ function LearningPanel({ material, onChange }) {
   const [saving, setSaving] = useState(null)
   const [error, setError] = useState('')
   const [quizOpen, setQuizOpen] = useState(null)
+  const [practicing, setPracticing] = useState(false)
   const quizCounts = material.objective_quiz ?? []
   const { done, total } = countChecks(progress.checks)
+  const practice = practiceState(material)
 
   const toggle = async (index) => {
     setSaving(index)
@@ -357,6 +377,19 @@ function LearningPanel({ material, onChange }) {
                   Kerjakan
                 </Link>
               )}
+              {check.key === 'practice' &&
+                !check.done &&
+                (practice.ready ? (
+                  <button
+                    type="button"
+                    onClick={() => setPracticing(true)}
+                    className="text-xs font-medium text-brand-700 underline"
+                  >
+                    Kerjakan
+                  </button>
+                ) : (
+                  <span className="text-xs text-slate-500">(buka semua konten dulu)</span>
+                ))}
             </li>
           )
         })}
@@ -367,8 +400,21 @@ function LearningPanel({ material, onChange }) {
         </p>
       )}
       <div className="mt-3 rounded-lg bg-white p-3 ring-1 ring-slate-200">
-        <ReflectionBox material={material} onSaved={onChange} />
+        {practice.blocked && !progress.reflection ? (
+          <p className="text-sm text-slate-500">
+            Cerita reflektif bisa ditulis setelah Latihan Pemahaman dijawab benar semua.
+          </p>
+        ) : (
+          <ReflectionBox material={material} onSaved={onChange} />
+        )}
       </div>
+      {practicing && (
+        <PracticeQuiz
+          material={material}
+          onPassed={onChange}
+          onClose={() => setPracticing(false)}
+        />
+      )}
     </section>
   )
 }

@@ -6,6 +6,7 @@ import {
   moveItem,
   parseObjectives,
   pathSummary,
+  practiceState,
   progressStatus,
   toggleObjective,
 } from './learningPath.js'
@@ -73,7 +74,7 @@ test('aktivitas modul materi', () => {
       ['approval', false],
     ],
   )
-  assert.equal(items[1].label, 'Latihan Pemahaman: Menyebut tag')
+  assert.equal(items[1].label, 'Uji capaian: Menyebut tag')
   assert.equal(items[1].quizCount, 3)
   // Guru (tanpa progres): hanya isi materi + capaian.
   assert.equal(moduleActivities({ material_type: 'pdf', objectives: [] }).length, 1)
@@ -101,6 +102,35 @@ test('aktivitas: konten tambahan tampil setelah konten utama', () => {
   )
   assert.equal(items[0].contentItem, null)
   assert.equal(items[1].contentItem.id, 7)
+})
+
+test('Latihan Pemahaman: setelah konten, sebelum capaian; refleksi menunggu lulus', () => {
+  const material = {
+    title: 'Pengantar',
+    material_type: 'video',
+    practice_count: 2,
+    objectives: ['Menyebut tag'],
+    progress: {
+      opened: true,
+      opened_items: [],
+      practice_passed: false,
+      checked_objectives: [],
+      checks: [{ key: 'opened', done: true }],
+    },
+  }
+  const items = moduleActivities(material)
+  assert.deepEqual(
+    items.map((item) => item.kind),
+    ['content', 'practice', 'objective'],
+  )
+  assert.equal(items[1].ready, true)
+  assert.deepEqual(practiceState(material), { count: 2, passed: false, ready: true, blocked: true })
+  material.progress.checks[0].done = false
+  assert.equal(practiceState(material).ready, false)
+  material.progress.practice_passed = true
+  assert.equal(practiceState(material).blocked, false)
+  // Tanpa latihan: tidak ada baris latihan dan refleksi tidak tertahan.
+  assert.equal(practiceState({ progress: null }).blocked, false)
 })
 
 test('materi pertama yang dibuka di tampilan modul', () => {

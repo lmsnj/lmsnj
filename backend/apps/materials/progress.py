@@ -3,7 +3,8 @@
 - Materi di satu kelas-mapel diurutkan (`order`). Materi ke-N terbuka setelah capaian SEMUA materi
   sebelumnya terpenuhi; materi pertama selalu terbuka. Hanya materi terbit yang dihitung.
 - Capaian satu materi terpenuhi jika semua syarat yang dipilih guru terpenuhi:
-  dibuka siswa (selalu; jika ada konten tambahan, SEMUA kontennya), semua capaian dicentang (jika ada daftar capaian), tugas terkumpul / nilai
+  dibuka siswa (selalu; jika ada konten tambahan, SEMUA kontennya), Latihan Pemahaman benar semua
+  (jika ada), semua capaian dicentang (jika ada daftar capaian), tugas terkumpul / nilai
   minimal (jika ada syarat tugas), asesmen tuntas (jika ada syarat asesmen), cerita reflektif ditulis
   (jika diwajibkan), disahkan guru.
 - Guru bisa menandai materi tercapai untuk siswa tertentu (`MaterialProgress.unlocked`).
@@ -41,6 +42,15 @@ def material_checks(material, progress, task_done, assessment_done):
     else:
         label = "Membuka materi"
     checks = [{"key": "opened", "label": label, "done": opened}]
+    practice_count = len((material.practice_quiz or {}).get("content", []))
+    if practice_count:
+        checks.append(
+            {
+                "key": "practice",
+                "label": f"Lulus Latihan Pemahaman ({practice_count} soal)",
+                "done": bool(progress and progress.practice_passed_at),
+            }
+        )
     if material.objectives:
         checked = set(progress.checked_objectives) if progress else set()
         done = all(index in checked for index in range(len(material.objectives)))
@@ -106,7 +116,8 @@ def progress_table(materials, student_ids):
     """Progres banyak siswa untuk materi-materi (boleh beberapa kelas-mapel).
 
     Mengembalikan {(material_id, student_id): {order_number, locked, locked_by, completed, unlocked,
-    teacher_approved, opened, opened_items, checked_objectives, note, reflection, reflected_at, checks}}."""
+    teacher_approved, opened, opened_items, practice_passed, checked_objectives, note, reflection, reflected_at, checks}}.
+    """
     materials = sorted(materials, key=lambda m: (m.teaching_assignment_id, m.order, m.created_at, m.id))
     progress = {
         (p.material_id, p.student_id): p
@@ -142,6 +153,7 @@ def progress_table(materials, student_ids):
                         "teacher_approved": bool(mine and mine.teacher_approved),
                         "opened": bool(mine and mine.opened_at),
                         "opened_items": list(mine.opened_items) if mine else [],
+                        "practice_passed": bool(mine and mine.practice_passed_at),
                         "checked_objectives": list(mine.checked_objectives) if mine else [],
                         "note": mine.note if mine else "",
                         "reflection": mine.reflection if mine else "",
@@ -245,6 +257,13 @@ def ensure_material_unlocked(request, material):
         raise PermissionDenied(
             f"Materi ini masih terkunci. Selesaikan capaian materi “{row['locked_by']}” dulu."
         )
+
+
+def check_done(request, material, key):
+    """Apakah syarat `key` materi ini sudah terpenuhi bagi siswa yang login (True jika syarat tidak ada)."""
+    row = progress_for_request(request).get(material.id)
+    check = next((c for c in (row or {}).get("checks", []) if c["key"] == key), None)
+    return check is None or check["done"]
 
 
 def ensure_content_unlocked(request, kind, content_id):

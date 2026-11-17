@@ -115,6 +115,11 @@ class MaterialViewSet(viewsets.ModelViewSet):
         self.unlocked_for_student(material)
         serializer = ReflectionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        # Alur belajar: konten -> Latihan Pemahaman -> Cerita Reflektif.
+        if not learning.check_done(request, material, "practice"):
+            raise ValidationError(
+                {"reflection": "Selesaikan Latihan Pemahaman dulu, lalu tulis cerita reflektif."}
+            )
         progress = self._my_progress(material)
         progress.reflection = serializer.validated_data["reflection"]
         progress.reflected_at = timezone.now()
@@ -179,8 +184,69 @@ class MaterialViewSet(viewsets.ModelViewSet):
     def _owned_material(self, request):
         material = self.get_object()
         if material.teaching_assignment.teacher_id != request.user.id:
-            raise PermissionDenied("Hanya guru pengampu yang dapat mengatur kuis capaian materi ini.")
+            raise PermissionDenied("Hanya guru pengampu yang dapat mengatur kuis materi ini.")
         return material
+
+    # Siswa juga boleh POST (mengirim jawaban); hak akses diperiksa di dalam action.
+    @action(detail=True, methods=["get", "post", "put"], permission_classes=[IsAuthenticated])
+    def practice(self, request, pk=None):
+        """Latihan Pemahaman satu materi.
+        GET: soal (tanpa kunci). POST {answers}: periksa; siswa yang benar semua -> lulus latihan.
+        PUT {items: [rancangan soal]}: guru pengampu mengatur latihan (daftar kosong = hapus)."""
+        material = self.get_object()
+        user = request.user
+        is_owner = material.teaching_assignment.teacher_id == user.id
+        if request.method == "PUT":
+            if not is_owner:
+                raise PermissionDenied("Hanya guru pengampu yang dapat mengatur Latihan Pemahaman.")
+            objective_quiz.set_practice(material, request.data.get("items"))
+            return Response({"count": objective_quiz.practice_count(material)})
+
+        if user.role == Role.STUDENT:
+            self.unlocked_for_student(material)
+        elif not (is_owner or user.is_admin_role):
+            raise PermissionDenied("Hanya guru pengampu yang dapat mencoba latihan ini.")
+        quiz = material.practice_quiz
+        if not objective_quiz.practice_count(material):
+            raise ValidationError({"detail": "Materi ini tidak punya Latihan Pemahaman."})
+        if user.role == Role.STUDENT and not learning.check_done(request, material, "opened"):
+            raise ValidationError(
+                {"detail": "Buka semua konten materi dulu, lalu kerjakan Latihan Pemahaman."}
+            )
+
+        if request.method == "GET":
+            # Seed berubah setiap kali dibuka agar urutan pilihan saat mencoba ulang berbeda.
+            seed = f"{user.id}-{timezone.now().timestamp()}"
+            return Response({"items": objective_quiz.student_items(quiz, seed)})
+
+        result = objective_quiz.grade(quiz, request.data.get("answers") or {})
+        if user.role == Role.STUDENT:
+            if result["passed"]:
+                progress = self._my_progress(material)
+                if not progress.practice_passed_at:
+                    progress.practice_passed_at = timezone.now()
+                    progress.save(update_fields=["practice_passed_at", "updated_at"])
+            result["material"] = self._material_response(material).data
+        return Response(result)
+
+    @action(detail=True, url_path="practice-template", permission_classes=[IsTeacher])
+    def practice_template(self, request, pk=None):
+        """Template Excel Latihan Pemahaman, sudah berisi soal latihan yang ada."""
+        material = self._owned_material(request)
+        content = objective_quiz_excel.build_practice_template(material)
+        return template_response(content, f"Latihan Pemahaman - {material.title[:60]}.xlsx")
+
+    @action(detail=True, methods=["post"], url_path="practice-import", permission_classes=[IsTeacher])
+    def practice_import(self, request, pk=None):
+        """Impor Latihan Pemahaman dari Excel; isi file MENGGANTI seluruh soal latihan materi ini."""
+        material = self._owned_material(request)
+        preview, items = objective_quiz_excel.check_practice_file(request.FILES.get("file"))
+
+        def save():
+            objective_quiz.set_practice(material, items)
+            return len(items)
+
+        return import_response(preview, is_dry_run(request), save)
 
     @action(detail=True, url_path="objective-quiz-template", permission_classes=[IsTeacher])
     def objective_quiz_template(self, request, pk=None):

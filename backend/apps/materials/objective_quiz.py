@@ -1,9 +1,12 @@
-"""Kuis kecil per capaian materi.
+"""Kuis kecil per capaian materi, dan Latihan Pemahaman (satu per materi).
 
 Capaian yang punya kuis tidak bisa dicentang sendiri oleh siswa: capaian itu tercentang otomatis
 setelah semua soal kuisnya dijawab benar (boleh dicoba berulang). Bentuk soalnya sama dengan
 sub-soal checkpoint video interaktif (pilihan ganda, isian, tarik & lepas, menjodohkan), jadi
 pemeriksaan rancangan, pengacakan pilihan, dan penilaiannya memakai apps/assessments/interactive.py.
+
+Latihan Pemahaman (`Material.practice_quiz`) memakai bentuk & penilaian yang sama, tetapi satu per
+materi (maks. PRACTICE_MAX_QUESTIONS soal) dan dikerjakan setelah semua konten materi dibuka.
 
 Rancangan satu soal (dari guru / file JSON):
     {"kind": "choice", "text": "...", "choices": [...], "correct_choice": 1, "explanation": "..."}
@@ -19,13 +22,14 @@ from rest_framework.exceptions import ValidationError
 from apps.assessments import interactive
 
 MAX_QUESTIONS = 5
+PRACTICE_MAX_QUESTIONS = 10
 KINDS = interactive.CHECKPOINT_KINDS
 
 
-def build_quiz(items):
-    """Periksa rancangan soal satu capaian. Mengembalikan {"spec", "content", "key"}."""
-    if not isinstance(items, list) or not 1 <= len(items) <= MAX_QUESTIONS:
-        raise ValidationError({"quizzes": f"Setiap capaian berisi 1 sampai {MAX_QUESTIONS} soal."})
+def build_quiz(items, max_questions=MAX_QUESTIONS, scope="Setiap capaian"):
+    """Periksa rancangan soal satu kuis. Mengembalikan {"spec", "content", "key"}."""
+    if not isinstance(items, list) or not 1 <= len(items) <= max_questions:
+        raise ValidationError({"quizzes": f"{scope} berisi 1 sampai {max_questions} soal."})
     spec, content, key = [], [], {}
     for number, item in enumerate(items, start=1):
         if not isinstance(item, dict) or item.get("kind") not in KINDS:
@@ -67,6 +71,19 @@ def set_quizzes(material, quizzes):
             current.pop(objective, None)
     material.objective_quizzes = current
     material.save(update_fields=["objective_quizzes"])
+
+
+def set_practice(material, items):
+    """Simpan Latihan Pemahaman materi; daftar kosong = hapus latihan."""
+    if items in (None, []):
+        material.practice_quiz = {}
+    else:
+        material.practice_quiz = build_quiz(items, PRACTICE_MAX_QUESTIONS, "Latihan Pemahaman")
+    material.save(update_fields=["practice_quiz"])
+
+
+def practice_count(material):
+    return len((material.practice_quiz or {}).get("content", []))
 
 
 def quiz_for(material, index):

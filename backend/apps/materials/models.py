@@ -41,6 +41,9 @@ class Material(models.Model):
     # Kuis kecil per capaian: {teks capaian: {"content": [...], "key": {...}, "spec": [...]}}. Dikunci dengan
     # teks capaian agar tidak tertukar saat urutan capaian diubah. Lihat objective_quiz.py.
     objective_quizzes = models.JSONField("kuis capaian", default=dict, blank=True)
+    # Latihan Pemahaman satu materi ({"spec", "content", "key"}, kosong = tanpa latihan). Dikerjakan
+    # setelah semua konten dibuka; harus benar semua (boleh mengulang). Lihat objective_quiz.py.
+    practice_quiz = models.JSONField("latihan pemahaman", default=dict, blank=True)
     required_task = models.ForeignKey(
         "tasks.Task",
         verbose_name="syarat tugas",
@@ -140,6 +143,7 @@ class MaterialProgress(models.Model):
     checked_objectives = models.JSONField("capaian dicentang", default=list, blank=True)
     # Id konten tambahan (MaterialItem) yang sudah dibuka siswa.
     opened_items = models.JSONField("konten dibuka", default=list, blank=True)
+    practice_passed_at = models.DateTimeField("lulus latihan pemahaman", null=True, blank=True)
     reflection = models.TextField("cerita reflektif", blank=True)
     reflected_at = models.DateTimeField("refleksi ditulis", null=True, blank=True)
     teacher_approved = models.BooleanField("disahkan guru", default=False)

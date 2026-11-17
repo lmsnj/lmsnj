@@ -1,4 +1,12 @@
-import { ArrowDown, ArrowUp, ClipboardList, Layers, ListChecks, Sparkles } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  ClipboardList,
+  Layers,
+  ListChecks,
+  PencilLine,
+  Sparkles,
+} from 'lucide-react'
 import { useState } from 'react'
 import { materialsApi } from '../../api/materials'
 import Alert from '../../components/Alert'
@@ -15,6 +23,7 @@ import MaterialFormModal from './MaterialFormModal'
 import MaterialItemsModal from './MaterialItemsModal'
 import MaterialProgressModal from './MaterialProgressModal'
 import ObjectiveQuizImportModal from './ObjectiveQuizImportModal'
+import PracticeImportModal from './PracticeImportModal'
 
 /**
  * Daftar + kelola materi guru. Dipakai di tab "Materi" halaman kelas-mapel (assignmentId tetap)
@@ -32,7 +41,7 @@ export default function MaterialsManager({
   summary,
 }) {
   const [notice, setNotice] = useState({ type: 'success', text: '' })
-  // { type: 'form' | 'items' | 'view' | 'delete' | 'progress' | 'ai' | 'quiz', material }
+  // { type: 'form' | 'items' | 'practice' | 'view' | 'delete' | 'progress' | 'ai' | 'quiz', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
   const materials = useFetch(materialsApi.list, {
     ...ALL,
@@ -140,6 +149,15 @@ export default function MaterialsManager({
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setDialog({ type: 'practice', material })}
+              title="Latihan Pemahaman: soal setelah siswa membuka semua konten materi"
+            >
+              <PencilLine className="size-4" aria-hidden="true" /> Latihan
+              {material.practice_count > 0 && ` (${material.practice_count})`}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setDialog({ type: 'progress', material })}
             >
               <ListChecks className="size-4" aria-hidden="true" /> Progres
@@ -204,6 +222,17 @@ export default function MaterialsManager({
           material={dialog.material}
           onClose={closeDialog}
           onChanged={() => materials.reload()}
+        />
+      )}
+      {dialog?.type === 'practice' && (
+        <PracticeImportModal
+          material={dialog.material}
+          onClose={closeDialog}
+          onChanged={(text) => {
+            closeDialog()
+            setNotice({ type: 'success', text })
+            materials.reload()
+          }}
         />
       )}
       {dialog?.type === 'progress' && (
