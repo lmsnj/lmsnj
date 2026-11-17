@@ -62,7 +62,8 @@ function ModuleCard({ material, selected, onSelect }) {
   const locked = progress?.locked
   const completed = progress?.completed
   const status = progressStatus(progress)
-  const activityCount = moduleActivities(material).length
+  const activities = moduleActivities(material)
+  const contentCount = activities.filter((item) => item.kind === 'content').length
   return (
     <li>
       <button
@@ -100,7 +101,8 @@ function ModuleCard({ material, selected, onSelect }) {
             {material.title}
           </span>
           <span className="mt-1 block text-xs text-slate-500">
-            {TYPE_LABELS[material.material_type]} &middot; {activityCount} aktivitas
+            {contentCount > 1 ? `${contentCount} konten` : TYPE_LABELS[material.material_type]}{' '}
+            &middot; {activities.length} aktivitas
           </span>
           {status && (
             <span className="mt-2 block">
@@ -152,14 +154,15 @@ function ActivityList({ material, onChange, onOpenContent }) {
         {moduleActivities(material).map((item) => {
           if (item.kind === 'content') {
             return (
-              <ActivityRow
-                key={item.key}
-                done={item.done}
-                icon={CONTENT_ICONS[material.material_type]}
-              >
-                <button type="button" onClick={onOpenContent} className={linkClass}>
-                  {item.label}: {material.title}
+              <ActivityRow key={item.key} done={item.done} icon={CONTENT_ICONS[item.type]}>
+                <button
+                  type="button"
+                  onClick={() => onOpenContent(item.contentItem?.id ?? null)}
+                  className={linkClass}
+                >
+                  {item.label}
                 </button>
+                <span className="ml-1 text-xs text-slate-500">({TYPE_LABELS[item.type]})</span>
               </ActivityRow>
             )
           }
@@ -247,7 +250,8 @@ function ActivityList({ material, onChange, onOpenContent }) {
 
 // Isi kolom kanan: judul materi, kemajuan, daftar aktivitas, dan cerita reflektif.
 function ModuleDetail({ material, next, onChange, onSelect }) {
-  const [viewing, setViewing] = useState(false)
+  // null = penampil tertutup; { itemId } = konten yang dibuka (itemId null = konten utama).
+  const [viewing, setViewing] = useState(null)
   const progress = material.progress
   const { done, total } = countChecks(progress.checks)
   const reflectionCheck = progress.checks.find((check) => check.key === 'reflection')
@@ -305,7 +309,7 @@ function ModuleDetail({ material, next, onChange, onSelect }) {
               <ActivityList
                 material={material}
                 onChange={onChange}
-                onOpenContent={() => setViewing(true)}
+                onOpenContent={(itemId) => setViewing({ itemId })}
               />
             </div>
           </div>
@@ -350,8 +354,9 @@ function ModuleDetail({ material, next, onChange, onSelect }) {
       {viewing && (
         <MaterialViewer
           material={material}
+          itemId={viewing.itemId}
           contentOnly
-          onClose={() => setViewing(false)}
+          onClose={() => setViewing(null)}
           onChange={onChange}
         />
       )}

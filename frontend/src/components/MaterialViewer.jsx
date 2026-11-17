@@ -1,7 +1,7 @@
 import { Circle, CircleCheck, Lock, Target } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { materialsApi } from '../api/materials'
+import { materialItemsApi, materialsApi } from '../api/materials'
 import { getErrorMessage } from '../utils/errors'
 import { countChecks, toggleObjective } from '../utils/learningPath'
 import { saveBlob, youtubeEmbedUrl } from '../utils/media'
@@ -12,14 +12,20 @@ import ObjectiveQuiz from './ObjectiveQuiz'
 import ReflectionBox from './ReflectionBox'
 import Spinner from './Spinner'
 
-function PdfViewer({ material }) {
+// `content` = materi (konten utama) atau konten tambahannya; `load()` mengambil file PDF sebagai blob.
+function PdfViewer({ content, load }) {
   const [state, setState] = useState({ blobUrl: null, error: '' })
+  // Simpan load terbaru tanpa memicu efek ulang (fungsi baru setiap render).
+  const loadRef = useRef(load)
+  useEffect(() => {
+    loadRef.current = load
+  })
 
   useEffect(() => {
     let blobUrl = null
     let ignore = false
-    materialsApi
-      .download(material.id)
+    loadRef
+      .current()
       .then((blob) => {
         blobUrl = URL.createObjectURL(blob)
         if (ignore) URL.revokeObjectURL(blobUrl)
@@ -31,7 +37,7 @@ function PdfViewer({ material }) {
       // Bebaskan memori browser saat penampil ditutup.
       if (blobUrl) URL.revokeObjectURL(blobUrl)
     }
-  }, [material.id])
+  }, [content.id])
 
   if (state.error) return <Alert type="error">{state.error}</Alert>
   if (!state.blobUrl) {
@@ -51,7 +57,7 @@ function PdfViewer({ material }) {
         </Button>
         <Button
           variant="secondary"
-          onClick={() => saveBlob(state.blobUrl, material.original_filename || 'materi.pdf')}
+          onClick={() => saveBlob(state.blobUrl, content.original_filename || 'materi.pdf')}
         >
           Unduh
         </Button>
@@ -59,7 +65,7 @@ function PdfViewer({ material }) {
       {/* Beberapa browser HP tidak bisa menampilkan PDF di dalam halaman; gunakan tombol di atas. */}
       <iframe
         src={state.blobUrl}
-        title={material.title}
+        title={content.title}
         className="hidden h-[65vh] w-full rounded-lg ring-1 ring-slate-200 sm:block"
       />
     </div>
@@ -82,18 +88,80 @@ function ExternalLink({ url, label }) {
   )
 }
 
-function VideoViewer({ material }) {
-  const embedUrl = youtubeEmbedUrl(material.url)
-  if (!embedUrl) return <ExternalLink url={material.url} label="Tonton Video" />
+function VideoViewer({ content }) {
+  const embedUrl = youtubeEmbedUrl(content.url)
+  if (!embedUrl) return <ExternalLink url={content.url} label="Tonton Video" />
   return (
     <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
       <iframe
         src={embedUrl}
-        title={material.title}
+        title={content.title}
         className="h-full w-full"
         allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
         allowFullScreen
       />
+    </div>
+  )
+}
+
+// Isi satu konten (utama atau tambahan) sesuai tipenya.
+function ContentBody({ material, contentItem }) {
+  const content = contentItem ?? material
+  if (content.material_type === 'pdf') {
+    const load = contentItem
+      ? () => materialItemsApi.download(contentItem.id)
+      : () => materialsApi.download(material.id)
+    // key: penampil dibuat ulang saat pindah konten agar PDF lama tidak tertinggal.
+    return <PdfViewer key={contentItem?.id ?? 'main'} content={content} load={load} />
+  }
+  if (content.material_type === 'video') return <VideoViewer content={content} />
+  return <ExternalLink url={content.url} label="Buka Link Materi" />
+}
+
+const TYPE_LABELS = { pdf: 'PDF', video: 'Video', link: 'Link' }
+
+// Pilihan konten jika materi punya konten tambahan. Tanda centang = sudah dibuka (khusus siswa).
+function ContentTabs({ material, currentId, onSelect }) {
+  const progress = material.progress
+  const contents = [
+    { id: null, title: material.title, type: material.material_type, done: progress?.opened },
+    ...material.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      type: item.material_type,
+      done: progress?.opened_items.includes(item.id),
+    })),
+  ]
+  return (
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Konten materi">
+      {contents.map((content, index) => {
+        const active = content.id === currentId
+        const Icon = content.done ? CircleCheck : Circle
+        return (
+          <button
+            key={content.id ?? 'main'}
+            type="button"
+            onClick={() => onSelect(content.id)}
+            aria-pressed={active}
+            className={`inline-flex max-w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-sm ring-1 ${
+              active
+                ? 'bg-brand-50 font-medium text-brand-800 ring-brand-600'
+                : 'text-slate-700 ring-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            {progress && (
+              <Icon
+                className={`size-4 shrink-0 ${content.done ? 'text-brand-600' : 'text-slate-400'}`}
+                aria-hidden="true"
+              />
+            )}
+            <span className="truncate">
+              {index + 1}. {content.title}
+            </span>
+            <span className="shrink-0 text-xs text-slate-500">({TYPE_LABELS[content.type]})</span>
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -332,13 +400,28 @@ function LockedNotice({ material }) {
 
 /**
  * Penampil materi dalam modal. Dipakai guru maupun siswa. Untuk siswa (`material.progress` ada),
- * materi otomatis ditandai "dibuka" dan panel capaian ditampilkan; `onChange(materiTerbaru)`
- * dipanggil setiap progres berubah agar daftar ikut diperbarui. `contentOnly` = hanya isi materi
- * (tampilan modul sudah menampilkan aktivitas & refleksi di halamannya sendiri).
+ * konten yang sedang ditampilkan otomatis ditandai "dibuka" dan panel capaian ditampilkan;
+ * `onChange(materiTerbaru)` dipanggil setiap progres berubah agar daftar ikut diperbarui.
+ * `contentOnly` = hanya isi materi (tampilan modul sudah menampilkan aktivitas & refleksi di
+ * halamannya sendiri). `itemId` = konten tambahan yang dibuka pertama (kosong = konten utama).
  */
-export default function MaterialViewer({ material, onClose, onChange, contentOnly = false }) {
+export default function MaterialViewer({
+  material,
+  onClose,
+  onChange,
+  contentOnly = false,
+  itemId = null,
+}) {
+  const [currentId, setCurrentId] = useState(itemId)
   const progress = material?.progress
-  const needsOpen = Boolean(progress && !progress.locked && !progress.opened)
+  const items = material?.items ?? []
+  const contentItem = items.find((item) => item.id === currentId) ?? null
+  const openItemId = contentItem?.id ?? null
+  const needsOpen = Boolean(
+    progress &&
+    !progress.locked &&
+    (openItemId ? !progress.opened_items.includes(openItemId) : !progress.opened),
+  )
   const materialId = material?.id
   // Simpan onChange terbaru tanpa memicu efek ulang (fungsi baru setiap render), seperti useFetch.
   const onChangeRef = useRef(onChange)
@@ -350,14 +433,12 @@ export default function MaterialViewer({ material, onClose, onChange, contentOnl
   useEffect(() => {
     if (!needsOpen) return
     let ignore = false
-    materialsApi
-      .open(materialId)
-      .then((updated) => !ignore && onChangeRef.current?.(updated))
-      .catch(() => {})
+    const request = openItemId ? materialItemsApi.open(openItemId) : materialsApi.open(materialId)
+    request.then((updated) => !ignore && onChangeRef.current?.(updated)).catch(() => {})
     return () => {
       ignore = true
     }
-  }, [materialId, needsOpen])
+  }, [materialId, openItemId, needsOpen])
 
   if (!material) return null
   if (progress?.locked) {
@@ -373,11 +454,11 @@ export default function MaterialViewer({ material, onClose, onChange, contentOnl
         {material.description && (
           <p className="text-sm whitespace-pre-line text-slate-700">{material.description}</p>
         )}
-        {material.material_type === 'pdf' && <PdfViewer material={material} />}
-        {material.material_type === 'video' && <VideoViewer material={material} />}
-        {material.material_type === 'link' && (
-          <ExternalLink url={material.url} label="Buka Link Materi" />
+        {items.length > 0 && (
+          <ContentTabs material={material} currentId={openItemId} onSelect={setCurrentId} />
         )}
+        {contentItem && <h3 className="font-semibold text-slate-900">{contentItem.title}</h3>}
+        <ContentBody material={material} contentItem={contentItem} />
         {contentOnly ? null : progress ? (
           <LearningPanel material={material} onChange={notify} />
         ) : (

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ClipboardList, ListChecks, Sparkles } from 'lucide-react'
+import { ArrowDown, ArrowUp, ClipboardList, Layers, ListChecks, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { materialsApi } from '../../api/materials'
 import Alert from '../../components/Alert'
@@ -12,6 +12,7 @@ import { getErrorMessage } from '../../utils/errors'
 import { moveItem } from '../../utils/learningPath'
 import GenerateAssessmentModal from './GenerateAssessmentModal'
 import MaterialFormModal from './MaterialFormModal'
+import MaterialItemsModal from './MaterialItemsModal'
 import MaterialProgressModal from './MaterialProgressModal'
 import ObjectiveQuizImportModal from './ObjectiveQuizImportModal'
 
@@ -31,7 +32,7 @@ export default function MaterialsManager({
   summary,
 }) {
   const [notice, setNotice] = useState({ type: 'success', text: '' })
-  // { type: 'form' | 'view' | 'delete' | 'progress' | 'ai' | 'quiz', material }
+  // { type: 'form' | 'items' | 'view' | 'delete' | 'progress' | 'ai' | 'quiz', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
   const materials = useFetch(materialsApi.list, {
     ...ALL,
@@ -130,6 +131,15 @@ export default function MaterialsManager({
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setDialog({ type: 'items', material })}
+              title="Tambah video, PDF, atau link lain ke materi ini"
+            >
+              <Layers className="size-4" aria-hidden="true" /> Konten (
+              {1 + (material.items?.length ?? 0)})
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setDialog({ type: 'progress', material })}
             >
               <ListChecks className="size-4" aria-hidden="true" /> Progres
@@ -187,6 +197,13 @@ export default function MaterialsManager({
             })
             materials.reload()
           }}
+        />
+      )}
+      {dialog?.type === 'items' && (
+        <MaterialItemsModal
+          material={dialog.material}
+          onClose={closeDialog}
+          onChanged={() => materials.reload()}
         />
       )}
       {dialog?.type === 'progress' && (

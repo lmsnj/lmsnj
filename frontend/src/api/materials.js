@@ -55,3 +55,24 @@ export const materialsApi = {
       })
       .then((res) => res.data),
 }
+
+// Konten tambahan materi (beberapa video/PDF/link dalam satu materi). Siswa: open() mengembalikan
+// materinya dengan progres terbaru.
+export const materialItemsApi = {
+  create: (data, onProgress) =>
+    api
+      .post('/material-items/', requestBody(data), uploadConfig(onProgress))
+      .then((res) => res.data),
+  update: (id, data, onProgress) =>
+    api
+      .patch(`/material-items/${id}/`, requestBody(data), uploadConfig(onProgress))
+      .then((res) => res.data),
+  remove: (id) => api.delete(`/material-items/${id}/`),
+  download: (id) =>
+    api.get(`/material-items/${id}/download/`, { responseType: 'blob' }).then((res) => res.data),
+  open: (id) => api.post(`/material-items/${id}/open/`).then((res) => res.data),
+  reorder: (materialId, itemIds) =>
+    api
+      .post('/material-items/reorder/', { material: materialId, items: itemIds })
+      .then((res) => res.data),
+}

@@ -49,29 +49,38 @@ export function toggleObjective(checked, index) {
     : [...checked, index].sort((a, b) => a - b)
 }
 
-const CONTENT_LABELS = {
-  video: 'Tonton video materi',
-  pdf: 'Baca dokumen materi (PDF)',
-  link: 'Buka tautan materi',
-}
-
 /**
  * Daftar aktivitas satu materi (tampilan modul siswa), urut seperti langkah belajar:
- * isi materi -> capaian (Latihan Pemahaman jika berkuis) -> tugas -> asesmen -> pengesahan guru.
- * Cerita reflektif ditampilkan terpisah. Setiap item: { key, kind, label, done, index?, quizCount? }.
+ * isi materi (konten utama + konten tambahan) -> capaian (Latihan Pemahaman jika berkuis) -> tugas ->
+ * asesmen -> pengesahan guru. Cerita reflektif ditampilkan terpisah.
+ * Setiap item: { key, kind, label, done, type?, contentItem?, index?, quizCount? }; untuk isi materi
+ * `contentItem` = konten tambahan (null = konten utama materi).
  */
 export function moduleActivities(material) {
   const progress = material.progress
   const checked = progress?.checked_objectives ?? []
+  const openedItems = progress?.opened_items ?? []
   const quizCounts = material.objective_quiz ?? []
   const items = [
     {
       key: 'content',
       kind: 'content',
-      label: CONTENT_LABELS[material.material_type] ?? 'Buka materi',
+      label: material.title,
+      type: material.material_type,
+      contentItem: null,
       done: Boolean(progress?.opened),
     },
   ]
+  for (const contentItem of material.items ?? []) {
+    items.push({
+      key: `item-${contentItem.id}`,
+      kind: 'content',
+      label: contentItem.title,
+      type: contentItem.material_type,
+      contentItem,
+      done: openedItems.includes(contentItem.id),
+    })
+  }
   ;(material.objectives ?? []).forEach((text, index) => {
     const quizCount = quizCounts[index] ?? 0
     items.push({

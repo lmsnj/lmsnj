@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.core.validators import MaxValueValidator
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 from apps.academics.models import TeachingAssignment
 from apps.common.files import RandomUploadPath, delete_file
@@ -89,6 +91,38 @@ class Material(models.Model):
         return result
 
 
+class MaterialItem(models.Model):
+    """Konten tambahan sebuah materi (mis. video pengantar + PDF ringkasan dalam satu materi).
+
+    Konten utama tetap di Material (file/url) agar materi lama tidak perlu dipindah; konten tambahan
+    tampil sesudahnya sesuai `order`. Siswa harus membuka SEMUA konten (lihat progress.py)."""
+
+    material = models.ForeignKey(
+        Material, verbose_name="materi", on_delete=models.CASCADE, related_name="items"
+    )
+    title = models.CharField("judul", max_length=200)
+    material_type = models.CharField("tipe", max_length=10, choices=MaterialType.choices)
+    file = models.FileField("file", upload_to=RandomUploadPath("materials"), blank=True)
+    original_filename = models.CharField("nama file asli", max_length=255, blank=True)
+    url = models.URLField("URL", max_length=500, blank=True)
+    order = models.PositiveIntegerField("urutan", default=0)
+    created_at = models.DateTimeField("dibuat", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "konten materi"
+        verbose_name_plural = "konten materi"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
+@receiver(post_delete, sender=MaterialItem)
+def delete_item_file(sender, instance, **kwargs):
+    # Sinyal (bukan delete()) agar file ikut terhapus juga saat materinya dihapus (CASCADE).
+    delete_file(instance.file)
+
+
 class MaterialProgress(models.Model):
     """Progres satu siswa di satu materi: dibuka, capaian yang dicentang, pengesahan/pembukaan guru."""
 
@@ -104,6 +138,8 @@ class MaterialProgress(models.Model):
     opened_at = models.DateTimeField("pertama dibuka", null=True, blank=True)
     # Indeks capaian (Material.objectives) yang sudah dicentang siswa.
     checked_objectives = models.JSONField("capaian dicentang", default=list, blank=True)
+    # Id konten tambahan (MaterialItem) yang sudah dibuka siswa.
+    opened_items = models.JSONField("konten dibuka", default=list, blank=True)
     reflection = models.TextField("cerita reflektif", blank=True)
     reflected_at = models.DateTimeField("refleksi ditulis", null=True, blank=True)
     teacher_approved = models.BooleanField("disahkan guru", default=False)

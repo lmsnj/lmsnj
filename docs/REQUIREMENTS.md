@@ -24,3 +24,15 @@ Selesai.
   baris Excel karena kolom Pilihan A–E). Video interaktif hanya bisa dibuat lewat form.
 - Gambar tarik & lepas terikat pada nomor pilihan; jika jumlah `[[...]]` diubah setelah memberi gambar
   pengecoh, guru perlu memeriksa ulang gambarnya di pratinjau.
+
+## Modul Materi — Alur Belajar per Bab (gaya modul pelatihan)
+
+Alur siswa per materi: isi materi (bisa beberapa konten) -> Latihan Pemahaman -> Cerita Reflektif ->
+materi berikutnya; di akhir Bab ada Post Test. Dikerjakan bertahap (A, B, C).
+
+| ID | Priority | Requirement | Acceptance Criteria | Frontend | Database | Backend/API | Testing | Status |
+|----|----------|-------------|---------------------|----------|----------|-------------|---------|--------|
+| MAT-MOD-A | Tinggi | Beberapa konten per materi | (1) Selain konten utama, guru bisa menambah maks. 10 konten tambahan (PDF/video/link) per materi, mengubah, menghapus, dan mengatur urutannya. (2) Materi lama tetap utuh (konten utamanya = konten pertama). (3) Siswa melihat semua konten berurutan di Daftar Aktivitas; syarat "membuka materi" baru terpenuhi setelah SEMUA konten dibuka. (4) Materi terkunci: isi konten tambahan disembunyikan, download & open 403. (5) File PDF dicek isinya, disajikan lewat endpoint download (bukan `/media/`), dan dihapus dari disk saat konten/materinya dihapus atau file diganti. | Tombol "Konten (N)" di `MaterialsManager` -> `pages/guru/MaterialItemsModal.jsx`; `MaterialViewer` (pilihan konten, prop `itemId`); `MaterialModule` (satu baris per konten); `utils/learningPath.js::moduleActivities` | Migrasi `materials/0006`: model `MaterialItem` (material CASCADE, title, material_type, file, original_filename, url, order); `MaterialProgress.opened_items` | `/api/material-items/` (CRUD guru pengampu, filter `material`), `.../{id}/download/`, `.../{id}/open/` (siswa), `.../reorder/`; `MaterialSerializer.items`; syarat `opened` di `progress.py` | `test_items.py` (kelola & hak akses, validasi, hapus file, akses siswa, wajib buka semua konten, materi terkunci, urutan); `learningPath.test.js` | Selesai |
+| MAT-MOD-B | Tinggi | Latihan Pemahaman per materi | Satu latihan per materi, satu soal per layar ("Soal 1 dari N", tombol Jawab), harus benar semua (boleh mengulang), pembahasan setelah lulus; Cerita Reflektif terbuka setelah lulus. | | | | | Rencana |
+| MAT-MOD-C | Tinggi | Bab + Post Test | Guru mengelompokkan materi ke Bab; Post Test (lembar asesmen) per bab terkunci sampai materi bab selesai; bab berikutnya terbuka setelah Post Test lulus. | | | | | Rencana |
+

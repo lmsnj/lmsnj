@@ -79,6 +79,30 @@ test('aktivitas modul materi', () => {
   assert.equal(moduleActivities({ material_type: 'pdf', objectives: [] }).length, 1)
 })
 
+test('aktivitas: konten tambahan tampil setelah konten utama', () => {
+  const material = {
+    title: 'Pengantar',
+    material_type: 'video',
+    items: [
+      { id: 7, title: 'Ringkasan', material_type: 'pdf' },
+      { id: 9, title: 'Latihan daring', material_type: 'link' },
+    ],
+    objectives: [],
+    progress: { opened: true, opened_items: [9], checks: [] },
+  }
+  const items = moduleActivities(material)
+  assert.deepEqual(
+    items.map((item) => [item.label, item.type, item.done]),
+    [
+      ['Pengantar', 'video', true],
+      ['Ringkasan', 'pdf', false],
+      ['Latihan daring', 'link', true],
+    ],
+  )
+  assert.equal(items[0].contentItem, null)
+  assert.equal(items[1].contentItem.id, 7)
+})
+
 test('materi pertama yang dibuka di tampilan modul', () => {
   const done = { progress: { completed: true, locked: false } }
   const next = { id: 2, progress: { completed: false, locked: false } }

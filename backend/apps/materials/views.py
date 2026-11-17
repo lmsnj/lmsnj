@@ -19,13 +19,15 @@ from apps.schools.context import active_school
 
 from . import objective_quiz, objective_quiz_excel
 from . import progress as learning
-from .models import Material, MaterialProgress
+from .models import Material, MaterialItem, MaterialProgress
 from .selectors import materials_for
 from .serializers import (
     CheckObjectivesSerializer,
+    MaterialItemSerializer,
     MaterialSerializer,
     ProgressUpdateSerializer,
     ReflectionSerializer,
+    ReorderItemsSerializer,
     ReorderSerializer,
 )
 
@@ -39,12 +41,16 @@ class MaterialViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "title", "order"]
 
     def get_queryset(self):
-        return materials_for(self.request.user, active_school(self.request)).select_related(
-            "teaching_assignment__subject",
-            "teaching_assignment__classroom",
-            "created_by",
-            "required_task",
-            "required_assessment",
+        return (
+            materials_for(self.request.user, active_school(self.request))
+            .select_related(
+                "teaching_assignment__subject",
+                "teaching_assignment__classroom",
+                "created_by",
+                "required_task",
+                "required_assessment",
+            )
+            .prefetch_related("items")
         )
 
     def perform_create(self, serializer):
@@ -54,14 +60,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user, order=last + 1)
 
     def unlocked_for_student(self, material):
-        """Siswa hanya boleh membuka isi materi yang tidak terkunci."""
-        if self.request.user.role != Role.STUDENT:
-            return
-        row = learning.progress_for_request(self.request).get(material.id)
-        if row and row["locked"]:
-            raise PermissionDenied(
-                f"Materi ini masih terkunci. Selesaikan capaian materi \u201c{row['locked_by']}\u201d dulu."
-            )
+        learning.ensure_material_unlocked(self.request, material)
 
     @action(detail=True)
     def download(self, request, pk=None):
@@ -319,3 +318,60 @@ class GenerateAssessmentSerializer(serializers.Serializer):
     question_count = serializers.IntegerField(
         min_value=ai_generate.MIN_QUESTIONS, max_value=ai_generate.MAX_QUESTIONS, default=10
     )
+
+
+class MaterialItemViewSet(viewsets.ModelViewSet):
+    """Konten tambahan materi. Hak akses mengikuti materinya: queryset dibatasi lewat materials_for
+    (guru hanya materi miliknya, siswa hanya materi terbit di kelasnya)."""
+
+    serializer_class = MaterialItemSerializer
+    permission_classes = [ContentPermission]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    filterset_fields = ["material"]
+
+    def get_queryset(self):
+        materials = materials_for(self.request.user, active_school(self.request))
+        return MaterialItem.objects.filter(material__in=materials).select_related("material")
+
+    def perform_create(self, serializer):
+        # Konten baru ditaruh paling akhir.
+        material = serializer.validated_data["material"]
+        last = material.items.aggregate(last=Max("order"))["last"] or 0
+        serializer.save(order=last + 1)
+
+    @action(detail=True)
+    def download(self, request, pk=None):
+        item = self.get_object()
+        learning.ensure_material_unlocked(request, item.material)
+        return file_response(item.file, item.original_filename or "materi.pdf")
+
+    @action(detail=True, methods=["post"], permission_classes=[IsStudent])
+    def open(self, request, pk=None):
+        """Siswa membuka konten ini; mengembalikan materinya (dengan progres terbaru)."""
+        item = self.get_object()
+        material = item.material
+        learning.ensure_material_unlocked(request, material)
+        progress, _ = MaterialProgress.objects.get_or_create(material=material, student=request.user)
+        if item.id not in progress.opened_items:
+            progress.opened_items = [*progress.opened_items, item.id]
+            progress.save(update_fields=["opened_items", "updated_at"])
+        request.__dict__.pop("_material_progress", None)
+        return Response(MaterialSerializer(material, context=self.get_serializer_context()).data)
+
+    @action(detail=False, methods=["post"], permission_classes=[IsTeacher])
+    def reorder(self, request):
+        """{material, items: [id urut]} - atur urutan konten tambahan materi milik guru."""
+        serializer = ReorderItemsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        material = get_object_or_404(
+            Material.objects.filter(teaching_assignment__teacher=request.user),
+            pk=serializer.validated_data["material"],
+        )
+        ids = serializer.validated_data["items"]
+        existing = set(material.items.values_list("id", flat=True))
+        if set(ids) != existing or len(ids) != len(existing):
+            raise ValidationError({"items": "Daftar konten tidak lengkap atau bukan dari materi ini."})
+        with transaction.atomic():
+            for number, item_id in enumerate(ids, start=1):
+                MaterialItem.objects.filter(pk=item_id).update(order=number)
+        return Response({"detail": "Urutan konten disimpan."})

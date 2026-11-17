@@ -10,7 +10,7 @@ from apps.assessments.models import Assessment
 from apps.common.files import delete_file, validate_upload
 from apps.tasks.models import Task
 
-from .models import Material, MaterialType
+from .models import Material, MaterialItem, MaterialType
 from .objective_quiz import quiz_counts
 from .progress import progress_for_request
 
@@ -19,6 +19,61 @@ MAX_OBJECTIVES = 10
 MAX_CONCEPTS = 12
 MIN_REFLECTION = 20
 MAX_REFLECTION = 2000
+MAX_ITEMS = 10
+
+
+def validate_pdf(file):
+    """Cek ekstensi, ukuran, dan isi file PDF (bukan hanya ekstensinya)."""
+    if not file:
+        return file
+    validate_upload(file, {".pdf"})
+    header = file.read(len(PDF_SIGNATURE))
+    file.seek(0)
+    if header != PDF_SIGNATURE:
+        raise serializers.ValidationError("File bukan PDF yang valid.")
+    return file
+
+
+def validate_content(attrs, instance):
+    """Isi konten sesuai tipenya: PDF wajib file, video/link wajib URL. Dipakai materi & konten tambahan."""
+    material_type = attrs.get("material_type", getattr(instance, "material_type", None))
+    has_file = bool(attrs.get("file")) or bool(instance and instance.file and "file" not in attrs)
+    url = attrs.get("url", getattr(instance, "url", ""))
+    if material_type == MaterialType.PDF:
+        if not has_file:
+            raise serializers.ValidationError({"file": "File PDF wajib diunggah."})
+        attrs["url"] = ""
+    else:
+        if not url:
+            raise serializers.ValidationError({"url": "URL wajib diisi untuk materi video/link."})
+        # Konten non-PDF tidak menyimpan file.
+        attrs["file"] = None
+    return attrs
+
+
+class FileContentMixin:
+    """Simpan file baru/kosongkan file beserta nama aslinya; file lama dihapus setelah data tersimpan."""
+
+    def create(self, validated_data):
+        file = validated_data.pop("file", None)
+        instance = self.Meta.model(**validated_data)
+        if file:
+            instance.file = file
+            instance.original_filename = file.name
+        instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        old_file = None
+        if "file" in validated_data:
+            old_file = instance.file if instance.file else None
+            new_file = validated_data.pop("file")
+            instance.file = new_file
+            instance.original_filename = new_file.name if new_file else ""
+        instance = super().update(instance, validated_data)
+        if old_file and old_file.name != instance.file.name:
+            delete_file(old_file)
+        return instance
 
 
 class ObjectivesField(serializers.ListField):
@@ -66,7 +121,53 @@ class ConceptsField(ObjectivesField):
         return values
 
 
-class MaterialSerializer(serializers.ModelSerializer):
+class MaterialItemSerializer(FileContentMixin, serializers.ModelSerializer):
+    # Guru hanya boleh menambah konten ke materi miliknya (diisi di __init__).
+    material = serializers.PrimaryKeyRelatedField(queryset=Material.objects.none())
+    file = serializers.FileField(write_only=True, required=False, allow_null=True)
+    has_file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MaterialItem
+        fields = [
+            "id",
+            "material",
+            "title",
+            "material_type",
+            "file",
+            "has_file",
+            "original_filename",
+            "url",
+            "order",
+        ]
+        read_only_fields = ["original_filename", "order"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request is not None and "material" in self.fields:
+            self.fields["material"].queryset = Material.objects.filter(
+                teaching_assignment__teacher=request.user
+            )
+
+    def get_has_file(self, obj):
+        return bool(obj.file)
+
+    def validate_material(self, value):
+        if self.instance and value != self.instance.material:
+            raise serializers.ValidationError("Konten tidak bisa dipindah ke materi lain.")
+        if not self.instance and value.items.count() >= MAX_ITEMS:
+            raise serializers.ValidationError(f"Maksimal {MAX_ITEMS} konten tambahan per materi.")
+        return value
+
+    def validate_file(self, file):
+        return validate_pdf(file)
+
+    def validate(self, attrs):
+        return validate_content(attrs, self.instance)
+
+
+class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
     # Guru hanya boleh memilih kelas-mapel yang ia ampu (diisi di __init__).
     teaching_assignment = serializers.PrimaryKeyRelatedField(queryset=TeachingAssignment.objects.none())
     file = serializers.FileField(write_only=True, required=False, allow_null=True)
@@ -88,6 +189,8 @@ class MaterialSerializer(serializers.ModelSerializer):
     required_assessment_title = serializers.CharField(
         source="required_assessment.title", read_only=True, default=None
     )
+    # Konten tambahan (urut). Siswa harus membuka semuanya; isinya disembunyikan jika materi terkunci.
+    items = serializers.SerializerMethodField()
     # Khusus siswa: urutan, terkunci/tidak, dan syarat capaian (lihat progress.py).
     progress = serializers.SerializerMethodField()
 
@@ -105,6 +208,7 @@ class MaterialSerializer(serializers.ModelSerializer):
             "has_file",
             "original_filename",
             "url",
+            "items",
             "is_published",
             "order",
             "objectives",
@@ -144,6 +248,20 @@ class MaterialSerializer(serializers.ModelSerializer):
     def get_progress(self, obj):
         return self._student_progress(obj)
 
+    def get_items(self, obj):
+        return [
+            {
+                "id": item.id,
+                "title": item.title,
+                "material_type": item.material_type,
+                "has_file": bool(item.file),
+                "original_filename": item.original_filename,
+                "url": item.url,
+                "order": item.order,
+            }
+            for item in obj.items.all()
+        ]
+
     def get_objective_quiz(self, obj):
         return quiz_counts(obj)
 
@@ -157,6 +275,8 @@ class MaterialSerializer(serializers.ModelSerializer):
         if progress and progress["locked"]:
             # Materi terkunci: judul & capaian terlihat, isinya belum.
             data.update(url="", has_file=False, original_filename="")
+            for item in data.get("items", []):
+                item.update(url="", has_file=False, original_filename="")
         return data
 
     def validate_teaching_assignment(self, value):
@@ -166,15 +286,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         return value
 
     def validate_file(self, file):
-        if not file:
-            return file
-        validate_upload(file, {".pdf"})
-        # Cek isi file, bukan hanya ekstensinya.
-        header = file.read(len(PDF_SIGNATURE))
-        file.seek(0)
-        if header != PDF_SIGNATURE:
-            raise serializers.ValidationError("File bukan PDF yang valid.")
-        return file
+        return validate_pdf(file)
 
     def validate(self, attrs):
         assignment = attrs.get("teaching_assignment", getattr(self.instance, "teaching_assignment", None))
@@ -184,48 +296,7 @@ class MaterialSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {field: f"{label} syarat harus dari kelas-mapel yang sama."}
                 )
-        material_type = attrs.get("material_type", getattr(self.instance, "material_type", None))
-        new_file = attrs.get("file")
-        has_file = bool(new_file) or bool(self.instance and self.instance.file and "file" not in attrs)
-        url = attrs.get("url", getattr(self.instance, "url", ""))
-
-        if material_type == MaterialType.PDF:
-            if not has_file:
-                raise serializers.ValidationError({"file": "File PDF wajib diunggah."})
-            attrs["url"] = ""
-        else:
-            if not url:
-                raise serializers.ValidationError({"url": "URL wajib diisi untuk materi video/link."})
-            # Materi non-PDF tidak menyimpan file.
-            attrs["file"] = None
-        return attrs
-
-    def _apply_file(self, instance, attrs):
-        """Set file baru (atau kosongkan) dan catat nama aslinya. Mengembalikan file lama."""
-        if "file" not in attrs:
-            return None
-        old_file = instance.file if instance.file else None
-        new_file = attrs.pop("file")
-        instance.file = new_file
-        instance.original_filename = new_file.name if new_file else ""
-        return old_file
-
-    def create(self, validated_data):
-        file = validated_data.pop("file", None)
-        material = Material(**validated_data)
-        if file:
-            material.file = file
-            material.original_filename = file.name
-        material.save()
-        return material
-
-    def update(self, instance, validated_data):
-        old_file = self._apply_file(instance, validated_data)
-        instance = super().update(instance, validated_data)
-        # Hapus file lama dari disk hanya setelah data baru tersimpan.
-        if old_file and old_file.name != instance.file.name:
-            delete_file(old_file)
-        return instance
+        return validate_content(attrs, self.instance)
 
 
 class ProgressRecordSerializer(serializers.Serializer):
@@ -244,6 +315,11 @@ class ProgressUpdateSerializer(serializers.Serializer):
 class ReorderSerializer(serializers.Serializer):
     teaching_assignment = serializers.IntegerField()
     materials = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
+
+
+class ReorderItemsSerializer(serializers.Serializer):
+    material = serializers.IntegerField()
+    items = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
 
 
 class CheckObjectivesSerializer(serializers.Serializer):

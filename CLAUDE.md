@@ -204,9 +204,15 @@ Pola yang wajib dipakai ulang:
   `reflected_at`, ditulis/diubah siswa lewat `POST .../reflection/` (min. 20 karakter), dibaca guru di
   `MaterialProgressModal`. **Tampilan modul** (tab Materi di `StudentSubjectPage`,
   `components/MaterialModule.jsx`): kiri "Yang akan dipelajari" + daftar materi berurutan (gembok/centang),
-  kanan "Daftar Aktivitas" (isi materi, Latihan Pemahaman/capaian, tugas, asesmen, pengesahan —
+  kanan "Daftar Aktivitas" (isi materi per konten, Latihan Pemahaman/capaian, tugas, asesmen, pengesahan —
   `utils/learningPath.js::moduleActivities`) + Cerita Reflektif (`ReflectionBox`). Isi materi dibuka lewat
-  `MaterialViewer contentOnly`.
+  `MaterialViewer contentOnly` (`itemId` = konten tambahan yang dibuka).
+  **Beberapa konten per materi** (`MaterialItem`, `docs/REQUIREMENTS.md` MAT-MOD-A): konten utama tetap di
+  `Material` (file/url); konten tambahan (maks. 10, PDF/video/link, `order`) dikelola guru lewat
+  `/api/material-items/` (tombol "Konten (N)" -> `MaterialItemsModal`). Syarat `opened` = konten utama
+  dibuka DAN semua id konten ada di `MaterialProgress.opened_items` (`POST /api/material-items/{id}/open/`).
+  File dihapus lewat sinyal `post_delete` (ikut terhapus saat materi dihapus). Rencana lanjutan:
+  Latihan Pemahaman per materi (MAT-MOD-B), Bab + Post Test (MAT-MOD-C).
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
 - **Submission** (pengumpulan): `task` (PROTECT), `student` (PROTECT), `text_answer`, `file` + `original_filename`, `is_late` (disimpan saat mengumpulkan), `submitted_at`. Satu per (tugas, siswa).
   - Aturan (`apps/tasks/services.py`): sebelum tenggat siswa boleh kumpul/ganti/batal; setelah tenggat pengumpulan pertama diterima dan ditandai terlambat jika `allow_late`, pengumpulan yang sudah ada terkunci. Minimal ada teks atau file.
@@ -573,6 +579,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET/POST | `/api/materials/{id}/objective-quiz-template/`, `.../objective-quiz-import/` (multipart `file`, `dry_run`) | Guru pengampu: template berisi kuis yang ada / impor kuis capaian |
 | GET/POST/PUT | `/api/materials/{id}/objective-quiz/` (GET `?index=`; POST `index`, `answers`; PUT `quizzes: {indeks: [soal]}`) | Siswa (materi terbuka): kerjakan; guru pengampu/admin: pratinjau; PUT guru pengampu |
 | POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu |
+| CRUD   | `/api/material-items/` (multipart; filter `material`), `.../{id}/download/`, `.../reorder/` (`material`, `items: [id urut]`) | Tulis: guru pengampu materinya. Hapus: + admin. Baca/download: sama dengan materinya (siswa: materi tidak terkunci) |
+| POST   | `/api/material-items/{id}/open/` | Siswa (materi tidak terkunci); mengembalikan materi + progres |
 | CRUD   | `/api/tasks/` (multipart; filter `teaching_assignment`, `is_published`, `due_at__gte`, `due_at__lte`) | Sama dengan materi. Untuk siswa ada `my_submission`; untuk guru `ungraded_count` |
 | GET    | `/api/tasks/{id}/attachment/`     | Sama dengan hak baca tugas |
 | GET/PUT/DELETE | `/api/tasks/{id}/my-submission/` | Siswa: lihat, kumpulkan/ganti (multipart `text_answer`, `file`), batalkan |
