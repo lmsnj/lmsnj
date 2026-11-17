@@ -62,6 +62,8 @@ class LearningPathTests(APITestCase):
         self.m4 = self.material("Proyek Akhir", require_teacher_approval=True)
 
     def material(self, title, **extra):
+        # Refleksi diuji tersendiri (test_reflection_requirement) agar test lain tetap ringkas.
+        extra.setdefault("require_reflection", False)
         order = Material.objects.filter(teaching_assignment=self.assignment).count() + 1
         return Material.objects.create(
             teaching_assignment=self.assignment, title=title, material_type="link",
@@ -124,6 +126,35 @@ class LearningPathTests(APITestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
         self.assertTrue(self.as_student()[self.m4.id]["progress"]["completed"])
+
+    def test_reflection_requirement(self):
+        m1 = Material.objects.get(pk=self.m1.id)
+        m1.require_reflection = True
+        m1.save()
+        self.client.force_authenticate(self.ani)
+        self.post("open", self.m1)
+        res = self.post("objectives", self.m1, {"checked": [0, 1]})
+        self.assertFalse(res.data["progress"]["completed"])
+        checks = {c["key"]: c["done"] for c in res.data["progress"]["checks"]}
+        self.assertEqual(checks["reflection"], False)
+
+        # Kosong / terlalu pendek ditolak.
+        self.assertEqual(self.post("reflection", self.m1, {"reflection": "  "}).status_code, 400)
+        self.assertEqual(self.post("reflection", self.m1, {"reflection": "paham"}).status_code, 400)
+        text = "Saya belajar tag dasar HTML, masih bingung atribut."
+        res = self.post("reflection", self.m1, {"reflection": text})
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertTrue(res.data["progress"]["completed"])
+        self.assertEqual(res.data["progress"]["reflection"], text)
+
+        # Materi terkunci tidak bisa direfleksikan; guru bisa membaca refleksi siswa.
+        self.assertEqual(self.post("reflection", self.m3, {"reflection": text}).status_code, 403)
+        self.client.force_authenticate(self.teacher)
+        rows = self.client.get(reverse("material-progress", args=[self.m1.id])).data["rows"]
+        self.assertEqual(rows[0]["reflection"], text)
+        self.assertEqual(rows[1]["reflection"], "")
+        # Guru tidak memakai endpoint refleksi siswa.
+        self.assertEqual(self.post("reflection", self.m1, {"reflection": text}).status_code, 403)
 
     def test_assessment_requirement_is_locked_too(self):
         self.client.force_authenticate(self.ani)

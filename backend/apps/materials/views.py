@@ -25,6 +25,7 @@ from .serializers import (
     CheckObjectivesSerializer,
     MaterialSerializer,
     ProgressUpdateSerializer,
+    ReflectionSerializer,
     ReorderSerializer,
 )
 
@@ -104,6 +105,20 @@ class MaterialViewSet(viewsets.ModelViewSet):
         kept = set(progress.checked_objectives) & with_quiz
         checked = sorted((requested - with_quiz) | kept)
         progress.checked_objectives = checked
+        progress.opened_at = progress.opened_at or timezone.now()
+        progress.save()
+        return self._material_response(material)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsStudent])
+    def reflection(self, request, pk=None):
+        """{reflection} - siswa menulis/mengubah cerita reflektif materi ini."""
+        material = self.get_object()
+        self.unlocked_for_student(material)
+        serializer = ReflectionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        progress = self._my_progress(material)
+        progress.reflection = serializer.validated_data["reflection"]
+        progress.reflected_at = timezone.now()
         progress.opened_at = progress.opened_at or timezone.now()
         progress.save()
         return self._material_response(material)

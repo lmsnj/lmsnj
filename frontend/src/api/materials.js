@@ -18,6 +18,9 @@ export const materialsApi = {
   open: (id) => api.post(`/materials/${id}/open/`).then((res) => res.data),
   checkObjectives: (id, checked) =>
     api.post(`/materials/${id}/objectives/`, { checked }).then((res) => res.data),
+  // Cerita reflektif siswa (syarat capaian jika materi mewajibkannya).
+  saveReflection: (id, reflection) =>
+    api.post(`/materials/${id}/reflection/`, { reflection }).then((res) => res.data),
   // Guru: progres semua siswa; records: [{ student, teacher_approved?, unlocked?, note? }].
   progress: (id) => api.get(`/materials/${id}/progress/`).then((res) => res.data),
   saveProgress: (id, records) =>

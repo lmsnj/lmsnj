@@ -48,3 +48,50 @@ export function toggleObjective(checked, index) {
     ? checked.filter((i) => i !== index)
     : [...checked, index].sort((a, b) => a - b)
 }
+
+const CONTENT_LABELS = {
+  video: 'Tonton video materi',
+  pdf: 'Baca dokumen materi (PDF)',
+  link: 'Buka tautan materi',
+}
+
+/**
+ * Daftar aktivitas satu materi (tampilan modul siswa), urut seperti langkah belajar:
+ * isi materi -> capaian (Latihan Pemahaman jika berkuis) -> tugas -> asesmen -> pengesahan guru.
+ * Cerita reflektif ditampilkan terpisah. Setiap item: { key, kind, label, done, index?, quizCount? }.
+ */
+export function moduleActivities(material) {
+  const progress = material.progress
+  const checked = progress?.checked_objectives ?? []
+  const quizCounts = material.objective_quiz ?? []
+  const items = [
+    {
+      key: 'content',
+      kind: 'content',
+      label: CONTENT_LABELS[material.material_type] ?? 'Buka materi',
+      done: Boolean(progress?.opened),
+    },
+  ]
+  ;(material.objectives ?? []).forEach((text, index) => {
+    const quizCount = quizCounts[index] ?? 0
+    items.push({
+      key: `objective-${index}`,
+      kind: quizCount ? 'quiz' : 'objective',
+      label: quizCount ? `Latihan Pemahaman: ${text}` : text,
+      index,
+      quizCount,
+      done: checked.includes(index),
+    })
+  })
+  for (const check of progress?.checks ?? []) {
+    if (['task', 'assessment', 'approval'].includes(check.key)) {
+      items.push({ key: check.key, kind: check.key, label: check.label, done: check.done })
+    }
+  }
+  return items
+}
+
+/** Materi yang dibuka pertama kali di tampilan modul: yang sedang dipelajari, atau materi pertama. */
+export function defaultModuleId(materials = []) {
+  return pathSummary(materials).next?.id ?? materials[0]?.id ?? null
+}

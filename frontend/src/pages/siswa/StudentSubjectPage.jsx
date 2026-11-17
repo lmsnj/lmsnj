@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { assignmentsApi } from '../../api/academics'
 import { materialsApi } from '../../api/materials'
@@ -6,8 +5,8 @@ import { tasksApi } from '../../api/tasks'
 import Alert from '../../components/Alert'
 import ClassHero, { Avatar } from '../../components/ClassHero'
 import ClassOverview from '../../components/ClassOverview'
-import MaterialList from '../../components/MaterialList'
-import MaterialViewer from '../../components/MaterialViewer'
+import EmptyState from '../../components/EmptyState'
+import MaterialModule from '../../components/MaterialModule'
 import ProgressBar from '../../components/ProgressBar'
 import Spinner from '../../components/Spinner'
 import TaskList from '../../components/TaskList'
@@ -24,7 +23,6 @@ const TABS = [
 
 // Backend hanya mengirim materi & tugas yang sudah terbit untuk siswa.
 function MaterialsTab({ assignmentId }) {
-  const [viewing, setViewing] = useState(null)
   const materials = useFetch(materialsApi.list, { ...ALL, teaching_assignment: assignmentId })
   const summary = pathSummary(materials.data?.results)
   return (
@@ -46,20 +44,15 @@ function MaterialsTab({ assignmentId }) {
           </p>
         </section>
       )}
-      <MaterialList
-        materials={materials.data?.results}
-        loading={materials.loading}
-        emptyTitle="Guru belum membagikan materi untuk mapel ini."
-        onOpen={setViewing}
-      />
-      <MaterialViewer
-        material={viewing}
-        onClose={() => setViewing(null)}
-        onChange={(updated) => {
-          setViewing(updated)
-          materials.reload()
-        }}
-      />
+      {!materials.data && materials.loading ? (
+        <div className="py-10 text-center text-brand-600">
+          <Spinner />
+        </div>
+      ) : materials.data?.results.length ? (
+        <MaterialModule materials={materials.data.results} onChange={() => materials.reload()} />
+      ) : (
+        !materials.error && <EmptyState title="Guru belum membagikan materi untuk mapel ini." />
+      )}
     </>
   )
 }

@@ -41,6 +41,8 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
     min_task_score: material?.min_task_score ?? '',
     required_assessment: material?.required_assessment ? String(material.required_assessment) : '',
     require_teacher_approval: material?.require_teacher_approval ?? false,
+    // Materi baru: refleksi wajib (bawaan).
+    require_reflection: material?.require_reflection ?? true,
   })
   const [file, setFile] = useState(null)
   const [progress, setProgress] = useState(null)
@@ -252,6 +254,19 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
           <span>
             Perlu disahkan guru (mis. setelah praktik di kelas). Sahkan lewat tombol
             &ldquo;Progres&rdquo; di daftar materi.
+          </span>
+        </label>
+        <label className="flex items-start gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            name="require_reflection"
+            checked={form.require_reflection}
+            onChange={handleChange}
+            className="mt-0.5 size-4 rounded border-slate-300"
+          />
+          <span>
+            Wajib menulis cerita reflektif (apa yang dipelajari & apa yang masih sulit). Refleksi
+            siswa bisa dibaca lewat tombol &ldquo;Progres&rdquo;.
           </span>
         </label>
       </fieldset>

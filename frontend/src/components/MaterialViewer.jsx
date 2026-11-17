@@ -9,6 +9,7 @@ import Alert from './Alert'
 import Button from './Button'
 import Modal from './Modal'
 import ObjectiveQuiz from './ObjectiveQuiz'
+import ReflectionBox from './ReflectionBox'
 import Spinner from './Spinner'
 
 function PdfViewer({ material }) {
@@ -122,6 +123,7 @@ function TeacherRequirements({ material }) {
   if (material.required_assessment_title) {
     items.push(`Tuntas asesmen "${material.required_assessment_title}"`)
   }
+  if (material.require_reflection) items.push('Menulis cerita reflektif')
   if (material.require_teacher_approval) items.push('Disahkan guru')
   if (!material.objectives?.length && !items.length) return null
   return (
@@ -296,6 +298,9 @@ function LearningPanel({ material, onChange }) {
           Ditandai tercapai oleh guru{progress.note ? `: ${progress.note}` : '.'}
         </p>
       )}
+      <div className="mt-3 rounded-lg bg-white p-3 ring-1 ring-slate-200">
+        <ReflectionBox material={material} onSaved={onChange} />
+      </div>
     </section>
   )
 }
@@ -328,9 +333,10 @@ function LockedNotice({ material }) {
 /**
  * Penampil materi dalam modal. Dipakai guru maupun siswa. Untuk siswa (`material.progress` ada),
  * materi otomatis ditandai "dibuka" dan panel capaian ditampilkan; `onChange(materiTerbaru)`
- * dipanggil setiap progres berubah agar daftar ikut diperbarui.
+ * dipanggil setiap progres berubah agar daftar ikut diperbarui. `contentOnly` = hanya isi materi
+ * (tampilan modul sudah menampilkan aktivitas & refleksi di halamannya sendiri).
  */
-export default function MaterialViewer({ material, onClose, onChange }) {
+export default function MaterialViewer({ material, onClose, onChange, contentOnly = false }) {
   const progress = material?.progress
   const needsOpen = Boolean(progress && !progress.locked && !progress.opened)
   const materialId = material?.id
@@ -372,7 +378,7 @@ export default function MaterialViewer({ material, onClose, onChange }) {
         {material.material_type === 'link' && (
           <ExternalLink url={material.url} label="Buka Link Materi" />
         )}
-        {progress ? (
+        {contentOnly ? null : progress ? (
           <LearningPanel material={material} onChange={notify} />
         ) : (
           <TeacherRequirements material={material} />

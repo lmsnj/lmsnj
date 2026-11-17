@@ -19,6 +19,7 @@ function requirementText(material) {
   if (material.objectives?.length) parts.push(`${material.objectives.length} capaian`)
   if (material.required_task) parts.push('tugas')
   if (material.required_assessment) parts.push('asesmen')
+  if (material.require_reflection) parts.push('refleksi')
   if (material.require_teacher_approval) parts.push('disahkan guru')
   return parts.join(' · ')
 }

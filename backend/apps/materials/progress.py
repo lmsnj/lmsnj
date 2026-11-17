@@ -4,7 +4,8 @@
   sebelumnya terpenuhi; materi pertama selalu terbuka. Hanya materi terbit yang dihitung.
 - Capaian satu materi terpenuhi jika semua syarat yang dipilih guru terpenuhi:
   dibuka siswa (selalu), semua capaian dicentang (jika ada daftar capaian), tugas terkumpul / nilai
-  minimal (jika ada syarat tugas), asesmen tuntas (jika ada syarat asesmen), disahkan guru.
+  minimal (jika ada syarat tugas), asesmen tuntas (jika ada syarat asesmen), cerita reflektif ditulis
+  (jika diwajibkan), disahkan guru.
 - Guru bisa menandai materi tercapai untuk siswa tertentu (`MaterialProgress.unlocked`).
 - Tugas/asesmen yang menjadi syarat sebuah materi ikut terkunci selama materi itu terkunci.
 """
@@ -51,6 +52,14 @@ def material_checks(material, progress, task_done, assessment_done):
     if material.required_assessment_id:
         label = f"Tuntas asesmen “{material.required_assessment.title}”"
         checks.append({"key": "assessment", "label": label, "done": assessment_done})
+    if material.require_reflection:
+        checks.append(
+            {
+                "key": "reflection",
+                "label": "Menulis cerita reflektif",
+                "done": bool(progress and progress.reflection.strip()),
+            }
+        )
     if material.require_teacher_approval:
         checks.append(
             {
@@ -90,7 +99,7 @@ def progress_table(materials, student_ids):
     """Progres banyak siswa untuk materi-materi (boleh beberapa kelas-mapel).
 
     Mengembalikan {(material_id, student_id): {order_number, locked, locked_by, completed, unlocked,
-    teacher_approved, opened, checked_objectives, note, checks}}."""
+    teacher_approved, opened, checked_objectives, note, reflection, reflected_at, checks}}."""
     materials = sorted(materials, key=lambda m: (m.teaching_assignment_id, m.order, m.created_at, m.id))
     progress = {
         (p.material_id, p.student_id): p
@@ -127,6 +136,8 @@ def progress_table(materials, student_ids):
                         "opened": bool(mine and mine.opened_at),
                         "checked_objectives": list(mine.checked_objectives) if mine else [],
                         "note": mine.note if mine else "",
+                        "reflection": mine.reflection if mine else "",
+                        "reflected_at": mine.reflected_at if mine else None,
                         "checks": checks,
                         "completed": unlocked or all(check["done"] for check in checks),
                     }

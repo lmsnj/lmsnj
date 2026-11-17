@@ -17,6 +17,8 @@ from .progress import progress_for_request
 PDF_SIGNATURE = b"%PDF-"
 MAX_OBJECTIVES = 10
 MAX_CONCEPTS = 12
+MIN_REFLECTION = 20
+MAX_REFLECTION = 2000
 
 
 class ObjectivesField(serializers.ListField):
@@ -114,6 +116,7 @@ class MaterialSerializer(serializers.ModelSerializer):
             "required_assessment",
             "required_assessment_title",
             "require_teacher_approval",
+            "require_reflection",
             "progress",
             "created_by_name",
             "created_at",
@@ -245,3 +248,19 @@ class ReorderSerializer(serializers.Serializer):
 
 class CheckObjectivesSerializer(serializers.Serializer):
     checked = serializers.ListField(child=serializers.IntegerField(min_value=0), max_length=MAX_OBJECTIVES)
+
+
+class ReflectionSerializer(serializers.Serializer):
+    # Batas minimal agar refleksi tidak sekadar "ok" atau "paham".
+    reflection = serializers.CharField(
+        max_length=MAX_REFLECTION,
+        trim_whitespace=True,
+        error_messages={"blank": "Cerita reflektif tidak boleh kosong."},
+    )
+
+    def validate_reflection(self, value):
+        if len(value) < MIN_REFLECTION:
+            raise serializers.ValidationError(
+                f"Tulis minimal {MIN_REFLECTION} karakter: apa yang Anda pelajari dan apa yang masih sulit."
+            )
+        return value

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  defaultModuleId,
+  moduleActivities,
   moveItem,
   parseObjectives,
   pathSummary,
@@ -41,4 +43,46 @@ test('urutan, capaian, dan centang', () => {
   assert.deepEqual(parseObjectives(' A \n\n B\n'), ['A', 'B'])
   assert.deepEqual(toggleObjective([0, 2], 1), [0, 1, 2])
   assert.deepEqual(toggleObjective([0, 2], 2), [0])
+})
+
+test('aktivitas modul materi', () => {
+  const material = {
+    material_type: 'video',
+    objectives: ['Menyebut tag', 'Membuat halaman'],
+    objective_quiz: [3, 0],
+    progress: {
+      opened: true,
+      checked_objectives: [1],
+      checks: [
+        { key: 'opened', label: 'Membuka materi', done: true },
+        { key: 'objectives', label: 'Menuntaskan 2 capaian', done: false },
+        { key: 'task', label: 'Mengumpulkan tugas “A”', done: true },
+        { key: 'reflection', label: 'Menulis cerita reflektif', done: false },
+        { key: 'approval', label: 'Disahkan guru', done: false },
+      ],
+    },
+  }
+  const items = moduleActivities(material)
+  assert.deepEqual(
+    items.map((item) => [item.kind, item.done]),
+    [
+      ['content', true],
+      ['quiz', false],
+      ['objective', true],
+      ['task', true],
+      ['approval', false],
+    ],
+  )
+  assert.equal(items[1].label, 'Latihan Pemahaman: Menyebut tag')
+  assert.equal(items[1].quizCount, 3)
+  // Guru (tanpa progres): hanya isi materi + capaian.
+  assert.equal(moduleActivities({ material_type: 'pdf', objectives: [] }).length, 1)
+})
+
+test('materi pertama yang dibuka di tampilan modul', () => {
+  const done = { progress: { completed: true, locked: false } }
+  const next = { id: 2, progress: { completed: false, locked: false } }
+  assert.equal(defaultModuleId([{ id: 1, ...done }, next]), 2)
+  assert.equal(defaultModuleId([{ id: 1, ...done }]), 1)
+  assert.equal(defaultModuleId([]), null)
 })

@@ -60,6 +60,9 @@ class Material(models.Model):
         related_name="required_by_materials",
     )
     require_teacher_approval = models.BooleanField("perlu disahkan guru", default=False)
+    # Siswa menulis "cerita reflektif" (apa yang dipelajari, apa yang masih sulit) sebelum lanjut.
+    # Materi lama dimigrasikan dengan nilai False agar progres siswa yang sudah jalan tidak terkunci.
+    require_reflection = models.BooleanField("wajib cerita reflektif", default=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="dibuat oleh",
@@ -101,6 +104,8 @@ class MaterialProgress(models.Model):
     opened_at = models.DateTimeField("pertama dibuka", null=True, blank=True)
     # Indeks capaian (Material.objectives) yang sudah dicentang siswa.
     checked_objectives = models.JSONField("capaian dicentang", default=list, blank=True)
+    reflection = models.TextField("cerita reflektif", blank=True)
+    reflected_at = models.DateTimeField("refleksi ditulis", null=True, blank=True)
     teacher_approved = models.BooleanField("disahkan guru", default=False)
     # Guru menandai materi ini tercapai untuk siswa tertentu (mis. siswa pindahan), apa pun syaratnya.
     unlocked = models.BooleanField("dibuka guru", default=False)

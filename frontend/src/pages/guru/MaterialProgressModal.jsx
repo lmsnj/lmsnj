@@ -77,6 +77,18 @@ export default function MaterialProgressModal({ material, onClose }) {
       },
     },
   ]
+  columns.push({
+    header: 'Cerita Reflektif',
+    cell: (row) =>
+      row.reflection ? (
+        <details className="max-w-xs text-sm">
+          <summary className="cursor-pointer font-medium text-brand-700">Baca refleksi</summary>
+          <p className="mt-1 whitespace-pre-line text-slate-700">{row.reflection}</p>
+        </details>
+      ) : (
+        <span className="text-xs text-slate-400">Belum ditulis</span>
+      ),
+  })
   if (material.require_teacher_approval) {
     columns.push({
       header: 'Sahkan',

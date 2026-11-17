@@ -199,6 +199,14 @@ Pola yang wajib dipakai ulang:
   syarat materi terkunci ikut terkunci (`locked_by_material` di serializer; `ensure_content_unlocked` di
   my-submission PUT & start). Frontend: `utils/learningPath.js`, `MaterialViewer` (panel capaian),
   `MaterialProgressModal` (guru), tombol urutan di `MaterialsManager` (halaman satu kelas-mapel).
+  **Cerita reflektif:** `Material.require_reflection` (bawaan True untuk materi baru; materi lama dimigrasi
+  False agar progres siswa tidak terkunci) -> syarat `reflection`; `MaterialProgress.reflection` +
+  `reflected_at`, ditulis/diubah siswa lewat `POST .../reflection/` (min. 20 karakter), dibaca guru di
+  `MaterialProgressModal`. **Tampilan modul** (tab Materi di `StudentSubjectPage`,
+  `components/MaterialModule.jsx`): kiri "Yang akan dipelajari" + daftar materi berurutan (gembok/centang),
+  kanan "Daftar Aktivitas" (isi materi, Latihan Pemahaman/capaian, tugas, asesmen, pengesahan —
+  `utils/learningPath.js::moduleActivities`) + Cerita Reflektif (`ReflectionBox`). Isi materi dibuka lewat
+  `MaterialViewer contentOnly`.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
 - **Submission** (pengumpulan): `task` (PROTECT), `student` (PROTECT), `text_answer`, `file` + `original_filename`, `is_late` (disimpan saat mengumpulkan), `submitted_at`. Satu per (tugas, siswa).
   - Aturan (`apps/tasks/services.py`): sebelum tenggat siswa boleh kumpul/ganti/batal; setelah tenggat pengumpulan pertama diterima dan ditandai terlambat jika `allow_late`, pengumpulan yang sudah ada terkunci. Minimal ada teks atau file.
@@ -559,7 +567,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | CRUD   | `/api/teaching-assignments/` (filter `teacher`, `subject`, `classroom`) | Tulis: admin. Baca: admin semua, guru miliknya, siswa di kelasnya |
 | CRUD   | `/api/materials/` (multipart; filter `teaching_assignment`, `material_type`, `is_published`) | Tambah/ubah: guru pengampu. Hapus: guru pengampu/admin. Baca: admin semua, guru miliknya, siswa hanya yang terbit di kelasnya |
 | GET    | `/api/materials/{id}/download/`   | Sama dengan hak baca materi |
-| POST   | `/api/materials/{id}/open/`, `.../objectives/` (`checked`) | Siswa (materi tidak terkunci) |
+| POST   | `/api/materials/{id}/open/`, `.../objectives/` (`checked`), `.../reflection/` (`reflection`) | Siswa (materi tidak terkunci) |
 | GET/PUT | `/api/materials/{id}/progress/` (PUT `records: [{student, teacher_approved, unlocked, note}]`) | GET guru pengampu/admin, PUT guru pengampu |
 | GET/POST | `/api/materials/{id}/generate-assessment/` (POST `source`, `question_count` 5-20 untuk AI) | Guru pengampu: buat asesmen "Cek Pemahaman" (`source` = `concepts` gratis / `ai`); GET = jumlah konsep, `ai_enabled` |
 | GET/POST | `/api/materials/{id}/objective-quiz-template/`, `.../objective-quiz-import/` (multipart `file`, `dry_run`) | Guru pengampu: template berisi kuis yang ada / impor kuis capaian |
