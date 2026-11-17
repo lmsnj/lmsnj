@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import { inputClass } from './TextField'
 
-export default function SelectField({ label, error, options, id, className = '', ...props }) {
+export default function SelectField({ label, error, hint, options, id, className = '', ...props }) {
   const autoId = useId()
   const selectId = id ?? autoId
 
@@ -24,7 +24,11 @@ export default function SelectField({ label, error, options, id, className = '',
           </option>
         ))}
       </select>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error ? (
+        <p className="mt-1 text-xs text-red-600">{error}</p>
+      ) : (
+        hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>
+      )}
     </div>
   )
 }

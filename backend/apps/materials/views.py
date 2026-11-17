@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers, status, viewsets
@@ -19,14 +19,16 @@ from apps.schools.context import active_school
 
 from . import objective_quiz, objective_quiz_excel
 from . import progress as learning
-from .models import Material, MaterialItem, MaterialProgress
-from .selectors import materials_for
+from .models import Chapter, Material, MaterialItem, MaterialProgress
+from .selectors import chapters_for, materials_for
 from .serializers import (
+    ChapterSerializer,
     CheckObjectivesSerializer,
     MaterialItemSerializer,
     MaterialSerializer,
     ProgressUpdateSerializer,
     ReflectionSerializer,
+    ReorderChaptersSerializer,
     ReorderItemsSerializer,
     ReorderSerializer,
 )
@@ -49,6 +51,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
                 "created_by",
                 "required_task",
                 "required_assessment",
+                "chapter",
             )
             .prefetch_related("items")
         )
@@ -441,3 +444,46 @@ class MaterialItemViewSet(viewsets.ModelViewSet):
             for number, item_id in enumerate(ids, start=1):
                 MaterialItem.objects.filter(pk=item_id).update(order=number)
         return Response({"detail": "Urutan konten disimpan."})
+
+
+class ChapterViewSet(viewsets.ModelViewSet):
+    """Bab per kelas-mapel (pengelompokan materi + Post Test). Hak akses seperti materi: guru pengampu
+    mengelola, admin boleh menghapus, siswa hanya melihat bab berisi materi terbit di kelasnya.
+    Menghapus bab TIDAK menghapus materinya (materi menjadi tanpa bab)."""
+
+    serializer_class = ChapterSerializer
+    permission_classes = [ContentPermission]
+    filterset_fields = ["teaching_assignment"]
+
+    def get_queryset(self):
+        materials = Material.objects.order_by("order", "created_at", "id")
+        return (
+            chapters_for(self.request.user, active_school(self.request))
+            .select_related("post_test")
+            .prefetch_related(Prefetch("materials", queryset=materials))
+            .order_by("teaching_assignment_id", "order", "id")
+        )
+
+    def perform_create(self, serializer):
+        # Bab baru ditaruh paling akhir.
+        assignment = serializer.validated_data["teaching_assignment"]
+        last = assignment.chapters.aggregate(last=Max("order"))["last"] or 0
+        serializer.save(order=last + 1)
+
+    @action(detail=False, methods=["post"], permission_classes=[IsTeacher])
+    def reorder(self, request):
+        """{teaching_assignment, chapters: [id urut]} - atur urutan bab kelas-mapel milik guru."""
+        serializer = ReorderChaptersSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        assignment = get_object_or_404(
+            TeachingAssignment.objects.filter(teacher=request.user),
+            pk=serializer.validated_data["teaching_assignment"],
+        )
+        ids = serializer.validated_data["chapters"]
+        existing = set(assignment.chapters.values_list("id", flat=True))
+        if set(ids) != existing or len(ids) != len(existing):
+            raise ValidationError({"chapters": "Daftar bab tidak lengkap atau bukan dari kelas-mapel ini."})
+        with transaction.atomic():
+            for number, chapter_id in enumerate(ids, start=1):
+                Chapter.objects.filter(pk=chapter_id).update(order=number)
+        return Response({"detail": "Urutan bab disimpan."})

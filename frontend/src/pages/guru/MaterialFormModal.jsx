@@ -2,7 +2,7 @@ import TemplatePicker from '../../components/TemplatePicker'
 import { MATERIAL_TEMPLATES } from '../../utils/formTemplates'
 import { useState } from 'react'
 import { assessmentsApi } from '../../api/assessments'
-import { materialsApi } from '../../api/materials'
+import { chaptersApi, materialsApi } from '../../api/materials'
 import { tasksApi } from '../../api/tasks'
 import AssignmentSelect from '../../components/AssignmentSelect'
 import FileInput, { UploadProgress } from '../../components/FileInput'
@@ -21,6 +21,7 @@ const listFor = (api) => (params) =>
   params.teaching_assignment ? api.list(params) : Promise.resolve({ results: [] })
 const listTasks = listFor(tasksApi)
 const listAssessments = listFor(assessmentsApi)
+const listChapters = listFor(chaptersApi)
 
 const URL_HINTS = {
   video: 'Tempel link YouTube (akan diputar langsung) atau link video lain.',
@@ -30,6 +31,7 @@ const URL_HINTS = {
 export default function MaterialFormModal({ material, assignmentId, onClose, onSaved }) {
   const isEdit = Boolean(material)
   const [form, setForm] = useState({
+    chapter: material?.chapter ? String(material.chapter) : '',
     title: material?.title ?? '',
     description: material?.description ?? '',
     material_type: material?.material_type ?? 'pdf',
@@ -52,6 +54,7 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
   const contentParams = { ...ALL, teaching_assignment: assignment || null }
   const tasks = useFetch(listTasks, contentParams)
   const assessments = useFetch(listAssessments, contentParams)
+  const chapters = useFetch(listChapters, contentParams)
 
   const { submit, submitting, errors, generalError } = useFormSubmit(async () => {
     const data = {
@@ -59,6 +62,7 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
       // Dikirim sebagai teks JSON agar tetap terbaca saat form berisi file (multipart).
       objectives: JSON.stringify(parseObjectives(form.objectives)),
       concepts: JSON.stringify(parseObjectives(form.concepts)),
+      chapter: form.chapter ? Number(form.chapter) : null,
       required_task: form.required_task ? Number(form.required_task) : null,
       min_task_score:
         form.required_task && form.min_task_score !== '' ? Number(form.min_task_score) : null,
@@ -104,6 +108,17 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
           placeholder="- Pilih kelas & mapel -"
           error={errors.teaching_assignment}
           required
+        />
+      )}
+      {chapters.data?.results.length > 0 && (
+        <SelectField
+          label="Bab"
+          name="chapter"
+          value={form.chapter}
+          onChange={handleChange}
+          options={toOptions(chapters.data.results, (c) => c.title, '- Tanpa bab (pengantar) -')}
+          error={errors.chapter}
+          hint="Materi tampil di bab ini sesuai urutan. Bab diatur lewat tombol “Bab” di daftar materi."
         />
       )}
       <fieldset>

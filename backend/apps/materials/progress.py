@@ -1,7 +1,10 @@
 """Capaian materi dan kunci urutan materi (dilihat dari sisi SATU siswa).
 
-- Materi di satu kelas-mapel diurutkan (`order`). Materi ke-N terbuka setelah capaian SEMUA materi
-  sebelumnya terpenuhi; materi pertama selalu terbuka. Hanya materi terbit yang dihitung.
+- Materi di satu kelas-mapel diurutkan: materi tanpa bab dulu, lalu per bab (`Chapter.order`), di dalamnya
+  `order`. Materi ke-N terbuka setelah capaian SEMUA materi sebelumnya terpenuhi; materi pertama selalu
+  terbuka. Hanya materi terbit yang dihitung.
+- Bab: materi bab berikutnya baru terbuka setelah Post Test (terbit) bab sebelumnya tuntas; Post Test
+  sendiri terkunci sampai semua materi babnya tercapai.
 - Capaian satu materi terpenuhi jika semua syarat yang dipilih guru terpenuhi:
   dibuka siswa (selalu; jika ada konten tambahan, SEMUA kontennya), Latihan Pemahaman benar semua
   (jika ada), semua capaian dicentang (jika ada daftar capaian), tugas terkumpul / nilai
@@ -23,13 +26,37 @@ from apps.tasks.models import Submission
 from .models import Material, MaterialProgress
 
 
-def chain_locks(completed):
-    """[selesai?] per materi (urut) -> [terkunci?]: terkunci jika ada materi sebelumnya yang belum selesai."""
-    locks, blocked = [], False
-    for done in completed:
-        locks.append(blocked)
-        blocked = blocked or not done
-    return locks
+def chain_blockers(steps):
+    """Kunci berantai. steps = [(judul, selesai?, gerbang)] urut, gerbang = judul Post Test bab sebelumnya
+    yang belum tuntas (None jika tidak ada). Mengembalikan penghalang tiap langkah: judul yang harus
+    diselesaikan dulu, atau None jika terbuka."""
+    result, blocker = [], None
+    for title, done, gate in steps:
+        blocker = blocker or gate
+        result.append(blocker)
+        if blocker is None and not done:
+            blocker = title
+    return result
+
+
+def sort_key(material):
+    """Urutan belajar: materi tanpa bab dulu, lalu per bab, lalu urutan materi."""
+    chapter = material.chapter
+    return (
+        material.teaching_assignment_id,
+        chapter is not None,
+        chapter.order if chapter else 0,
+        material.chapter_id or 0,
+        material.order,
+        material.created_at,
+        material.id,
+    )
+
+
+def open_post_test(chapter):
+    """Post Test bab yang dihitung (hanya yang terbit; draf tidak menahan siswa)."""
+    test = chapter.post_test if chapter and chapter.post_test_id else None
+    return test if test and test.is_published else None
 
 
 def material_checks(material, progress, task_done, assessment_done):
@@ -118,7 +145,7 @@ def progress_table(materials, student_ids):
     Mengembalikan {(material_id, student_id): {order_number, locked, locked_by, completed, unlocked,
     teacher_approved, opened, opened_items, practice_passed, checked_objectives, note, reflection, reflected_at, checks}}.
     """
-    materials = sorted(materials, key=lambda m: (m.teaching_assignment_id, m.order, m.created_at, m.id))
+    materials = sorted(materials, key=sort_key)
     progress = {
         (p.material_id, p.student_id): p
         for p in MaterialProgress.objects.filter(material__in=materials, student_id__in=student_ids)
@@ -130,7 +157,9 @@ def progress_table(materials, student_ids):
             "task"
         )
     }
-    assessments = list({m.required_assessment for m in materials if m.required_assessment_id})
+    assessments = {m.required_assessment for m in materials if m.required_assessment_id}
+    assessments |= {open_post_test(m.chapter) for m in materials if open_post_test(m.chapter)}
+    assessments = list(assessments)
     statuses = _assessment_statuses(student_ids, assessments) if assessments else {}
 
     groups = {}
@@ -162,33 +191,28 @@ def progress_table(materials, student_ids):
                         "completed": unlocked or all(check["done"] for check in checks),
                     }
                 )
-            locks = chain_locks([row["completed"] for row in rows])
-            for number, (material, row, locked) in enumerate(zip(group, rows, locks), start=1):
+            steps, previous = [], None
+            for material, row in zip(group, rows):
+                gate = None
+                if previous is not None and material.chapter_id != previous.id:
+                    test = open_post_test(previous)
+                    if test and statuses.get((test.id, student_id)) not in (PASSED, GRADED):
+                        gate = test.title
+                steps.append((material.title, row["completed"], gate))
+                previous = material.chapter
+            blockers = chain_blockers(steps)
+            for number, (material, row, blocker) in enumerate(zip(group, rows, blockers), start=1):
                 # Materi yang dibuka guru tidak pernah terkunci.
-                locked = locked and not row["unlocked"]
-                row.update(
-                    order_number=number,
-                    locked=locked,
-                    locked_by=None if not locked else _first_blocker(group, rows, material),
-                )
+                locked = blocker is not None and not row["unlocked"]
+                row.update(order_number=number, locked=locked, locked_by=blocker if locked else None)
                 table[(material.id, student_id)] = row
     return table
-
-
-def _first_blocker(group, rows, material):
-    """Judul materi sebelumnya yang belum tercapai (penyebab materi ini terkunci)."""
-    for other, row in zip(group, rows):
-        if other.id == material.id:
-            return None
-        if not row["completed"]:
-            return other.title
-    return None
 
 
 def published_materials(teaching_assignment_ids):
     return list(
         Material.objects.filter(teaching_assignment_id__in=teaching_assignment_ids, is_published=True)
-        .select_related("required_task", "required_assessment")
+        .select_related("required_task", "required_assessment", "chapter__post_test")
         .prefetch_related("items")
         .order_by("order", "created_at", "id")
     )
@@ -202,9 +226,9 @@ def student_progress(student, teaching_assignment_ids):
 
 
 def content_locks(student, teaching_assignment_ids):
-    """Tugas/asesmen yang terkunci karena materinya terkunci: {"tasks": {id: judul materi penyebab},
-    "assessments": {id: judul materi}}. Konten yang disyaratkan beberapa materi terbuka jika SALAH SATU
-    materinya terbuka."""
+    """Tugas/asesmen yang terkunci karena materinya terkunci: {"tasks": {id: judul penyebab},
+    "assessments": {id: judul penyebab}}. Konten yang disyaratkan beberapa materi terbuka jika SALAH SATU
+    materinya terbuka. Post Test bab terkunci sampai semua materi babnya tercapai."""
     materials = published_materials(teaching_assignment_ids)
     progress = progress_table(materials, [student.id])
     locks = {"tasks": {}, "assessments": {}}
@@ -225,6 +249,12 @@ def content_locks(student, teaching_assignment_ids):
     for kind in locks:
         for content_id in opened[kind]:
             locks[kind].pop(content_id, None)
+    for material in sorted(materials, key=sort_key):
+        test_id = material.chapter.post_test_id if material.chapter_id else None
+        # Asesmen yang sekaligus syarat materi bab itu tidak dikunci lagi (agar tidak saling menunggu).
+        if test_id and test_id != material.required_assessment_id:
+            if not progress[(material.id, student.id)]["completed"]:
+                locks["assessments"].setdefault(test_id, material.title)
     return locks
 
 
@@ -254,9 +284,7 @@ def ensure_material_unlocked(request, material):
         return
     row = progress_for_request(request).get(material.id)
     if row and row["locked"]:
-        raise PermissionDenied(
-            f"Materi ini masih terkunci. Selesaikan capaian materi “{row['locked_by']}” dulu."
-        )
+        raise PermissionDenied(f"Materi ini masih terkunci. Selesaikan dulu “{row['locked_by']}”.")
 
 
 def check_done(request, material, key):
@@ -273,7 +301,30 @@ def ensure_content_unlocked(request, kind, content_id):
         return
     title = locks_for_request(request)[kind].get(content_id)
     if title:
-        raise PermissionDenied(f"Masih terkunci. Selesaikan capaian materi \u201c{title}\u201d dulu.")
+        raise PermissionDenied(f"Masih terkunci. Selesaikan dulu “{title}”.")
+
+
+def chapter_progress(request, chapter, materials):
+    """Progres satu bab bagi siswa yang login. `materials` = materi terbit bab itu (urut).
+    {locked, locked_by, completed_materials, total_materials, post_test_status, post_test_locked_by,
+    completed}."""
+    rows = progress_for_request(request)
+    mine = [rows[m.id] for m in materials if m.id in rows]
+    done = sum(1 for row in mine if row["completed"])
+    test = open_post_test(chapter)
+    status = None
+    if test:
+        status = _assessment_statuses([request.user.id], [test])[(test.id, request.user.id)]
+    first = mine[0] if mine else None
+    return {
+        "locked": bool(first and first["locked"]),
+        "locked_by": first["locked_by"] if first else None,
+        "completed_materials": done,
+        "total_materials": len(mine),
+        "post_test_status": status,
+        "post_test_locked_by": locks_for_request(request)["assessments"].get(test.id) if test else None,
+        "completed": done == len(mine) and (test is None or status in (PASSED, GRADED)),
+    }
 
 
 def locked_by_material(request, kind, content_id):

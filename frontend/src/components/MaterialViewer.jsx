@@ -425,7 +425,7 @@ function LockedNotice({ material }) {
       <div className="flex items-start gap-3 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
         <Lock className="mt-0.5 size-5 shrink-0 text-slate-500" aria-hidden="true" />
         <p className="text-sm text-slate-700">
-          Materi ini masih terkunci. Selesaikan dulu capaian materi{' '}
+          Materi ini masih terkunci. Selesaikan dulu{' '}
           <strong>&ldquo;{material.progress.locked_by}&rdquo;</strong>, lalu materi ini terbuka
           otomatis.
         </p>

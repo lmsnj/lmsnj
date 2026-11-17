@@ -217,7 +217,15 @@ Pola yang wajib dipakai ulang:
   Alur siswa: semua konten dibuka -> latihan (`components/PracticeQuiz.jsx`, satu soal per layar, benar
   semua, boleh ulang) -> Cerita Reflektif (endpoint `reflection` menolak sebelum lulus). Guru: tombol
   "Latihan (N)" -> `PracticeImportModal` (Excel lembar "Latihan", isi file mengganti semua soal; pola
-  impor bersama `QuizImportModal`). Rencana lanjutan: Bab + Post Test (MAT-MOD-C).
+  impor bersama `QuizImportModal`).
+  **Bab + Post Test** (MAT-MOD-C): `Chapter` (per kelas-mapel: `title`, `description` = "yang akan dipelajari",
+  `order`, `post_test` = asesmen kelas-mapel yang sama) dan `Material.chapter` (kosong = tanpa bab; hapus bab ->
+  materi jadi tanpa bab). Urutan belajar (`progress.sort_key`): tanpa bab dulu, lalu per bab, lalu `order`.
+  `chain_blockers`: materi bab berikutnya terkunci sampai Post Test (terbit) bab sebelumnya passed/graded;
+  `locked_by` bisa berisi judul Post Test. Post Test terkunci (`content_locks`) sampai semua materi babnya
+  tercapai. Siswa: jika ada bab, `StudentSubjectPage` memakai `components/ChapterModule.jsx` (daftar bab kiri,
+  akordeon materi + kartu Post Test kanan); tanpa bab tetap `MaterialModule`. Guru: tombol "Bab" ->
+  `ChaptersModal`, pilihan "Bab" di form materi, daftar materi dikelompokkan per bab.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
 - **Submission** (pengumpulan): `task` (PROTECT), `student` (PROTECT), `text_answer`, `file` + `original_filename`, `is_late` (disimpan saat mengumpulkan), `submitted_at`. Satu per (tugas, siswa).
   - Aturan (`apps/tasks/services.py`): sebelum tenggat siswa boleh kumpul/ganti/batal; setelah tenggat pengumpulan pertama diterima dan ditandai terlambat jika `allow_late`, pengumpulan yang sudah ada terkunci. Minimal ada teks atau file.
@@ -585,6 +593,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET/POST/PUT | `/api/materials/{id}/objective-quiz/` (GET `?index=`; POST `index`, `answers`; PUT `quizzes: {indeks: [soal]}`) | Siswa (materi terbuka): kerjakan; guru pengampu/admin: pratinjau; PUT guru pengampu |
 | GET/POST/PUT | `/api/materials/{id}/practice/` (POST `answers`; PUT `items: [rancangan soal]`, `[]` = hapus), `.../practice-template/`, `.../practice-import/` (multipart `file`, `dry_run`) | Siswa (semua konten sudah dibuka): kerjakan; guru pengampu/admin: pratinjau; PUT/template/impor: guru pengampu |
 | POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu |
+| CRUD   | `/api/chapters/` (filter `teaching_assignment`), `.../reorder/` (`teaching_assignment`, `chapters: [id urut]`) | Tulis: guru pengampu. Hapus: + admin. Baca: admin semua, guru miliknya, siswa bab berisi materi terbit di kelasnya (+ `progress`) |
 | CRUD   | `/api/material-items/` (multipart; filter `material`), `.../{id}/download/`, `.../reorder/` (`material`, `items: [id urut]`) | Tulis: guru pengampu materinya. Hapus: + admin. Baca/download: sama dengan materinya (siswa: materi tidak terkunci) |
 | POST   | `/api/material-items/{id}/open/` | Siswa (materi tidak terkunci); mengembalikan materi + progres |
 | CRUD   | `/api/tasks/` (multipart; filter `teaching_assignment`, `is_published`, `due_at__gte`, `due_at__lte`) | Sama dengan materi. Untuk siswa ada `my_submission`; untuk guru `ungraded_count` |

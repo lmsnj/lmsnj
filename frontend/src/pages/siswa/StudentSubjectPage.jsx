@@ -1,9 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
 import { assignmentsApi } from '../../api/academics'
-import { materialsApi } from '../../api/materials'
+import { chaptersApi, materialsApi } from '../../api/materials'
 import { tasksApi } from '../../api/tasks'
 import Alert from '../../components/Alert'
 import ClassHero, { Avatar } from '../../components/ClassHero'
+import ChapterModule from '../../components/ChapterModule'
 import ClassOverview from '../../components/ClassOverview'
 import EmptyState from '../../components/EmptyState'
 import MaterialModule from '../../components/MaterialModule'
@@ -13,7 +14,7 @@ import TaskList from '../../components/TaskList'
 import useFetch from '../../hooks/useFetch'
 import { useTabs } from '../../hooks/useTabs'
 import { ALL } from '../../utils/academic'
-import { pathSummary } from '../../utils/learningPath'
+import { groupByChapter, pathSummary } from '../../utils/learningPath'
 
 const TABS = [
   { id: 'ringkasan', label: 'Ringkasan' },
@@ -23,11 +24,21 @@ const TABS = [
 
 // Backend hanya mengirim materi & tugas yang sudah terbit untuk siswa.
 function MaterialsTab({ assignmentId }) {
-  const materials = useFetch(materialsApi.list, { ...ALL, teaching_assignment: assignmentId })
+  const params = { ...ALL, teaching_assignment: assignmentId }
+  const materials = useFetch(materialsApi.list, params)
+  const chapters = useFetch(chaptersApi.list, params)
   const summary = pathSummary(materials.data?.results)
+  // Guru membuat Bab -> tampilan bab (+ Post Test); tanpa bab -> tampilan modul per materi.
+  const groups = chapters.data?.results.length
+    ? groupByChapter(materials.data?.results, chapters.data.results, { skipEmpty: true })
+    : null
+  const reload = () => {
+    materials.reload()
+    chapters.reload()
+  }
   return (
     <>
-      <Alert type="error">{materials.error}</Alert>
+      <Alert type="error">{materials.error || chapters.error}</Alert>
       {summary.total > 0 && (
         <section className="mb-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <ProgressBar
@@ -44,12 +55,14 @@ function MaterialsTab({ assignmentId }) {
           </p>
         </section>
       )}
-      {!materials.data && materials.loading ? (
+      {(!materials.data && materials.loading) || (!chapters.data && chapters.loading) ? (
         <div className="py-10 text-center text-brand-600">
           <Spinner />
         </div>
+      ) : groups?.length ? (
+        <ChapterModule groups={groups} onChange={reload} />
       ) : materials.data?.results.length ? (
-        <MaterialModule materials={materials.data.results} onChange={() => materials.reload()} />
+        <MaterialModule materials={materials.data.results} onChange={reload} />
       ) : (
         !materials.error && <EmptyState title="Guru belum membagikan materi untuk mapel ini." />
       )}

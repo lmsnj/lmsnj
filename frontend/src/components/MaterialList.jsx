@@ -104,7 +104,7 @@ export default function MaterialList({
                 </span>
                 {locked && progress.locked_by && (
                   <span className="mt-0.5 block text-sm text-slate-500">
-                    Selesaikan capaian &ldquo;{progress.locked_by}&rdquo; untuk membuka.
+                    Selesaikan dulu &ldquo;{progress.locked_by}&rdquo; untuk membuka.
                   </span>
                 )}
                 {requirements && (

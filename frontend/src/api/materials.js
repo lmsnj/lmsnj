@@ -93,3 +93,15 @@ export const materialItemsApi = {
       .post('/material-items/reorder/', { material: materialId, items: itemIds })
       .then((res) => res.data),
 }
+
+// Bab (kelompok materi + Post Test) per kelas-mapel. Siswa: berisi `progress` per bab.
+export const chaptersApi = {
+  list: (params) => api.get('/chapters/', { params }).then((res) => res.data),
+  create: (data) => api.post('/chapters/', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/chapters/${id}/`, data).then((res) => res.data),
+  remove: (id) => api.delete(`/chapters/${id}/`),
+  reorder: (teachingAssignment, chapterIds) =>
+    api
+      .post('/chapters/reorder/', { teaching_assignment: teachingAssignment, chapters: chapterIds })
+      .then((res) => res.data),
+}

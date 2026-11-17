@@ -133,3 +133,55 @@ export function moduleActivities(material) {
 export function defaultModuleId(materials = []) {
   return pathSummary(materials).next?.id ?? materials[0]?.id ?? null
 }
+
+/**
+ * Kelompokkan materi per bab, urut seperti backend (progress.py `sort_key`): materi tanpa bab dulu
+ * (`chapter: null`), lalu bab sesuai urutan `chapters`. `skipEmpty` = buang bab tanpa materi
+ * (tampilan siswa); guru tetap melihat bab kosong agar bisa mengisinya.
+ */
+export function groupByChapter(materials = [], chapters = [], { skipEmpty = false } = {}) {
+  const ids = new Set(chapters.map((chapter) => chapter.id))
+  const groups = []
+  const loose = materials.filter((material) => !ids.has(material.chapter))
+  if (loose.length) groups.push({ chapter: null, materials: loose })
+  for (const chapter of chapters) {
+    const list = materials.filter((material) => material.chapter === chapter.id)
+    if (list.length || !skipEmpty) groups.push({ chapter, materials: list })
+  }
+  return groups
+}
+
+/**
+ * Ringkasan satu kelompok bab bagi siswa: { locked, lockedBy, done, total, completed }. Bab memakai
+ * `chapter.progress` dari API (termasuk Post Test); kelompok tanpa bab dihitung dari materinya.
+ */
+export function groupProgress(group) {
+  const progress = group.chapter?.progress
+  if (progress) {
+    return {
+      locked: progress.locked,
+      lockedBy: progress.locked_by,
+      done: progress.completed_materials,
+      total: progress.total_materials,
+      completed: progress.completed,
+    }
+  }
+  const rows = group.materials.map((material) => material.progress).filter(Boolean)
+  const done = rows.filter((row) => row.completed).length
+  return {
+    locked: Boolean(rows[0]?.locked),
+    lockedBy: rows[0]?.locked_by ?? null,
+    done,
+    total: rows.length,
+    completed: rows.length > 0 && done === rows.length,
+  }
+}
+
+/** Kelompok yang dibuka pertama di tampilan bab: yang sedang dipelajari, atau yang pertama. */
+export function defaultGroupIndex(groups = []) {
+  const index = groups.findIndex((group) => {
+    const progress = groupProgress(group)
+    return !progress.locked && !progress.completed
+  })
+  return index === -1 ? 0 : index
+}

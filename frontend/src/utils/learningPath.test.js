@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   defaultModuleId,
+  defaultGroupIndex,
+  groupByChapter,
+  groupProgress,
   moduleActivities,
   moveItem,
   parseObjectives,
@@ -139,4 +142,73 @@ test('materi pertama yang dibuka di tampilan modul', () => {
   assert.equal(defaultModuleId([{ id: 1, ...done }, next]), 2)
   assert.equal(defaultModuleId([{ id: 1, ...done }]), 1)
   assert.equal(defaultModuleId([]), null)
+})
+
+test('materi dikelompokkan per bab, tanpa bab paling depan', () => {
+  const chapters = [
+    { id: 1, title: 'Bab 1' },
+    { id: 2, title: 'Bab 2' },
+    { id: 3, title: 'Bab 3' },
+  ]
+  const materials = [
+    { id: 10, chapter: 2 },
+    { id: 11, chapter: null },
+    { id: 12, chapter: 1 },
+    { id: 13, chapter: 99 }, // bab tidak dikenal = tanpa bab
+  ]
+  const groups = groupByChapter(materials, chapters)
+  assert.deepEqual(
+    groups.map((group) => [group.chapter?.id ?? null, group.materials.map((m) => m.id)]),
+    [
+      [null, [11, 13]],
+      [1, [12]],
+      [2, [10]],
+      [3, []],
+    ],
+  )
+  assert.equal(groupByChapter(materials, chapters, { skipEmpty: true }).length, 3)
+})
+
+test('progres kelompok bab dan bab yang dibuka pertama', () => {
+  const done = { completed: true, locked: false }
+  const open = { completed: false, locked: false }
+  const locked = { completed: false, locked: true, locked_by: 'Post Test Bab 1' }
+  const loose = { chapter: null, materials: [{ progress: done }, { progress: done }] }
+  assert.deepEqual(groupProgress(loose), {
+    locked: false,
+    lockedBy: null,
+    done: 2,
+    total: 2,
+    completed: true,
+  })
+  const chapter = (progress) => ({
+    chapter: { id: 1, progress },
+    materials: [],
+  })
+  const finished = chapter({
+    locked: false,
+    completed_materials: 1,
+    total_materials: 1,
+    completed: true,
+  })
+  const current = chapter({
+    locked: false,
+    completed_materials: 0,
+    total_materials: 2,
+    completed: false,
+  })
+  const waiting = chapter({
+    locked: true,
+    locked_by: 'Post Test Bab 1',
+    completed_materials: 0,
+    total_materials: 1,
+    completed: false,
+  })
+  assert.equal(groupProgress(waiting).lockedBy, 'Post Test Bab 1')
+  assert.equal(defaultGroupIndex([loose, finished, current, waiting]), 2)
+  assert.equal(defaultGroupIndex([finished]), 0)
+  assert.equal(
+    groupProgress({ chapter: null, materials: [{ progress: locked }, { progress: open }] }).locked,
+    true,
+  )
 })

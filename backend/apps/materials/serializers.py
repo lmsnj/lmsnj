@@ -10,9 +10,9 @@ from apps.assessments.models import Assessment
 from apps.common.files import delete_file, validate_upload
 from apps.tasks.models import Task
 
-from .models import Material, MaterialItem, MaterialType
+from .models import Chapter, Material, MaterialItem, MaterialType
 from .objective_quiz import practice_count, quiz_counts
-from .progress import progress_for_request
+from .progress import chapter_progress, progress_for_request
 
 PDF_SIGNATURE = b"%PDF-"
 MAX_OBJECTIVES = 10
@@ -167,9 +167,83 @@ class MaterialItemSerializer(FileContentMixin, serializers.ModelSerializer):
         return validate_content(attrs, self.instance)
 
 
+class ChapterSerializer(serializers.ModelSerializer):
+    # Guru hanya boleh memilih kelas-mapel yang ia ampu (diisi di __init__).
+    teaching_assignment = serializers.PrimaryKeyRelatedField(queryset=TeachingAssignment.objects.none())
+    post_test = serializers.PrimaryKeyRelatedField(
+        queryset=Assessment.objects.all(), required=False, allow_null=True
+    )
+    post_test_title = serializers.CharField(source="post_test.title", read_only=True, default=None)
+    post_test_published = serializers.BooleanField(
+        source="post_test.is_published", read_only=True, default=None
+    )
+    material_count = serializers.SerializerMethodField()
+    # Khusus siswa: terkunci/tidak, jumlah materi tercapai, status Post Test (lihat progress.py).
+    progress = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Chapter
+        fields = [
+            "id",
+            "teaching_assignment",
+            "title",
+            "description",
+            "order",
+            "post_test",
+            "post_test_title",
+            "post_test_published",
+            "material_count",
+            "progress",
+        ]
+        read_only_fields = ["order"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request is not None:
+            self.fields["teaching_assignment"].queryset = TeachingAssignment.objects.filter(
+                teacher=request.user
+            )
+
+    def _visible_materials(self, obj):
+        request = self.context.get("request")
+        materials = list(obj.materials.all())
+        if request is not None and request.user.role == Role.STUDENT:
+            materials = [m for m in materials if m.is_published]
+        return materials
+
+    def get_material_count(self, obj):
+        return len(self._visible_materials(obj))
+
+    def get_progress(self, obj):
+        request = self.context.get("request")
+        if request is None or request.user.role != Role.STUDENT:
+            return None
+        return chapter_progress(request, obj, self._visible_materials(obj))
+
+    def validate_teaching_assignment(self, value):
+        if self.instance and value != self.instance.teaching_assignment:
+            raise serializers.ValidationError("Bab tidak bisa dipindah ke kelas-mapel lain.")
+        return value
+
+    def validate(self, attrs):
+        assignment = attrs.get("teaching_assignment", getattr(self.instance, "teaching_assignment", None))
+        test = attrs.get("post_test")
+        if test is not None and test.teaching_assignment_id != getattr(assignment, "id", None):
+            raise serializers.ValidationError(
+                {"post_test": "Post Test harus asesmen dari kelas-mapel yang sama."}
+            )
+        return attrs
+
+
 class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
     # Guru hanya boleh memilih kelas-mapel yang ia ampu (diisi di __init__).
     teaching_assignment = serializers.PrimaryKeyRelatedField(queryset=TeachingAssignment.objects.none())
+    # Kosong = materi tanpa bab. Bab harus dari kelas-mapel yang sama (dicek di validate).
+    chapter = serializers.PrimaryKeyRelatedField(
+        queryset=Chapter.objects.none(), required=False, allow_null=True
+    )
+    chapter_title = serializers.CharField(source="chapter.title", read_only=True, default=None)
     file = serializers.FileField(write_only=True, required=False, allow_null=True)
     has_file = serializers.SerializerMethodField()
     subject_name = serializers.CharField(source="teaching_assignment.subject.name", read_only=True)
@@ -203,6 +277,8 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
             "teaching_assignment",
             "subject_name",
             "classroom_name",
+            "chapter",
+            "chapter_title",
             "title",
             "description",
             "material_type",
@@ -237,6 +313,9 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
         if request is not None:
             self.fields["teaching_assignment"].queryset = TeachingAssignment.objects.filter(
                 teacher=request.user
+            )
+            self.fields["chapter"].queryset = Chapter.objects.filter(
+                teaching_assignment__teacher=request.user
             )
 
     def get_has_file(self, obj):
@@ -302,6 +381,9 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {field: f"{label} syarat harus dari kelas-mapel yang sama."}
                 )
+        chapter = attrs.get("chapter")
+        if chapter is not None and chapter.teaching_assignment_id != getattr(assignment, "id", None):
+            raise serializers.ValidationError({"chapter": "Bab harus dari kelas-mapel yang sama."})
         return validate_content(attrs, self.instance)
 
 
@@ -321,6 +403,11 @@ class ProgressUpdateSerializer(serializers.Serializer):
 class ReorderSerializer(serializers.Serializer):
     teaching_assignment = serializers.IntegerField()
     materials = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
+
+
+class ReorderChaptersSerializer(serializers.Serializer):
+    teaching_assignment = serializers.IntegerField()
+    chapters = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
 
 
 class ReorderItemsSerializer(serializers.Serializer):

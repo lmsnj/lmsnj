@@ -13,15 +13,23 @@ from apps.common.testing import default_school
 from apps.tasks.models import Submission, Task
 
 from .models import Material, MaterialProgress
-from .progress import chain_locks
+from .progress import chain_blockers
 from .tests import make_user
 
 
 class ChainLockTests(SimpleTestCase):
     def test_locks_after_first_unfinished(self):
-        self.assertEqual(chain_locks([True, False, True, False]), [False, False, True, True])
-        self.assertEqual(chain_locks([True, True]), [False, False])
-        self.assertEqual(chain_locks([]), [])
+        steps = [("A", True, None), ("B", False, None), ("C", True, None), ("D", False, None)]
+        self.assertEqual(chain_blockers(steps), [None, None, "B", "B"])
+        self.assertEqual(chain_blockers([("A", True, None), ("B", True, None)]), [None, None])
+        self.assertEqual(chain_blockers([]), [])
+
+    def test_post_test_gate(self):
+        steps = [("A", True, None), ("B", True, "Post Test Bab 1"), ("C", True, None)]
+        self.assertEqual(chain_blockers(steps), [None, "Post Test Bab 1", "Post Test Bab 1"])
+        # Materi yang belum selesai lebih dulu menjadi penghalang.
+        steps = [("A", False, None), ("B", True, "Post Test Bab 1")]
+        self.assertEqual(chain_blockers(steps), [None, "A"])
 
 
 class LearningPathTests(APITestCase):

@@ -44,7 +44,7 @@ const KIND_ICONS = {
   approval: BadgeCheck,
 }
 
-function DoneIcon({ done, className = '' }) {
+export function DoneIcon({ done, className = '' }) {
   const Icon = done ? CircleCheck : Circle
   return (
     <Icon
@@ -270,26 +270,109 @@ function ActivityList({ material, onChange, onOpenContent, onOpenPractice }) {
 }
 
 // Isi kolom kanan: judul materi, kemajuan, daftar aktivitas, dan cerita reflektif.
-function ModuleDetail({ material, next, onChange, onSelect }) {
+/**
+ * Isi "Daftar Aktivitas" satu materi yang terbuka: aktivitas (konten, Latihan Pemahaman, capaian,
+ * tugas, asesmen, pengesahan) lalu Cerita Reflektif, beserta penampil konten & latihannya.
+ * Dipakai tampilan modul (per materi) dan tampilan bab (`ChapterModule`, di dalam akordeon).
+ */
+export function MaterialActivities({ material, onChange }) {
   // null = penampil tertutup; { itemId } = konten yang dibuka (itemId null = konten utama).
   const [viewing, setViewing] = useState(null)
   const [practicing, setPracticing] = useState(false)
   const practice = practiceState(material)
   const progress = material.progress
-  const { done, total } = countChecks(progress.checks)
   const reflectionCheck = progress.checks.find((check) => check.key === 'reflection')
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <SectionTitle>Aktivitas</SectionTitle>
+        <div className="mt-1">
+          <ActivityList
+            material={material}
+            onChange={onChange}
+            onOpenContent={(itemId) => setViewing({ itemId })}
+            onOpenPractice={() => setPracticing(true)}
+          />
+        </div>
+      </div>
+      <div>
+        <SectionTitle>
+          Cerita Reflektif{' '}
+          {!material.require_reflection && (
+            <span className="font-normal tracking-normal normal-case">(opsional)</span>
+          )}
+        </SectionTitle>
+        <div className="mt-2 flex items-start gap-3">
+          <DoneIcon done={Boolean(progress.reflection)} className="mt-7" />
+          <div className="min-w-0 flex-1">
+            {practice.blocked && !progress.reflection ? (
+              <p className="mt-6 rounded-lg bg-slate-100 p-4 text-sm text-slate-500">
+                Cerita reflektif bisa ditulis setelah Latihan Pemahaman dijawab benar semua.
+              </p>
+            ) : (
+              // key: isi kotak diatur ulang saat pindah materi.
+              <ReflectionBox key={material.id} material={material} onSaved={onChange} />
+            )}
+          </div>
+        </div>
+        {reflectionCheck && !reflectionCheck.done && (
+          <p className="mt-2 text-xs text-slate-500">
+            Refleksi wajib ditulis agar materi berikutnya terbuka.
+          </p>
+        )}
+      </div>
+      {progress.unlocked && (
+        <p className="text-xs text-slate-600">
+          Ditandai tercapai oleh guru{progress.note ? `: ${progress.note}` : '.'}
+        </p>
+      )}
+
+      {practicing && (
+        <PracticeQuiz
+          material={material}
+          onPassed={onChange}
+          onClose={() => setPracticing(false)}
+        />
+      )}
+      {viewing && (
+        <MaterialViewer
+          material={material}
+          itemId={viewing.itemId}
+          contentOnly
+          onClose={() => setViewing(null)}
+          onChange={onChange}
+        />
+      )}
+    </div>
+  )
+}
+
+// Pemberitahuan materi terkunci (penyebabnya: materi atau Post Test yang harus diselesaikan dulu).
+export function LockedMessage({ lockedBy }) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
+      <Lock className="mt-0.5 size-5 shrink-0 text-slate-500" aria-hidden="true" />
+      <p className="text-sm text-slate-700">
+        Masih terkunci. Selesaikan dulu <strong>&ldquo;{lockedBy}&rdquo;</strong>, lalu bagian ini
+        terbuka otomatis.
+      </p>
+    </div>
+  )
+}
+
+// Isi kolom kanan: judul materi, kemajuan, daftar aktivitas, dan cerita reflektif.
+function ModuleDetail({ material, next, onChange, onSelect }) {
+  const progress = material.progress
+  const { done, total } = countChecks(progress.checks)
 
   if (progress.locked) {
     return (
       <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p className="text-xs text-slate-500">Materi {progress.order_number}</p>
         <h3 className="mt-1 text-xl font-bold text-slate-900">{material.title}</h3>
-        <div className="mt-4 flex items-start gap-3 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
-          <Lock className="mt-0.5 size-5 shrink-0 text-slate-500" aria-hidden="true" />
-          <p className="text-sm text-slate-700">
-            Materi ini masih terkunci. Selesaikan dulu semua aktivitas materi{' '}
-            <strong>&ldquo;{progress.locked_by}&rdquo;</strong>, lalu materi ini terbuka otomatis.
-          </p>
+        <div className="mt-4">
+          <LockedMessage lockedBy={progress.locked_by} />
         </div>
       </section>
     )
@@ -313,11 +396,6 @@ function ModuleDetail({ material, next, onChange, onSelect }) {
               : `${done} dari ${total} syarat terpenuhi`
           }
         />
-        {progress.unlocked && (
-          <p className="mt-2 text-xs text-slate-600">
-            Ditandai tercapai oleh guru{progress.note ? `: ${progress.note}` : '.'}
-          </p>
-        )}
       </section>
 
       <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -325,44 +403,8 @@ function ModuleDetail({ material, next, onChange, onSelect }) {
           <DoneIcon done={progress.completed} className="size-6" />
           <h3 className="font-semibold text-slate-900">Daftar Aktivitas</h3>
         </div>
-        <div className="space-y-5 px-5 py-4">
-          <div>
-            <SectionTitle>Aktivitas</SectionTitle>
-            <div className="mt-1">
-              <ActivityList
-                material={material}
-                onChange={onChange}
-                onOpenContent={(itemId) => setViewing({ itemId })}
-                onOpenPractice={() => setPracticing(true)}
-              />
-            </div>
-          </div>
-          <div>
-            <SectionTitle>
-              Cerita Reflektif{' '}
-              {!material.require_reflection && (
-                <span className="font-normal tracking-normal normal-case">(opsional)</span>
-              )}
-            </SectionTitle>
-            <div className="mt-2 flex items-start gap-3">
-              <DoneIcon done={Boolean(progress.reflection)} className="mt-7" />
-              <div className="min-w-0 flex-1">
-                {practice.blocked && !progress.reflection ? (
-                  <p className="mt-6 rounded-lg bg-slate-100 p-4 text-sm text-slate-500">
-                    Cerita reflektif bisa ditulis setelah Latihan Pemahaman dijawab benar semua.
-                  </p>
-                ) : (
-                  // key: isi kotak diatur ulang saat pindah materi.
-                  <ReflectionBox key={material.id} material={material} onSaved={onChange} />
-                )}
-              </div>
-            </div>
-            {reflectionCheck && !reflectionCheck.done && (
-              <p className="mt-2 text-xs text-slate-500">
-                Refleksi wajib ditulis agar materi berikutnya terbuka.
-              </p>
-            )}
-          </div>
+        <div className="px-5 py-4">
+          <MaterialActivities material={material} onChange={onChange} />
         </div>
       </section>
 
@@ -379,23 +421,6 @@ function ModuleDetail({ material, next, onChange, onSelect }) {
             Materi Berikutnya <ChevronRight className="size-4" aria-hidden="true" />
           </button>
         </section>
-      )}
-
-      {practicing && (
-        <PracticeQuiz
-          material={material}
-          onPassed={onChange}
-          onClose={() => setPracticing(false)}
-        />
-      )}
-      {viewing && (
-        <MaterialViewer
-          material={material}
-          itemId={viewing.itemId}
-          contentOnly
-          onClose={() => setViewing(null)}
-          onChange={onChange}
-        />
       )}
     </div>
   )

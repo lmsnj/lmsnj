@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Material, MaterialItem
+from .models import Chapter, Material, MaterialItem
 
 
 class MaterialItemInline(admin.TabularInline):
@@ -16,3 +16,10 @@ class MaterialAdmin(admin.ModelAdmin):
     list_filter = ["material_type", "is_published", "teaching_assignment__subject"]
     search_fields = ["title", "teaching_assignment__classroom__name"]
     list_select_related = ["teaching_assignment__subject", "teaching_assignment__classroom"]
+
+
+@admin.register(Chapter)
+class ChapterAdmin(admin.ModelAdmin):
+    list_display = ["title", "teaching_assignment", "order", "post_test"]
+    search_fields = ["title", "teaching_assignment__classroom__name"]
+    list_select_related = ["teaching_assignment__subject", "teaching_assignment__classroom", "post_test"]

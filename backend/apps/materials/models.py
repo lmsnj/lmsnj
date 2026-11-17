@@ -14,6 +14,38 @@ class MaterialType(models.TextChoices):
     LINK = "link", "Link"
 
 
+class Chapter(models.Model):
+    """Bab: kumpulan materi berurutan dalam satu kelas-mapel, diakhiri Post Test (opsional).
+
+    Materi bab berikutnya baru terbuka setelah Post Test bab sebelumnya tuntas (lihat progress.py).
+    Materi tanpa bab tetap bisa dipakai (ditampilkan sebelum bab pertama)."""
+
+    teaching_assignment = models.ForeignKey(
+        TeachingAssignment, verbose_name="pengampu", on_delete=models.PROTECT, related_name="chapters"
+    )
+    title = models.CharField("judul", max_length=200)
+    # "Yang akan dipelajari" di bab ini (tampil di kolom kiri tampilan siswa).
+    description = models.TextField("yang akan dipelajari", blank=True)
+    order = models.PositiveIntegerField("urutan", default=0)
+    post_test = models.ForeignKey(
+        "assessments.Assessment",
+        verbose_name="post test",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="post_test_chapters",
+    )
+    created_at = models.DateTimeField("dibuat", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "bab"
+        verbose_name_plural = "bab"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
 class Material(models.Model):
     # PROTECT: pengampu yang masih punya materi tidak bisa dihapus tanpa sengaja.
     # Jika guru pengampu diganti, cukup ubah data pengampunya; materi tetap ada.
@@ -21,6 +53,15 @@ class Material(models.Model):
         TeachingAssignment,
         verbose_name="pengampu",
         on_delete=models.PROTECT,
+        related_name="materials",
+    )
+    # Kosong = materi tanpa bab. Bab dihapus -> materinya menjadi tanpa bab (tidak ikut terhapus).
+    chapter = models.ForeignKey(
+        Chapter,
+        verbose_name="bab",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="materials",
     )
     title = models.CharField("judul", max_length=200)
