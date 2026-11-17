@@ -1,0 +1,23 @@
+# Untuk hosting Apache/LiteSpeed (cPanel). Ikut tersalin ke dist/ saat `npm run build`.
+# Nginx mengabaikan file ini (lihat docs/DEPLOY.md untuk server Nginx).
+RewriteEngine On
+
+# Selalu pakai HTTPS.
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# File yang benar-benar ada (JS, CSS, gambar) disajikan apa adanya.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Alamat halaman (mis. /guru/kelas/1) dibuka oleh React Router, jadi kirim index.html.
+# Tanpa ini, refresh browser di halaman dalam menghasilkan 404.
+RewriteRule ^ index.html [L]
+
+<IfModule mod_headers.c>
+  # index.html jangan di-cache agar versi baru langsung terpakai setelah upload ulang.
+  <FilesMatch "index\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
