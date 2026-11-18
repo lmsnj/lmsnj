@@ -48,7 +48,9 @@ class ObjectiveQuizExcelTests(APITestCase):
         )
         subject = Subject.objects.create(school=school, code="DDP", name="DDP")
         assignment = TeachingAssignment.objects.create(teacher=self.teacher, subject=subject, classroom=room)
-        TeachingAssignment.objects.create(teacher=self.other, subject=subject, classroom=room)
+        # Guru mapel lain di kelas yang sama (bukan tim pengampu DDP) tidak boleh mengatur kuis.
+        other_subject = Subject.objects.create(school=school, code="BINDO", name="Bahasa Indonesia")
+        TeachingAssignment.objects.create(teacher=self.other, subject=other_subject, classroom=room)
         self.material = Material.objects.create(
             teaching_assignment=assignment, title="Flowgorithm", material_type="link", url="https://example.com",
             objectives=["Capaian satu", "Capaian dua", "Capaian tiga"], created_by=self.teacher,

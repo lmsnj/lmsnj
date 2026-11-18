@@ -1,9 +1,12 @@
-"""Rekap nilai satu kelas-mapel: baris = siswa, kolom = tugas yang sudah terbit."""
+"""Rekap nilai satu kelas-mapel: baris = siswa, kolom = tugas yang sudah terbit.
+
+Tugas seluruh tim pengampu kelas-mapel itu ikut dihitung (lihat TeachingAssignment.team), jadi rekap
+setiap guru tim sama."""
 
 import csv
 import io
 
-from .models import Submission
+from .models import Submission, Task
 
 # Penanda UTF-8 di awal file agar Excel membaca huruf dengan benar.
 UTF8_BOM = "\ufeff"
@@ -18,7 +21,11 @@ def roster_students(teaching_assignment, submissions):
 
 
 def build_gradebook(teaching_assignment):
-    tasks = list(teaching_assignment.tasks.filter(is_published=True).order_by("due_at", "id"))
+    tasks = list(
+        Task.objects.filter(teaching_assignment__in=teaching_assignment.team(), is_published=True).order_by(
+            "due_at", "id"
+        )
+    )
     submissions = list(Submission.objects.filter(task__in=tasks).select_related("student"))
     by_key = {(s.student_id, s.task_id): s for s in submissions}
 

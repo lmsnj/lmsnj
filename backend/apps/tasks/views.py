@@ -7,8 +7,9 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.academics.filters import TeamContentFilter
 from apps.academics.models import Classroom
-from apps.academics.selectors import teaching_assignments_for
+from apps.academics.selectors import team_assignments_for
 from apps.accounts.models import Role
 from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStudent, IsTeacher
 from apps.common.files import file_response
@@ -23,16 +24,18 @@ from .serializers import GradeSerializer, SubmissionSerializer, SubmitSerializer
 from .services import cancel_submission, grade_submission, submit_task
 
 
+class TaskFilter(TeamContentFilter):
+    class Meta:
+        model = Task
+        fields = {"is_published": ["exact"], "due_at": ["gte", "lte"]}
+
+
 class TaskViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [ContentPermission]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     # due_at__gte / due_at__lte dipakai tab "Tugas Hari Ini" dan "Tugas Mendatang" di Beranda.
-    filterset_fields = {
-        "teaching_assignment": ["exact"],
-        "is_published": ["exact"],
-        "due_at": ["gte", "lte"],
-    }
+    filterset_class = TaskFilter
     search_fields = ["title", "instructions"]
     ordering_fields = ["due_at", "created_at", "title"]
     protected_message = (
@@ -145,9 +148,7 @@ class GradebookView(APIView):
 
     def get(self, request, assignment_id):
         assignment = get_object_or_404(
-            teaching_assignments_for(request.user, active_school(request)).select_related(
-                "subject", "classroom"
-            ),
+            team_assignments_for(request.user, active_school(request)).select_related("subject", "classroom"),
             pk=assignment_id,
         )
         gradebook = build_gradebook(assignment)

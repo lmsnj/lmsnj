@@ -6,6 +6,7 @@ import EmptyState from '../../components/EmptyState'
 import Spinner from '../../components/Spinner'
 import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
+import { teamLabel, uniqueClassSubjects } from '../../utils/teams'
 
 function Header({ description }) {
   return (
@@ -21,7 +22,8 @@ export default function MySubjectsPage() {
   const me = useFetch(authApi.me)
   // Backend otomatis hanya mengirim mapel di kelas siswa yang login.
   const assignments = useFetch(assignmentsApi.list, ALL)
-  const items = assignments.data?.results ?? []
+  // Mapel yang diampu beberapa guru (tim) cukup tampil satu kali: materinya sama.
+  const items = uniqueClassSubjects(assignments.data?.results)
 
   if (me.data && !me.data.classroom) {
     return (
@@ -58,7 +60,7 @@ export default function MySubjectsPage() {
               to={`/siswa/mapel/${a.id}`}
               title={a.subject_name}
               subject={a.subject_name}
-              subtitle={`Guru: ${a.teacher_name}`}
+              subtitle={`Guru: ${teamLabel(a)}`}
               info={[
                 a.classroom_name,
                 <>

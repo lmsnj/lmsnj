@@ -12,6 +12,7 @@ import Spinner from '../../components/Spinner'
 import useFetch from '../../hooks/useFetch'
 import { useTabs } from '../../hooks/useTabs'
 import { ALL } from '../../utils/academic'
+import { teamPartners } from '../../utils/teams'
 import AttendanceTab from './AttendanceTab'
 import GradebookTab from './GradebookTab'
 import MaterialsManager from './MaterialsManager'
@@ -108,6 +109,13 @@ function ClassContent({ assignment: a }) {
             Guru <Avatar name={a.teacher_name} />
             <strong className="text-slate-800">{a.teacher_name}</strong>
           </>,
+          // Rekan setim memakai materi, bab, tugas, dan asesmen yang sama di kelas-mapel ini.
+          ...teamPartners(a).map((name) => (
+            <>
+              Bersama <Avatar name={name} />
+              <strong className="text-slate-800">{name}</strong>
+            </>
+          )),
         ]}
       />
       {tabsBar}

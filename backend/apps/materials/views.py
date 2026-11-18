@@ -9,7 +9,9 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.academics.filters import TeamContentFilter
 from apps.academics.models import TeachingAssignment
+from apps.academics.selectors import team_assignments_for_request
 from apps.accounts.models import Role
 from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStudent, IsTeacher
 from apps.assessments import ai_generate, auto_assessment
@@ -19,13 +21,16 @@ from apps.schools.context import active_school
 
 from . import objective_quiz, objective_quiz_excel
 from . import progress as learning
+from . import sharing
 from .models import Chapter, Material, MaterialItem, MaterialProgress
 from .selectors import chapters_for, materials_for
 from .serializers import (
     ChapterSerializer,
     CheckObjectivesSerializer,
+    CopyMaterialsSerializer,
     MaterialItemSerializer,
     MaterialSerializer,
+    MergeMaterialSerializer,
     ProgressUpdateSerializer,
     ReflectionSerializer,
     ReorderChaptersSerializer,
@@ -34,11 +39,42 @@ from .serializers import (
 )
 
 
+class MaterialFilter(TeamContentFilter):
+    class Meta:
+        model = Material
+        fields = ["material_type", "is_published"]
+
+
+class ChapterFilter(TeamContentFilter):
+    class Meta:
+        model = Chapter
+        fields = []
+
+
+def team_materials(assignment):
+    """Semua materi kelas-mapel ini, buatan guru tim mana pun."""
+    return Material.objects.filter(teaching_assignment__in=assignment.team())
+
+
+def team_chapters(assignment):
+    return Chapter.objects.filter(teaching_assignment__in=assignment.team())
+
+
+def team_assignment_or_404(request, assignment_id):
+    """Pengampu kelas-mapel tim guru yang login (404 jika bukan timnya)."""
+    return get_object_or_404(team_assignments_for_request(request), pk=assignment_id)
+
+
+def ensure_team_member(user, material, message):
+    if not material.teaching_assignment.has_team_member(user):
+        raise PermissionDenied(message)
+
+
 class MaterialViewSet(viewsets.ModelViewSet):
     serializer_class = MaterialSerializer
     permission_classes = [ContentPermission]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    filterset_fields = ["teaching_assignment", "material_type", "is_published"]
+    filterset_class = MaterialFilter
     search_fields = ["title", "description"]
     ordering_fields = ["created_at", "title", "order"]
 
@@ -57,9 +93,9 @@ class MaterialViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        # Materi baru ditaruh di urutan terakhir kelas-mapelnya.
+        # Materi baru ditaruh di urutan terakhir kelas-mapelnya (materi semua guru tim dihitung).
         assignment = serializer.validated_data["teaching_assignment"]
-        last = assignment.materials.aggregate(last=Max("order"))["last"] or 0
+        last = team_materials(assignment).aggregate(last=Max("order"))["last"] or 0
         serializer.save(created_by=self.request.user, order=last + 1)
 
     def unlocked_for_student(self, material):
@@ -144,7 +180,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
         PUT {quizzes: {indeks: [rancangan soal]}}: guru pengampu mengatur kuis."""
         material = self.get_object()
         user = request.user
-        is_owner = material.teaching_assignment.teacher_id == user.id
+        is_owner = material.teaching_assignment.has_team_member(user)
         if request.method == "PUT":
             if not is_owner:
                 raise PermissionDenied("Hanya guru pengampu yang dapat mengatur kuis capaian.")
@@ -186,8 +222,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
 
     def _owned_material(self, request):
         material = self.get_object()
-        if material.teaching_assignment.teacher_id != request.user.id:
-            raise PermissionDenied("Hanya guru pengampu yang dapat mengatur kuis materi ini.")
+        ensure_team_member(request.user, material, "Hanya guru pengampu yang dapat mengatur kuis materi ini.")
         return material
 
     # Siswa juga boleh POST (mengirim jawaban); hak akses diperiksa di dalam action.
@@ -198,7 +233,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
         PUT {items: [rancangan soal]}: guru pengampu mengatur latihan (daftar kosong = hapus)."""
         material = self.get_object()
         user = request.user
-        is_owner = material.teaching_assignment.teacher_id == user.id
+        is_owner = material.teaching_assignment.has_team_member(user)
         if request.method == "PUT":
             if not is_owner:
                 raise PermissionDenied("Hanya guru pengampu yang dapat mengatur Latihan Pemahaman.")
@@ -286,8 +321,10 @@ class MaterialViewSet(viewsets.ModelViewSet):
         students = list(
             material.teaching_assignment.classroom.students.filter(is_active=True).order_by("full_name")
         )
-        # Progres dihitung bersama materi lain di kelas-mapel ini (agar status terkunci benar).
-        materials = learning.published_materials([material.teaching_assignment_id])
+        # Progres dihitung bersama materi lain di kelas-mapel ini, buatan guru tim mana pun (agar status
+        # terkunci benar).
+        team_ids = list(material.teaching_assignment.team().values_list("id", flat=True))
+        materials = learning.published_materials(team_ids)
         if material not in materials:
             materials.append(material)
         table = learning.progress_table(materials, [s.id for s in students])
@@ -323,8 +360,9 @@ class MaterialViewSet(viewsets.ModelViewSet):
         """Guru pengampu: buat asesmen "Cek Pemahaman" otomatis (draf, langsung jadi syarat materi).
         GET = sumber yang tersedia. POST {source: "concepts" (gratis, bawaan) | "ai", question_count}."""
         material = self.get_object()
-        if material.teaching_assignment.teacher_id != request.user.id:
-            raise PermissionDenied("Hanya guru pengampu yang dapat membuat asesmen untuk materi ini.")
+        ensure_team_member(
+            request.user, material, "Hanya guru pengampu yang dapat membuat asesmen untuk materi ini."
+        )
         if request.method == "GET":
             return Response(
                 {
@@ -363,15 +401,12 @@ class MaterialViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"], permission_classes=[IsTeacher])
     def reorder(self, request):
-        """{teaching_assignment, materials: [id urut]} - atur urutan materi kelas-mapel milik guru."""
+        """{teaching_assignment, materials: [id urut]} - atur urutan materi kelas-mapel tim guru."""
         serializer = ReorderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        assignment = get_object_or_404(
-            TeachingAssignment.objects.filter(teacher=request.user),
-            pk=serializer.validated_data["teaching_assignment"],
-        )
+        assignment = team_assignment_or_404(request, serializer.validated_data["teaching_assignment"])
         ids = serializer.validated_data["materials"]
-        existing = set(assignment.materials.values_list("id", flat=True))
+        existing = set(team_materials(assignment).values_list("id", flat=True))
         if set(ids) != existing or len(ids) != len(existing):
             raise ValidationError(
                 {"materials": "Daftar materi tidak lengkap atau bukan dari kelas-mapel ini."}
@@ -380,6 +415,60 @@ class MaterialViewSet(viewsets.ModelViewSet):
             for number, material_id in enumerate(ids, start=1):
                 Material.objects.filter(pk=material_id).update(order=number)
         return Response({"detail": "Urutan materi disimpan."})
+
+    @action(detail=False, url_path="copy-targets", permission_classes=[IsTeacher])
+    def copy_targets(self, request):
+        """?teaching_assignment=<id> - kelas lain (mapel sama, sekolah ini) tujuan Salin ke Kelas Lain."""
+        raw_id = request.query_params.get("teaching_assignment", "")
+        assignment = team_assignment_or_404(request, raw_id if raw_id.isdigit() else 0)
+        return Response(sharing.copy_targets(assignment, active_school(request)))
+
+    @action(detail=False, methods=["post"], permission_classes=[IsTeacher])
+    def copy(self, request):
+        """{teaching_assignment, materials: [id], target} - salin materi ke kelas-mapel lain sebagai draf."""
+        serializer = CopyMaterialsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        source = team_assignment_or_404(request, data["teaching_assignment"])
+        materials = list(
+            team_materials(source)
+            .filter(pk__in=data["materials"])
+            .select_related("teaching_assignment", "chapter")
+            .prefetch_related("items")
+        )
+        if len(materials) != len(set(data["materials"])):
+            raise ValidationError({"materials": "Ada materi yang bukan dari kelas-mapel ini."})
+        targets = {t["teaching_assignment"] for t in sharing.copy_targets(source, active_school(request))}
+        if data["target"] not in targets:
+            raise ValidationError({"target": "Kelas tujuan harus kelas lain dengan mapel yang sama."})
+        target = TeachingAssignment.objects.select_related("classroom").get(pk=data["target"])
+        copies = sharing.copy_materials(materials, target, request.user)
+        return Response(
+            {
+                "copied": len(copies),
+                "detail": f"{len(copies)} materi disalin ke {target.classroom.name} sebagai draf.",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=["post"], permission_classes=[IsTeacher])
+    def merge(self, request, pk=None):
+        """{duplicate} - gabungkan materi kembar ke materi ini; materi kembar dihapus."""
+        keep = self.get_object()
+        serializer = MergeMaterialSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        duplicate = self.get_queryset().filter(pk=serializer.validated_data["duplicate"]).first()
+        if duplicate is None:
+            raise ValidationError({"duplicate": "Materi yang digabung tidak ditemukan."})
+        completed = sharing.merge_materials(keep, duplicate, request.user)
+        keep.refresh_from_db()
+        return Response(
+            {
+                "completed": completed,
+                "detail": f"Materi digabung. {completed} siswa ditandai sudah tuntas.",
+                "material": self.get_serializer(keep).data,
+            }
+        )
 
 
 class GenerateAssessmentSerializer(serializers.Serializer):
@@ -433,7 +522,7 @@ class MaterialItemViewSet(viewsets.ModelViewSet):
         serializer = ReorderItemsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         material = get_object_or_404(
-            Material.objects.filter(teaching_assignment__teacher=request.user),
+            Material.objects.filter(teaching_assignment__in=team_assignments_for_request(request)),
             pk=serializer.validated_data["material"],
         )
         ids = serializer.validated_data["items"]
@@ -453,7 +542,7 @@ class ChapterViewSet(viewsets.ModelViewSet):
 
     serializer_class = ChapterSerializer
     permission_classes = [ContentPermission]
-    filterset_fields = ["teaching_assignment"]
+    filterset_class = ChapterFilter
 
     def get_queryset(self):
         materials = Material.objects.order_by("order", "created_at", "id")
@@ -461,26 +550,24 @@ class ChapterViewSet(viewsets.ModelViewSet):
             chapters_for(self.request.user, active_school(self.request))
             .select_related("post_test")
             .prefetch_related(Prefetch("materials", queryset=materials))
-            .order_by("teaching_assignment_id", "order", "id")
+            # Urut per kelas-mapel (bukan per pengampu) agar bab semua guru tim tersusun bersama.
+            .order_by("teaching_assignment__classroom_id", "teaching_assignment__subject_id", "order", "id")
         )
 
     def perform_create(self, serializer):
-        # Bab baru ditaruh paling akhir.
+        # Bab baru ditaruh paling akhir (bab semua guru tim dihitung).
         assignment = serializer.validated_data["teaching_assignment"]
-        last = assignment.chapters.aggregate(last=Max("order"))["last"] or 0
+        last = team_chapters(assignment).aggregate(last=Max("order"))["last"] or 0
         serializer.save(order=last + 1)
 
     @action(detail=False, methods=["post"], permission_classes=[IsTeacher])
     def reorder(self, request):
-        """{teaching_assignment, chapters: [id urut]} - atur urutan bab kelas-mapel milik guru."""
+        """{teaching_assignment, chapters: [id urut]} - atur urutan bab kelas-mapel tim guru."""
         serializer = ReorderChaptersSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        assignment = get_object_or_404(
-            TeachingAssignment.objects.filter(teacher=request.user),
-            pk=serializer.validated_data["teaching_assignment"],
-        )
+        assignment = team_assignment_or_404(request, serializer.validated_data["teaching_assignment"])
         ids = serializer.validated_data["chapters"]
-        existing = set(assignment.chapters.values_list("id", flat=True))
+        existing = set(team_chapters(assignment).values_list("id", flat=True))
         if set(ids) != existing or len(ids) != len(existing):
             raise ValidationError({"chapters": "Daftar bab tidak lengkap atau bukan dari kelas-mapel ini."})
         with transaction.atomic():

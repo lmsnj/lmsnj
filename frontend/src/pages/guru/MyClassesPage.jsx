@@ -8,6 +8,7 @@ import useAuth from '../../hooks/useAuth'
 import useFetch from '../../hooks/useFetch'
 import { useTabs } from '../../hooks/useTabs'
 import { ALL } from '../../utils/academic'
+import { teamPartners } from '../../utils/teams'
 
 // Tab per tahun ajaran: tahun terbaru = "Kelas Aktif".
 function yearTabs(items) {
@@ -70,6 +71,7 @@ export default function MyClassesPage() {
               badge={homeroomIds.has(a.classroom) && <Badge color="green">Wali kelas</Badge>}
               info={[
                 `${a.student_count} Siswa`,
+                ...(teamPartners(a).length ? [`Bersama ${teamPartners(a).join(', ')}`] : []),
                 <>
                   Tahun Ajaran <strong className="text-slate-800">{a.academic_year}</strong>
                 </>,

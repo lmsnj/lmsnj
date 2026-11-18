@@ -15,6 +15,7 @@ import useFetch from '../../hooks/useFetch'
 import { useTabs } from '../../hooks/useTabs'
 import { ALL } from '../../utils/academic'
 import { groupByChapter, pathSummary } from '../../utils/learningPath'
+import { teamTeachers } from '../../utils/teams'
 
 const TABS = [
   { id: 'ringkasan', label: 'Ringkasan' },
@@ -92,7 +93,10 @@ function Overview({ assignment, onSelectTab }) {
     <ClassOverview
       materials={materials}
       tasks={tasks}
-      people={[{ name: assignment.teacher_name, role: `Guru ${assignment.subject_name}` }]}
+      people={teamTeachers(assignment).map((name) => ({
+        name,
+        role: `Guru ${assignment.subject_name}`,
+      }))}
       onSelectTab={onSelectTab}
       taskLink={(task) => `/siswa/tugas/${task.id}`}
     />
@@ -135,10 +139,12 @@ export default function StudentSubjectPage() {
           <>
             Tahun Ajaran <strong className="text-slate-800">{a.academic_year}</strong>
           </>,
-          <>
-            Guru <Avatar name={a.teacher_name} />
-            <strong className="text-slate-800">{a.teacher_name}</strong>
-          </>,
+          ...teamTeachers(a).map((name) => (
+            <>
+              Guru <Avatar name={name} />
+              <strong className="text-slate-800">{name}</strong>
+            </>
+          )),
         ]}
       />
       {tabsBar}

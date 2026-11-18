@@ -16,18 +16,23 @@ def _mean(values):
 
 def build_classroom_report(classroom):
     assignments = classroom.teaching_assignments.select_related("subject", "teacher").order_by(
-        "subject__name"
+        "subject__name", "id"
     )
+    # Satu kolom per kelas-mapel: tim pengampu (beberapa guru satu mapel) memakai rekap yang sama.
+    teams = {}
+    for assignment in assignments:
+        teams.setdefault(assignment.subject_id, []).append(assignment)
     subjects = []
     averages = {}  # student_id -> {assignment_id: rata-rata}
-    for assignment in assignments:
+    for team in teams.values():
+        assignment = team[0]
         gradebook = build_gradebook(assignment)
         subjects.append(
             {
                 "id": assignment.id,
                 "subject_code": assignment.subject.code,
                 "subject_name": assignment.subject.name,
-                "teacher_name": assignment.teacher.full_name,
+                "teacher_name": ", ".join(a.teacher.full_name for a in team),
                 "task_count": len(gradebook["tasks"]),
             }
         )

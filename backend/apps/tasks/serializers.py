@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.academics.models import TeachingAssignment
+from apps.academics.selectors import team_assignments_for_request
 from apps.common.files import delete_file, validate_upload
 
 from .models import ALLOWED_TASK_EXTENSIONS, Submission, Task
@@ -112,9 +113,8 @@ class TaskSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request is not None:
-            self.fields["teaching_assignment"].queryset = TeachingAssignment.objects.filter(
-                teacher=request.user
-            )
+            # Kelas-mapel tim guru ini (rekan setim boleh mengubah tugas buatan rekannya).
+            self.fields["teaching_assignment"].queryset = team_assignments_for_request(request)
 
     # Diisi lewat annotate di view; hitung manual jika objek baru dibuat/diubah.
     def get_ungraded_count(self, obj):

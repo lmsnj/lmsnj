@@ -127,3 +127,19 @@ class TeachingAssignment(models.Model):
 
     def __str__(self):
         return f"{self.subject.name} - {self.classroom.name} ({self.teacher.full_name})"
+
+    # Tim pengampu: beberapa guru boleh mengajar mapel yang sama di kelas yang sama. Materi, bab, tugas,
+    # dan asesmen satu kelas-mapel dipakai BERSAMA oleh tim itu, sehingga siswa hanya punya satu jalur
+    # belajar (progresnya tidak ganda) dan guru tidak perlu mengunggah ulang materi rekannya.
+    @property
+    def class_subject(self):
+        """Kunci kelas-mapel (sama untuk semua anggota tim)."""
+        return (self.classroom_id, self.subject_id)
+
+    def team(self):
+        """Semua pengampu mapel ini di kelas ini (termasuk dirinya sendiri)."""
+        return TeachingAssignment.objects.filter(classroom_id=self.classroom_id, subject_id=self.subject_id)
+
+    def has_team_member(self, user):
+        """Apakah `user` termasuk guru tim kelas-mapel ini."""
+        return self.team().filter(teacher_id=user.id).exists()

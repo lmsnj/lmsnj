@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.academics.models import TeachingAssignment
+from apps.academics.selectors import team_assignments_for_request
 from apps.exams.models import ExamEvent
 
 from . import interactive
@@ -128,7 +129,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request is not None:
             self.fields["assessment"].queryset = Assessment.objects.filter(
-                teaching_assignment__teacher=request.user
+                teaching_assignment__in=team_assignments_for_request(request)
             )
 
     def validate_assessment(self, value):
@@ -318,9 +319,8 @@ class AssessmentSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request is not None:
-            self.fields["teaching_assignment"].queryset = TeachingAssignment.objects.filter(
-                teacher=request.user
-            )
+            # Kelas-mapel tim guru ini (rekan setim boleh mengubah asesmen buatan rekannya).
+            self.fields["teaching_assignment"].queryset = team_assignments_for_request(request)
 
     def get_locked(self, obj):
         # Hitungan dari annotate; untuk objek baru dibuat pasti belum ada pengerjaan.

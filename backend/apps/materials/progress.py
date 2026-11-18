@@ -1,5 +1,7 @@
 """Capaian materi dan kunci urutan materi (dilihat dari sisi SATU siswa).
 
+- Satu kelas-mapel = SATU jalur belajar, walaupun diampu beberapa guru (tim pengampu): materi semua guru
+  tim digabung dalam satu urutan, sehingga progres siswa tidak ganda.
 - Materi di satu kelas-mapel diurutkan: materi tanpa bab dulu, lalu per bab (`Chapter.order`), di dalamnya
   `order`. Materi ke-N terbuka setelah capaian SEMUA materi sebelumnya terpenuhi; materi pertama selalu
   terbuka. Hanya materi terbit yang dihitung.
@@ -39,11 +41,16 @@ def chain_blockers(steps):
     return result
 
 
+def group_key(material):
+    """Jalur belajar materi ini = kelas-mapelnya (bukan guru pengampunya)."""
+    return material.teaching_assignment.class_subject
+
+
 def sort_key(material):
     """Urutan belajar: materi tanpa bab dulu, lalu per bab, lalu urutan materi."""
     chapter = material.chapter
     return (
-        material.teaching_assignment_id,
+        *group_key(material),
         chapter is not None,
         chapter.order if chapter else 0,
         material.chapter_id or 0,
@@ -164,7 +171,7 @@ def progress_table(materials, student_ids):
 
     groups = {}
     for material in materials:
-        groups.setdefault(material.teaching_assignment_id, []).append(material)
+        groups.setdefault(group_key(material), []).append(material)
 
     table = {}
     for student_id in student_ids:
@@ -212,7 +219,7 @@ def progress_table(materials, student_ids):
 def published_materials(teaching_assignment_ids):
     return list(
         Material.objects.filter(teaching_assignment_id__in=teaching_assignment_ids, is_published=True)
-        .select_related("required_task", "required_assessment", "chapter__post_test")
+        .select_related("teaching_assignment", "required_task", "required_assessment", "chapter__post_test")
         .prefetch_related("items")
         .order_by("order", "created_at", "id")
     )

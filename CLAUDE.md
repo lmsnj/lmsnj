@@ -170,6 +170,20 @@ Pola yang wajib dipakai ulang:
   `/cetak/kartu-akun` (`AccountCardsPrintPage`, di luar `DashboardLayout`, 10 kartu per A4) menerima data
   lewat `cardStore` (sessionStorage, dihapus saat halaman ditinggalkan — password tidak dikirim balik ke server).
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan. `weekly_hours` = JP resmi per minggu (opsional, dari distribusi JP).
+- **Tim pengampu** (`docs/REQUIREMENTS.md` MAT-TEAM): beberapa guru satu mapel di kelas yang sama = satu tim
+  (`TeachingAssignment.team()`, `class_subject`, `has_team_member`). Materi, bab, konten, kuis/latihan, tugas,
+  asesmen, pengumpulan & nilai kelas-mapel itu DIPAKAI BERSAMA: selector konten memakai
+  `team_assignments_for(user, school)` (bukan `teaching_assignments_for`; presensi/sesi/jadwal tetap per guru),
+  `?teaching_assignment=<id>` disaring `academics/filters.py::TeamContentFilter` (= seluruh tim), field FK di
+  serializer memakai `team_assignments_for_request`, cek "guru pengampu" memakai `has_team_member`, validasi
+  syarat/bab/Post Test = kelas-mapel sama. Jalur belajar siswa dikelompokkan per (kelas, mapel)
+  (`progress.group_key`), jadi satu urutan & progres tidak ganda; urutan materi/bab dihitung per tim. Konten tetap
+  tercatat di pengampu pembuatnya (tanpa migrasi). Rekap nilai memuat tugas seluruh tim; laporan kelas satu kolom
+  per mapel. `/api/teaching-assignments/` mengirim `team_teachers`; frontend `utils/teams.js` (siswa: satu kartu
+  per kelas-mapel). `materials/sharing.py`: **Salin ke Kelas Lain** (`copy_materials`, mapel sama kelas lain,
+  hasil DRAF, file disalin, bab dicocokkan judul, syarat tugas/asesmen & progres tidak ikut) dan **Gabungkan
+  materi kembar** (`merge_materials`: siswa yang menuntaskan materi kembar -> `unlocked` di materi yang
+  dipertahankan, refleksi & pengesahan ikut, materi kembar dihapus).
 - **Jadwal pelajaran mingguan** (`apps/schedule`, panduan `docs/jadwal/README.md`): **Timetable** (versi jadwal milik
   satu sekolah: `school`, `code` unik per sekolah, `academic_year`, `semester`, `effective_from`, `is_active` = satu
   yang aktif PER SEKOLAH). **TimeSlot**: `day` (Senin = 0 … Ahad = 6, sama dengan `date.weekday()`), `period`,
@@ -592,7 +606,9 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET/POST | `/api/materials/{id}/objective-quiz-template/`, `.../objective-quiz-import/` (multipart `file`, `dry_run`) | Guru pengampu: template berisi kuis yang ada / impor kuis capaian |
 | GET/POST/PUT | `/api/materials/{id}/objective-quiz/` (GET `?index=`; POST `index`, `answers`; PUT `quizzes: {indeks: [soal]}`) | Siswa (materi terbuka): kerjakan; guru pengampu/admin: pratinjau; PUT guru pengampu |
 | GET/POST/PUT | `/api/materials/{id}/practice/` (POST `answers`; PUT `items: [rancangan soal]`, `[]` = hapus), `.../practice-template/`, `.../practice-import/` (multipart `file`, `dry_run`) | Siswa (semua konten sudah dibuka): kerjakan; guru pengampu/admin: pratinjau; PUT/template/impor: guru pengampu |
-| POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu |
+| POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu (tim) |
+| GET/POST | `/api/materials/copy-targets/?teaching_assignment=`, `/api/materials/copy/` (`teaching_assignment`, `materials`, `target`) | Guru tim: salin materi ke kelas lain (mapel sama) sebagai draf |
+| POST   | `/api/materials/{id}/merge/` (`duplicate`) | Guru tim: gabungkan materi kembar ke materi ini |
 | CRUD   | `/api/chapters/` (filter `teaching_assignment`), `.../reorder/` (`teaching_assignment`, `chapters: [id urut]`) | Tulis: guru pengampu. Hapus: + admin. Baca: admin semua, guru miliknya, siswa bab berisi materi terbit di kelasnya (+ `progress`) |
 | CRUD   | `/api/material-items/` (multipart; filter `material`), `.../{id}/download/`, `.../reorder/` (`material`, `items: [id urut]`) | Tulis: guru pengampu materinya. Hapus: + admin. Baca/download: sama dengan materinya (siswa: materi tidak terkunci) |
 | POST   | `/api/material-items/{id}/open/` | Siswa (materi tidak terkunci); mengembalikan materi + progres |
@@ -671,3 +687,5 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
       ruang obrolan, lembar asesmen
 - [x] Soal interaktif (lihat `docs/REQUIREMENTS.md` QA-INT-00..04): isian singkat, tarik & lepas,
       menjodohkan, video interaktif
+- [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
+      guru, salin materi ke kelas lain, gabungkan materi kembar

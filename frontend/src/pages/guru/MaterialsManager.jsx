@@ -4,8 +4,10 @@ import {
   BookOpen,
   ClipboardCheck,
   ClipboardList,
+  Copy,
   Layers,
   ListChecks,
+  Merge,
   PencilLine,
   Sparkles,
 } from 'lucide-react'
@@ -21,10 +23,12 @@ import { ALL } from '../../utils/academic'
 import { getErrorMessage } from '../../utils/errors'
 import { groupByChapter, moveItem } from '../../utils/learningPath'
 import ChaptersModal from './ChaptersModal'
+import CopyMaterialsModal from './CopyMaterialsModal'
 import GenerateAssessmentModal from './GenerateAssessmentModal'
 import MaterialFormModal from './MaterialFormModal'
 import MaterialItemsModal from './MaterialItemsModal'
 import MaterialProgressModal from './MaterialProgressModal'
+import MergeMaterialModal from './MergeMaterialModal'
 import ObjectiveQuizImportModal from './ObjectiveQuizImportModal'
 import PracticeImportModal from './PracticeImportModal'
 
@@ -48,7 +52,8 @@ export default function MaterialsManager({
   summary,
 }) {
   const [notice, setNotice] = useState({ type: 'success', text: '' })
-  // { type: 'form' | 'items' | 'practice' | 'chapters' | 'view' | 'delete' | 'progress' | 'ai' | 'quiz', material }
+  // { type: 'form' | 'items' | 'practice' | 'chapters' | 'copy' | 'merge' | 'view' | 'delete' | 'progress' |
+  //   'ai' | 'quiz', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
   const materials = useFetch(materialsApi.list, {
     ...ALL,
@@ -155,6 +160,16 @@ export default function MaterialsManager({
       <Button variant="ghost" size="sm" onClick={() => setDialog({ type: 'form', material })}>
         Ubah
       </Button>
+      {canReorder && all?.length > 1 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setDialog({ type: 'merge', material })}
+          title="Gabungkan materi kembar (mis. diunggah dua guru) ke materi ini"
+        >
+          <Merge className="size-4" aria-hidden="true" /> Gabungkan
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="sm"
@@ -192,9 +207,16 @@ export default function MaterialsManager({
             Materi berstatus <strong>Draf</strong> tidak terlihat oleh siswa.
             {canReorder &&
               ' Siswa membuka materi sesuai urutan; materi berikutnya terbuka setelah capaian sebelumnya terpenuhi.'}
+            {canReorder &&
+              ' Guru lain yang mengampu mapel ini di kelas yang sama memakai daftar materi yang sama: cukup tambahkan materi berikutnya.'}
           </p>
         )}
         <div className="flex flex-wrap gap-2">
+          {canReorder && all?.length > 0 && (
+            <Button variant="secondary" onClick={() => setDialog({ type: 'copy' })}>
+              <Copy className="size-4" aria-hidden="true" /> Salin ke Kelas Lain
+            </Button>
+          )}
           {canReorder && (
             <Button variant="secondary" onClick={() => setDialog({ type: 'chapters' })}>
               <BookOpen className="size-4" aria-hidden="true" /> Bab
@@ -281,6 +303,29 @@ export default function MaterialsManager({
           onClose={closeDialog}
           onChanged={() => {
             chapters.reload()
+            materials.reload()
+          }}
+        />
+      )}
+      {dialog?.type === 'copy' && (
+        <CopyMaterialsModal
+          assignmentId={assignmentId}
+          materials={groups ? groups.flatMap((group) => group.materials) : all}
+          onClose={closeDialog}
+          onCopied={(text) => {
+            closeDialog()
+            setNotice({ type: 'success', text })
+          }}
+        />
+      )}
+      {dialog?.type === 'merge' && (
+        <MergeMaterialModal
+          material={dialog.material}
+          materials={all}
+          onClose={closeDialog}
+          onMerged={(text) => {
+            closeDialog()
+            setNotice({ type: 'success', text })
             materials.reload()
           }}
         />

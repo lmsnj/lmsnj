@@ -10,7 +10,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.academics.selectors import teaching_assignments_for
+from apps.academics.filters import TeamContentFilter
+from apps.academics.selectors import team_assignments_for, team_assignments_for_request
 from apps.accounts.models import Role, User
 from apps.accounts.permissions import ContentPermission, IsAdminOrTeacher, IsStudent, IsTeacher
 from apps.common.excel import import_response, is_dry_run, template_response
@@ -65,8 +66,9 @@ def _subquery(queryset, aggregate):
 
 
 def assessments_for(user, school):
-    """Admin: semua. Guru: asesmen kelas-mapel miliknya (termasuk draf). Siswa: yang terbit di kelasnya."""
-    queryset = Assessment.objects.filter(teaching_assignment__in=teaching_assignments_for(user, school))
+    """Admin: semua. Guru: asesmen kelas-mapel tim-nya (termasuk draf & buatan rekan setim).
+    Siswa: yang terbit di kelasnya."""
+    queryset = Assessment.objects.filter(teaching_assignment__in=team_assignments_for(user, school))
     if user.role == Role.STUDENT:
         queryset = queryset.filter(is_published=True)
     return queryset
@@ -78,10 +80,16 @@ def attempt_with_answers():
     )
 
 
+class AssessmentFilter(TeamContentFilter):
+    class Meta:
+        model = Assessment
+        fields = {"is_published": ["exact"], "due_at": ["gte", "lte"]}
+
+
 class AssessmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
     serializer_class = AssessmentSerializer
     permission_classes = [ContentPermission]
-    filterset_fields = {"teaching_assignment": ["exact"], "is_published": ["exact"], "due_at": ["gte", "lte"]}
+    filterset_class = AssessmentFilter
     search_fields = ["title"]
     ordering_fields = ["due_at", "created_at"]
     protected_message = "Asesmen ini sudah dikerjakan siswa sehingga tidak bisa dihapus. Jadikan draf saja."
@@ -294,7 +302,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Question.objects.filter(
-            assessment__teaching_assignment__teacher=self.request.user
+            assessment__teaching_assignment__in=team_assignments_for_request(self.request)
         ).prefetch_related("images")
 
     def perform_destroy(self, instance):
@@ -365,7 +373,9 @@ class AttemptViewSet(viewsets.GenericViewSet):
             assessment__teaching_assignment__classroom__school=active_school(self.request)
         )
         if self.request.user.role == Role.TEACHER:
-            queryset = queryset.filter(assessment__teaching_assignment__teacher=self.request.user)
+            queryset = queryset.filter(
+                assessment__teaching_assignment__in=team_assignments_for_request(self.request)
+            )
         return queryset
 
     def retrieve(self, request, pk=None):

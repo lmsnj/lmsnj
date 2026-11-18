@@ -64,6 +64,24 @@ export const materialsApi = {
     form.append('dry_run', dryRun ? 'true' : 'false')
     return api.post(`/materials/${id}/practice-import/`, form).then((res) => res.data)
   },
+  // Salin materi ke kelas lain (mapel sama) sebagai draf. copyTargets = daftar kelas tujuan
+  // [{ teaching_assignment, classroom_name, academic_year, teachers }].
+  copyTargets: (teachingAssignment) =>
+    api
+      .get('/materials/copy-targets/', { params: { teaching_assignment: teachingAssignment } })
+      .then((res) => res.data),
+  copy: (teachingAssignment, materialIds, target) =>
+    api
+      .post('/materials/copy/', {
+        teaching_assignment: teachingAssignment,
+        materials: materialIds,
+        target,
+      })
+      .then((res) => res.data),
+  // Gabungkan materi kembar (duplicate) ke materi id; duplicate dihapus, siswa yang sudah tuntas
+  // ditandai tercapai. Mengembalikan { completed, detail, material }.
+  merge: (id, duplicate) =>
+    api.post(`/materials/${id}/merge/`, { duplicate }).then((res) => res.data),
   reorder: (teachingAssignment, materialIds) =>
     api
       .post('/materials/reorder/', {

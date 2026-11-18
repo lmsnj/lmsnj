@@ -5,6 +5,7 @@ from rest_framework.fields import empty
 from rest_framework.utils import html
 
 from apps.academics.models import TeachingAssignment
+from apps.academics.selectors import team_assignments_for_request
 from apps.accounts.models import Role, User
 from apps.assessments.models import Assessment
 from apps.common.files import delete_file, validate_upload
@@ -32,6 +33,11 @@ def validate_pdf(file):
     if header != PDF_SIGNATURE:
         raise serializers.ValidationError("File bukan PDF yang valid.")
     return file
+
+
+def same_class_subject(content, assignment):
+    """Konten (tugas/asesmen/bab) boleh dipakai jika dari kelas-mapel yang sama, buatan guru tim mana pun."""
+    return assignment is not None and content.teaching_assignment.class_subject == assignment.class_subject
 
 
 def validate_content(attrs, instance):
@@ -122,7 +128,7 @@ class ConceptsField(ObjectivesField):
 
 
 class MaterialItemSerializer(FileContentMixin, serializers.ModelSerializer):
-    # Guru hanya boleh menambah konten ke materi miliknya (diisi di __init__).
+    # Guru hanya boleh menambah konten ke materi kelas-mapel timnya (diisi di __init__).
     material = serializers.PrimaryKeyRelatedField(queryset=Material.objects.none())
     file = serializers.FileField(write_only=True, required=False, allow_null=True)
     has_file = serializers.SerializerMethodField()
@@ -147,7 +153,7 @@ class MaterialItemSerializer(FileContentMixin, serializers.ModelSerializer):
         request = self.context.get("request")
         if request is not None and "material" in self.fields:
             self.fields["material"].queryset = Material.objects.filter(
-                teaching_assignment__teacher=request.user
+                teaching_assignment__in=team_assignments_for_request(request)
             )
 
     def get_has_file(self, obj):
@@ -201,9 +207,7 @@ class ChapterSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request is not None:
-            self.fields["teaching_assignment"].queryset = TeachingAssignment.objects.filter(
-                teacher=request.user
-            )
+            self.fields["teaching_assignment"].queryset = team_assignments_for_request(request)
 
     def _visible_materials(self, obj):
         request = self.context.get("request")
@@ -229,7 +233,7 @@ class ChapterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         assignment = attrs.get("teaching_assignment", getattr(self.instance, "teaching_assignment", None))
         test = attrs.get("post_test")
-        if test is not None and test.teaching_assignment_id != getattr(assignment, "id", None):
+        if test is not None and not same_class_subject(test, assignment):
             raise serializers.ValidationError(
                 {"post_test": "Post Test harus asesmen dari kelas-mapel yang sama."}
             )
@@ -311,12 +315,10 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request is not None:
-            self.fields["teaching_assignment"].queryset = TeachingAssignment.objects.filter(
-                teacher=request.user
-            )
-            self.fields["chapter"].queryset = Chapter.objects.filter(
-                teaching_assignment__teacher=request.user
-            )
+            # Kelas-mapel tim guru ini: rekan setim boleh mengubah materi buatan rekannya.
+            assignments = team_assignments_for_request(request)
+            self.fields["teaching_assignment"].queryset = assignments
+            self.fields["chapter"].queryset = Chapter.objects.filter(teaching_assignment__in=assignments)
 
     def get_has_file(self, obj):
         return bool(obj.file)
@@ -377,12 +379,12 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
         assignment = attrs.get("teaching_assignment", getattr(self.instance, "teaching_assignment", None))
         for field, label in (("required_task", "Tugas"), ("required_assessment", "Asesmen")):
             content = attrs.get(field)
-            if content is not None and content.teaching_assignment_id != getattr(assignment, "id", None):
+            if content is not None and not same_class_subject(content, assignment):
                 raise serializers.ValidationError(
                     {field: f"{label} syarat harus dari kelas-mapel yang sama."}
                 )
         chapter = attrs.get("chapter")
-        if chapter is not None and chapter.teaching_assignment_id != getattr(assignment, "id", None):
+        if chapter is not None and not same_class_subject(chapter, assignment):
             raise serializers.ValidationError({"chapter": "Bab harus dari kelas-mapel yang sama."})
         return validate_content(attrs, self.instance)
 
@@ -403,6 +405,16 @@ class ProgressUpdateSerializer(serializers.Serializer):
 class ReorderSerializer(serializers.Serializer):
     teaching_assignment = serializers.IntegerField()
     materials = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
+
+
+class CopyMaterialsSerializer(serializers.Serializer):
+    teaching_assignment = serializers.IntegerField()
+    materials = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, max_length=100)
+    target = serializers.IntegerField()
+
+
+class MergeMaterialSerializer(serializers.Serializer):
+    duplicate = serializers.IntegerField()
 
 
 class ReorderChaptersSerializer(serializers.Serializer):

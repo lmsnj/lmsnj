@@ -120,6 +120,8 @@ export default function MaterialList({
                 <span className="mt-1 block text-xs text-slate-500">
                   {showContext && `${material.subject_name} · ${material.classroom_name} · `}
                   {formatDate(material.created_at)}
+                  {/* Guru tim pengampu memakai materi bersama, jadi pengunggahnya perlu terlihat. */}
+                  {showStatus && material.created_by_name && ` · oleh ${material.created_by_name}`}
                 </span>
               </span>
             </button>

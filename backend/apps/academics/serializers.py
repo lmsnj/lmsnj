@@ -103,6 +103,8 @@ class TeachingAssignmentSerializer(serializers.ModelSerializer):
     classroom_name = serializers.CharField(source="classroom.name", read_only=True)
     academic_year = serializers.CharField(source="classroom.academic_year", read_only=True)
     student_count = serializers.SerializerMethodField()
+    # Nama semua guru tim kelas-mapel ini (termasuk guru pengampu ini sendiri), lihat TeachingAssignment.team.
+    team_teachers = serializers.SerializerMethodField()
 
     class Meta:
         model = TeachingAssignment
@@ -118,7 +120,23 @@ class TeachingAssignmentSerializer(serializers.ModelSerializer):
             "academic_year",
             "weekly_hours",
             "student_count",
+            "team_teachers",
         ]
+
+    def get_team_teachers(self, obj):
+        # Dihitung sekali per request (satu query untuk seluruh sekolah), bukan satu query per baris.
+        teams = self.context.get("_teams")
+        if teams is None:
+            teams = {}
+            rows = (
+                TeachingAssignment.objects.filter(classroom__school_id=obj.classroom.school_id)
+                .order_by("id")
+                .values_list("classroom_id", "subject_id", "teacher__full_name")
+            )
+            for classroom_id, subject_id, name in rows:
+                teams.setdefault((classroom_id, subject_id), []).append(name)
+            self.context["_teams"] = teams
+        return teams.get(obj.class_subject, [])
 
     def get_student_count(self, obj):
         count = getattr(obj, "student_count", None)
