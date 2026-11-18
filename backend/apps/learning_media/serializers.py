@@ -101,6 +101,23 @@ class PreviewSerializer(serializers.Serializer):
     draft = serializers.JSONField(required=False)
 
 
+class ImportSerializer(serializers.Serializer):
+    """Impor isi media. Sumber file: excel/json/word/pptx/pdf (`file`); tautan: `text`; bank soal:
+    `assessment` + `questions` (kosong = semua soal)."""
+
+    SOURCES = ("excel", "json", "word", "pptx", "pdf", "links", "bank")
+
+    source = serializers.ChoiceField(choices=SOURCES)
+    mode = serializers.ChoiceField(choices=("append", "replace"), default="append")
+    file = serializers.FileField(required=False)
+    text = serializers.CharField(required=False, allow_blank=True, max_length=50_000, default="")
+    assessment = serializers.IntegerField(required=False, min_value=1)
+    questions = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), required=False, max_length=200
+    )
+    dry_run = serializers.BooleanField(default=True)
+
+
 class RestoreSerializer(serializers.Serializer):
     number = serializers.IntegerField(min_value=1)
 

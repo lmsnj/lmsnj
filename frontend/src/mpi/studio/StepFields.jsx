@@ -161,6 +161,30 @@ const FORMS = {
       />
     </>
   ),
+  link: ({ step, set }) => (
+    <>
+      <Text
+        label="Alamat tautan"
+        type="url"
+        value={step.url}
+        onChange={(url) => set({ url })}
+        placeholder="https://..."
+        hint="Dibuka di tab baru, mis. artikel, simulasi daring, atau dokumen Drive."
+      />
+      <Text
+        label="Teks tombol (opsional)"
+        value={step.label}
+        onChange={(label) => set({ label })}
+        placeholder="Buka tautan"
+      />
+      <Area
+        label="Keterangan / tugas"
+        value={step.body}
+        onChange={(body) => set({ body })}
+        rows={2}
+      />
+    </>
+  ),
   flip_cards: ({ step, set }) => (
     <ListEditor
       label="Kartu"

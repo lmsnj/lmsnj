@@ -1,4 +1,12 @@
-import { Bot, ChevronLeft, ChevronRight, Lightbulb, RotateCw, UserRound } from 'lucide-react'
+import {
+  Bot,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Lightbulb,
+  RotateCw,
+  UserRound,
+} from 'lucide-react'
 import { useState } from 'react'
 import AuthImage from '../../components/AuthImage'
 import RichText from '../../components/RichText'
@@ -155,6 +163,35 @@ export function VideoStep({ step, user }) {
         Video memakai kuota data. Lewati jika sinyal lemah.
       </p>
       <Rich text={step.body} user={user} />
+    </div>
+  )
+}
+
+/** Tautan ke halaman lain, dibuka di tab baru (noopener agar halaman itu tidak bisa mengendalikan LMS). */
+export function LinkStep({ step, user }) {
+  let host = ''
+  try {
+    host = new URL(step.url).hostname.replace(/^www\./, '')
+  } catch {
+    host = ''
+  }
+  return (
+    <div className="space-y-3">
+      <Rich text={step.body} user={user} />
+      <a
+        href={step.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between gap-3 rounded-lg bg-brand-50 p-4 font-semibold text-brand-800 ring-1 ring-brand-200 hover:bg-brand-100"
+      >
+        <span className="min-w-0">
+          <span className="block">{step.label || 'Buka tautan'}</span>
+          {host && (
+            <span className="block truncate text-[0.8em] font-normal text-slate-500">{host}</span>
+          )}
+        </span>
+        <ExternalLink className="size-5 shrink-0" aria-hidden="true" />
+      </a>
     </div>
   )
 }

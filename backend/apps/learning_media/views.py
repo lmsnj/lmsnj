@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -17,6 +17,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from apps.accounts.models import Role
 from apps.accounts.permissions import IsAdminOrTeacher, IsFoundation
 from apps.accounts.views import impersonator_id
+from apps.common.excel import template_response
 from apps.common.files import file_response
 from apps.common.mixins import ProtectedDeleteMixin
 from apps.materials import progress as learning
@@ -26,10 +27,13 @@ from apps.schools.models import School
 
 from . import assets as media_assets
 from . import schema, services
+from .importers import excel as excel_import
+from .importers.service import run_import
 from .models import InteractiveMedia, InteractiveMediaAsset, InteractiveMediaShare, InteractiveMediaVersion
 from .selectors import can_edit, library_for, media_for
 from .serializers import (
     AnswerSerializer,
+    ImportSerializer,
     MediaListSerializer,
     MediaSerializer,
     PreviewSerializer,
@@ -286,6 +290,35 @@ class LearningMediaViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         )
         response["Content-Disposition"] = f'attachment; filename="media-{media.id}.json"'
         return response
+
+    # ------------------------------------------------------------ impor
+
+    @action(detail=True, url_path="import-template")
+    def import_template(self, request, pk=None):
+        """Template Excel berisi isi draf (atau contoh jika masih kosong), untuk diubah lalu diimpor ulang."""
+        media = self.get_object()
+        return template_response(excel_import.build_workbook(media.draft), f"media-{media.id}.xlsx")
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="import",
+        parser_classes=[MultiPartParser, FormParser, JSONParser],
+    )
+    def import_content(self, request, pk=None):
+        """Periksa (`dry_run`, bawaan) lalu terapkan isi impor ke draf (`mode` append/replace)."""
+        media = self.editable_object()
+        serializer = ImportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        result, saved = run_import(media, data, request.user, active_school(request), data["dry_run"])
+        if not data["dry_run"] and not saved:
+            return Response(
+                {**result, "detail": "Impor belum bisa diterapkan. Perbaiki kesalahan di bawah."}, status=400
+            )
+        if saved:
+            result["media"] = MediaSerializer(media, context=self.get_serializer_context()).data
+        return Response(result)
 
     @action(detail=True, methods=["get", "put"], permission_classes=[IsFoundation])
     def shares(self, request, pk=None):

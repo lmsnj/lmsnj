@@ -209,6 +209,23 @@ class VideoStep(StepKind):
 
 
 @register
+class LinkStep(StepKind):
+    """Tautan ke halaman lain (dibuka di tab baru), mis. artikel, simulasi daring, atau dokumen Drive."""
+
+    kind, label = "link", "Tautan"
+
+    def validate(self, step):
+        url = text(step.get("url"), "Alamat tautan", required=True)
+        if not url.startswith(("https://", "http://")):
+            raise StepError("Alamat tautan harus diawali https://.")
+        return {
+            "url": url,
+            "label": text(step.get("label"), "Teks tombol", 80),
+            "body": text(step.get("body"), "Keterangan", MAX_TEXT),
+        }
+
+
+@register
 class FlipCardsStep(StepKind):
     kind, label = "flip_cards", "Kartu bolak-balik"
 

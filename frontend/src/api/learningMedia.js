@@ -29,6 +29,22 @@ export const learningMediaApi = {
     api.put(`/learning-media/${id}/shares/`, { schools }).then((res) => res.data),
   exportJson: (id) =>
     api.get(`/learning-media/${id}/export/`, { responseType: 'blob' }).then((res) => res.data),
+  // Impor isi (Excel/CSV, JSON, Word, PowerPoint, PDF, tautan, bank soal). dryRun = Periksa saja.
+  importTemplate: (id) =>
+    api
+      .get(`/learning-media/${id}/import-template/`, { responseType: 'blob' })
+      .then((res) => res.data),
+  importContent: (id, data, dryRun, onProgress) => {
+    const body = { ...data, dry_run: dryRun }
+    if (!data.file) return api.post(`/learning-media/${id}/import/`, body).then((res) => res.data)
+    const form = new FormData()
+    Object.entries(body).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) form.append(key, value)
+    })
+    return api
+      .post(`/learning-media/${id}/import/`, form, uploadConfig(onProgress))
+      .then((res) => res.data)
+  },
   // Pratinjau sebagai siswa (draft opsional = isi yang belum disimpan). Tidak menyimpan progres.
   preview: (id, draft) =>
     api.post(`/learning-media/${id}/preview/`, draft ? { draft } : {}).then((res) => res.data),

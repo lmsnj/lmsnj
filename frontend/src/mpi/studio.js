@@ -29,6 +29,7 @@ const STEP_DEFAULTS = {
     ],
   }),
   video: () => ({ url: '', start: 0, body: '' }),
+  link: () => ({ url: 'https://', label: '', body: '' }),
   flip_cards: () => ({ cards: [{ front: 'Istilah', back: 'Artinya' }] }),
   flashcards: () => ({ cards: [{ front: 'Pertanyaan', back: 'Jawaban' }] }),
   worked_example: () => ({
@@ -325,3 +326,42 @@ export const linesToList = (text) =>
     .map((line) => line.trim())
     .filter(Boolean)
 export const listToLines = (list) => (list ?? []).join('\n')
+
+// Sumber impor isi media (pasangan `backend/apps/learning_media/importers/service.py`).
+export const IMPORT_SOURCES = {
+  excel: { accept: '.xlsx,.csv', maxMb: 10 },
+  json: { accept: '.json,application/json', maxMb: 3 },
+  word: { accept: '.docx', maxMb: 25 },
+  pptx: { accept: '.pptx', maxMb: 40 },
+  pdf: { accept: '.pdf,application/pdf', maxMb: 25 },
+  links: {},
+  bank: {},
+}
+
+/**
+ * Mode impor bawaan. Excel & JSON biasanya berisi SELURUH media (template berisi isi draf), jadi "ganti";
+ * sumber lain menambah isi baru di belakang.
+ */
+export function defaultImportMode(source, hasContent) {
+  if (!hasContent) return 'append'
+  return source === 'excel' || source === 'json' ? 'replace' : 'append'
+}
+
+/** Isian impor siap kirim, atau pesan kenapa belum bisa diperiksa. */
+export function importPayload({ source, mode, file, text, assessment, questions }) {
+  const rules = IMPORT_SOURCES[source]
+  if (!rules) return { error: 'Pilih sumber impor.' }
+  if (rules.accept) {
+    if (!file) return { error: 'Pilih file yang akan diimpor.' }
+    if (file.size > rules.maxMb * 1024 * 1024)
+      return { error: `Ukuran file maksimal ${rules.maxMb} MB.` }
+    return { data: { source, mode, file } }
+  }
+  if (source === 'links') {
+    if (!String(text || '').trim()) return { error: 'Tulis minimal satu tautan.' }
+    return { data: { source, mode, text } }
+  }
+  if (!assessment) return { error: 'Pilih asesmen yang akan diambil soalnya.' }
+  if (questions && questions.length === 0) return { error: 'Pilih minimal satu soal.' }
+  return { data: { source, mode, assessment: Number(assessment), questions: questions ?? [] } }
+}

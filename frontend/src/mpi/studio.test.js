@@ -3,10 +3,12 @@ import { test } from 'node:test'
 import {
   cloneWithNewIds,
   containerOf,
+  defaultImportMode,
   draftStats,
   duplicateInList,
   emptyDraft,
   getAt,
+  importPayload,
   linesToList,
   moveInList,
   newStation,
@@ -65,4 +67,30 @@ test('updateAt & containerOf tidak mengubah draf lama', () => {
 
 test('linesToList', () => {
   assert.deepEqual(linesToList(' a \n\n b '), ['a', 'b'])
+})
+
+test('mode impor bawaan dan isian impor', () => {
+  assert.equal(defaultImportMode('excel', true), 'replace')
+  assert.equal(defaultImportMode('word', true), 'append')
+  assert.equal(defaultImportMode('excel', false), 'append')
+  assert.equal(importPayload({ source: 'word' }).error, 'Pilih file yang akan diimpor.')
+  const big = { size: 30 * 1024 * 1024 }
+  assert.equal(importPayload({ source: 'word', file: big }).error, 'Ukuran file maksimal 25 MB.')
+  const file = { size: 1000 }
+  assert.deepEqual(importPayload({ source: 'pdf', mode: 'append', file }).data, {
+    source: 'pdf',
+    mode: 'append',
+    file,
+  })
+  assert.equal(importPayload({ source: 'links', text: '  ' }).error, 'Tulis minimal satu tautan.')
+  assert.equal(
+    importPayload({ source: 'bank', assessment: '3', questions: [] }).error,
+    'Pilih minimal satu soal.',
+  )
+  assert.deepEqual(importPayload({ source: 'bank', mode: 'append', assessment: '3' }).data, {
+    source: 'bank',
+    mode: 'append',
+    assessment: 3,
+    questions: [],
+  })
 })

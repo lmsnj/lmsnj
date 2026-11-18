@@ -1,4 +1,4 @@
-import { ArrowLeft, Eye, History, Laptop, Rocket, Save, Smartphone } from 'lucide-react'
+import { ArrowLeft, Eye, FileUp, History, Laptop, Rocket, Save, Smartphone } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useBlocker, useParams } from 'react-router-dom'
 import { learningMediaApi, previewPlayApi } from '../api/learningMedia'
@@ -13,6 +13,7 @@ import useFetch from '../hooks/useFetch'
 import MediaPlayer from '../mpi/MediaPlayer'
 import { MediaSettingsEditor, PartEditor, StationEditor, StepEditor } from '../mpi/studio/Editors'
 import { draftStats, getAt, updateAt } from '../mpi/studio'
+import ImportMediaModal from '../mpi/studio/ImportMediaModal'
 import Outline from '../mpi/studio/Outline'
 import { ROLE_HOME } from '../utils/constants'
 import { getErrorMessage } from '../utils/errors'
@@ -257,6 +258,25 @@ export default function MediaStudioPage() {
     setNotice(`Draf dipulihkan dari versi ${number}. Terbitkan agar terlihat siswa.`)
   }
 
+  // Impor bekerja pada draf di server, jadi ubahan lokal disimpan dulu.
+  const openImport = async () => {
+    if (dirty && !(await save())) return
+    setDialog('import')
+  }
+  const imported = (result) => {
+    setDraftState(result.media.draft)
+    setDirty(false)
+    setDialog(null)
+    const { stations, steps } = result.summary
+    const first = result.mode === 'replace' ? 0 : Math.max(0, result.media.draft.parts.length - 1)
+    setSelected(result.media.draft.parts.length ? { part: first } : { part: 0, station: 0 })
+    setNotice(
+      `Impor selesai: ${stations} stasiun, ${steps} langkah ${result.mode === 'replace' ? 'menggantikan isi lama' : 'ditambahkan'}. ` +
+        'Periksa hasilnya, lalu Terbitkan agar terlihat siswa.' +
+        (result.warnings.length ? ` (${result.warnings.length} catatan impor)` : ''),
+    )
+  }
+
   const item = selected === 'media' ? null : getAt(draft, selected)
   const change = (changes) =>
     setDraft(updateAt(draft, selected, (current) => ({ ...current, ...changes })))
@@ -264,6 +284,8 @@ export default function MediaStudioPage() {
   const stats = draftStats(draft)
   const allStations = draft.parts.flatMap((part) => part.stations)
   const version = media.latest_version
+  // Media baru (belum terbit, paling banyak berisi stasiun contoh): tawarkan impor bahan.
+  const starter = !version && stats.stations <= 1
 
   let editor = null
   if (selected === 'media') {
@@ -333,6 +355,13 @@ export default function MediaStudioPage() {
           <Button variant="secondary" onClick={openPreview} loading={busy === 'preview'}>
             <Eye className="size-4" aria-hidden="true" /> Pratinjau
           </Button>
+          <Button
+            variant="secondary"
+            onClick={openImport}
+            loading={busy === 'save' && dialog === null}
+          >
+            <FileUp className="size-4" aria-hidden="true" /> Impor
+          </Button>
           <Button variant="secondary" onClick={() => setDialog('versions')}>
             <History className="size-4" aria-hidden="true" /> Riwayat
           </Button>
@@ -355,6 +384,17 @@ export default function MediaStudioPage() {
         </Alert>
       )}
 
+      {starter && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl bg-brand-50 p-4 ring-1 ring-brand-200">
+          <FileUp className="size-8 text-brand-700" aria-hidden="true" />
+          <p className="min-w-0 flex-1 text-sm text-brand-900">
+            <strong>Sudah punya bahan?</strong> Impor dari Excel, Word, PowerPoint, PDF, daftar
+            tautan, atau bank soal agar tidak mengetik ulang.
+          </p>
+          <Button onClick={openImport}>Impor Bahan</Button>
+        </div>
+      )}
+
       <div className="grid items-start gap-4 lg:grid-cols-[20rem_1fr]">
         <aside className="max-h-[70vh] overflow-y-auto rounded-xl bg-white p-2 shadow-sm ring-1 ring-slate-200 lg:sticky lg:top-20 lg:max-h-[calc(100vh-7rem)]">
           <Outline draft={draft} setDraft={setDraft} selected={selected} select={setSelected} />
@@ -366,6 +406,15 @@ export default function MediaStudioPage() {
 
       {preview && <PreviewModal media={media} data={preview} onClose={() => setPreview(null)} />}
       {dialog === 'publish' && <PublishModal onClose={() => setDialog(null)} onPublish={publish} />}
+      {dialog === 'import' && (
+        <ImportMediaModal
+          mediaId={media.id}
+          hasContent={stats.stations > 0}
+          preferReplace={starter}
+          onClose={() => setDialog(null)}
+          onImported={imported}
+        />
+      )}
       {dialog === 'versions' && (
         <VersionsModal mediaId={media.id} onClose={() => setDialog(null)} onRestore={restore} />
       )}
