@@ -17,6 +17,12 @@ export function personalize(text, user) {
   return String(text).replace(PLACEHOLDER, (_, key) => values[key])
 }
 
+/** "asset:12" -> alamat API gambar unggahan (diambil dengan token lewat AuthImage). */
+export function assetUrl(src) {
+  const match = /^asset:(\d+)$/.exec(src || '')
+  return match ? `/media-assets/${match[1]}/` : null
+}
+
 /** Semua stasiun berurutan dengan nomor global dan judul bagiannya. */
 export function flattenStations(content) {
   const list = []

@@ -1,4 +1,5 @@
 import api from './client'
+import { uploadConfig } from './upload'
 
 // Media Pembelajaran Interaktif. Studio (guru) dan pemutar (di halaman materi).
 export const learningMediaApi = {
@@ -13,6 +14,19 @@ export const learningMediaApi = {
   restore: (id, number) =>
     api.post(`/learning-media/${id}/restore/`, { number }).then((res) => res.data),
   copy: (id) => api.post(`/learning-media/${id}/copy/`).then((res) => res.data),
+  // Gambar media (dikompres server). Isi media merujuknya sebagai "asset:<id>".
+  assets: (id) => api.get(`/learning-media/${id}/assets/`).then((res) => res.data),
+  uploadAsset: (id, file, onProgress) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api
+      .post(`/learning-media/${id}/assets/`, form, uploadConfig(onProgress))
+      .then((res) => res.data)
+  },
+  removeAsset: (assetId) => api.delete(`/media-assets/${assetId}/`),
+  shares: (id) => api.get(`/learning-media/${id}/shares/`).then((res) => res.data),
+  setShares: (id, schools) =>
+    api.put(`/learning-media/${id}/shares/`, { schools }).then((res) => res.data),
   exportJson: (id) =>
     api.get(`/learning-media/${id}/export/`, { responseType: 'blob' }).then((res) => res.data),
   // Pratinjau sebagai siswa (draft opsional = isi yang belum disimpan). Tidak menyimpan progres.

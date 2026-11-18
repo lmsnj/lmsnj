@@ -16,6 +16,7 @@ import {
   Building2,
   Palette,
   School,
+  Sparkles,
   Trophy,
   UserCheck,
   UserRound,
@@ -38,6 +39,9 @@ const CHAT = { label: 'Ruang Obrolan', icon: MessagesSquare, to: '/obrolan', bad
 const TIMETABLE = { label: 'Jadwal Pelajaran', icon: CalendarDays }
 const ANNOUNCEMENTS = { label: 'Pengumuman', icon: Megaphone, to: '/pengumuman' }
 
+// Studio Media Interaktif; di mode yayasan = Pustaka Media global.
+const MEDIA_STUDIO = { label: 'Media Interaktif', icon: Sparkles, to: '/admin/media-interaktif' }
+
 // Menu admin dipakai juga oleh admin yayasan (di sekolah yang sedang dibuka).
 const ADMIN_MAIN = [
   { label: 'Beranda', icon: House, to: '/admin', end: true },
@@ -55,6 +59,7 @@ const ADMIN_MORE = [
   { label: 'Ujian & Kartu Ujian', icon: IdCard, to: '/admin/ujian' },
   { ...ANNOUNCEMENTS, label: 'Pengumuman Sekolah' },
   { label: 'Tahun Ajaran Baru', icon: CalendarSync, to: '/admin/tahun-ajaran' },
+  MEDIA_STUDIO,
 ]
 // Identitas sekolah yang sedang dibuka; di mode yayasan halaman yang sama = identitas yayasan.
 const IDENTITY = { label: 'Identitas Sekolah', icon: Palette, to: '/admin/identitas' }
@@ -70,6 +75,7 @@ const FOUNDATION_HOME = {
     { label: 'Beranda', icon: House, to: '/admin', end: true },
     SCHOOL_LIST,
     IMPERSONATE,
+    { ...MEDIA_STUDIO, label: 'Pustaka Media' },
     CHAT,
   ],
   more: [{ ...IDENTITY, label: 'Identitas Aplikasi' }, PROFILE],
@@ -92,6 +98,7 @@ export const NAVIGATION = {
       { label: 'Beranda', icon: House, to: '/guru', end: true },
       { label: 'Ruang Kelas', icon: School, to: '/guru/kelas' },
       { label: 'Materi Pembelajaran', icon: BookOpen, to: '/guru/materi' },
+      { label: 'Media Interaktif', icon: Sparkles, to: '/guru/media-interaktif' },
       { label: 'Tugas & Nilai', icon: ClipboardCheck, to: '/guru/tugas' },
       { label: 'Lembar Asesmen', icon: ClipboardPen, to: '/guru/asesmen' },
       CHAT,

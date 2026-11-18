@@ -1,10 +1,11 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import LearningMediaViewSet, MediaPlayViewSet
+from .views import LearningMediaViewSet, MediaAssetViewSet, MediaPlayViewSet
 
 router = DefaultRouter()
 router.register("learning-media", LearningMediaViewSet, basename="learning-media")
+router.register("media-assets", MediaAssetViewSet, basename="media-asset")
 
 play = MediaPlayViewSet
 urlpatterns = router.urls + [

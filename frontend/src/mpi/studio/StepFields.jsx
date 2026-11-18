@@ -1,0 +1,497 @@
+import SelectField from '../../components/SelectField'
+import TextAreaField from '../../components/TextAreaField'
+import TextField from '../../components/TextField'
+import { CheckField, ImageField, LinesField, ListEditor, NumberField, SmallInput } from './fields'
+
+const SPEAKERS = [
+  { value: 'mascot', label: 'Maskot' },
+  { value: 'student', label: 'Siswa' },
+  { value: 'narrator', label: 'Narator' },
+]
+const MOODS = [
+  { value: '', label: 'Biasa' },
+  { value: 'happy', label: 'Senang' },
+  { value: 'think', label: 'Berpikir' },
+  { value: 'oops', label: 'Ups' },
+  { value: 'wow', label: 'Kagum' },
+]
+const FORMAT_HINT =
+  'Format: **tebal**, *miring*, rumus $a^2$, tabel | a | b |. Sapaan: {nama_panggilan}, {nama_siswa}, {kelas}.'
+
+function Area({ label, value, onChange, rows = 3, hint, placeholder }) {
+  return (
+    <TextAreaField
+      label={label}
+      value={value ?? ''}
+      rows={rows}
+      hint={hint}
+      placeholder={placeholder}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  )
+}
+
+function Text({ label, value, onChange, hint, placeholder, type = 'text' }) {
+  return (
+    <TextField
+      label={label}
+      type={type}
+      value={value ?? ''}
+      hint={hint}
+      placeholder={placeholder}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  )
+}
+
+/** Pertanyaan + gambar + pembahasan (dipakai semua latihan). */
+function QuestionFields({ step, set, mediaId, questionLabel = 'Pertanyaan' }) {
+  return (
+    <>
+      <Area
+        label={questionLabel}
+        value={step.text}
+        onChange={(text) => set({ text })}
+        hint={FORMAT_HINT}
+      />
+      {step.kind !== 'hotspot' && (
+        <ImageField value={step.image} onChange={(image) => set({ image })} mediaId={mediaId} />
+      )}
+    </>
+  )
+}
+
+function Explanation({ step, set }) {
+  return (
+    <Area
+      label="Pembahasan (tampil setelah siswa benar / membuka jawaban)"
+      value={step.explanation}
+      onChange={(explanation) => set({ explanation })}
+      rows={2}
+    />
+  )
+}
+
+function Why({ step, set, label = 'Alasan jika salah (umpan balik “kenapa”)' }) {
+  return <Area label={label} value={step.why} onChange={(why) => set({ why })} rows={2} />
+}
+
+const FORMS = {
+  text: ({ step, set, mediaId }) => (
+    <>
+      <Area
+        label="Isi penjelasan"
+        value={step.body}
+        onChange={(body) => set({ body })}
+        rows={6}
+        hint={FORMAT_HINT}
+      />
+      <ImageField value={step.image} onChange={(image) => set({ image })} mediaId={mediaId} />
+      <Text
+        label="Keterangan gambar"
+        value={step.caption}
+        onChange={(caption) => set({ caption })}
+      />
+    </>
+  ),
+  dialog: ({ step, set, mediaId }) => (
+    <>
+      <ListEditor
+        label="Baris dialog"
+        items={step.lines}
+        min={1}
+        onChange={(lines) => set({ lines })}
+        newItem={() => ({ speaker: 'mascot', mood: '', text: '' })}
+        addLabel="Tambah baris"
+        renderItem={(line, update) => (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <SelectField
+                value={line.speaker}
+                options={SPEAKERS}
+                aria-label="Pembicara"
+                onChange={(e) => update({ speaker: e.target.value })}
+              />
+              <SelectField
+                value={line.mood}
+                options={MOODS}
+                aria-label="Ekspresi"
+                onChange={(e) => update({ mood: e.target.value })}
+              />
+            </div>
+            <textarea
+              aria-label="Teks dialog"
+              rows={2}
+              value={line.text}
+              onChange={(e) => update({ text: e.target.value })}
+              className="block w-full rounded-md border-0 px-2.5 py-1.5 text-base ring-1 ring-slate-300 ring-inset focus:ring-2 focus:ring-brand-600 sm:text-sm"
+            />
+          </>
+        )}
+      />
+      <ImageField
+        label="Gambar pendukung (opsional)"
+        value={step.image}
+        onChange={(image) => set({ image })}
+        mediaId={mediaId}
+      />
+    </>
+  ),
+  video: ({ step, set }) => (
+    <>
+      <Text
+        label="Alamat video"
+        type="url"
+        value={step.url}
+        onChange={(url) => set({ url })}
+        placeholder="https://youtu.be/... atau Google Drive"
+        hint="YouTube dan Google Drive diputar langsung."
+      />
+      <NumberField
+        label="Mulai dari detik ke-"
+        value={step.start}
+        max={21600}
+        onChange={(start) => set({ start })}
+      />
+      <Area
+        label="Keterangan / tugas saat menonton"
+        value={step.body}
+        onChange={(body) => set({ body })}
+        rows={2}
+      />
+    </>
+  ),
+  flip_cards: ({ step, set }) => (
+    <ListEditor
+      label="Kartu"
+      items={step.cards}
+      min={1}
+      onChange={(cards) => set({ cards })}
+      newItem={() => ({ front: '', back: '' })}
+      addLabel="Tambah kartu"
+      renderItem={(card, update) => (
+        <>
+          <SmallInput
+            label="Sisi depan"
+            value={card.front}
+            onChange={(front) => update({ front })}
+          />
+          <SmallInput
+            label="Sisi belakang"
+            value={card.back}
+            onChange={(back) => update({ back })}
+          />
+        </>
+      )}
+    />
+  ),
+  worked_example: ({ step, set }) => (
+    <>
+      <Area
+        label="Soal contoh"
+        value={step.body}
+        onChange={(body) => set({ body })}
+        rows={3}
+        hint={FORMAT_HINT}
+      />
+      <ListEditor
+        label="Langkah penyelesaian (dibuka satu per satu)"
+        items={step.steps}
+        min={1}
+        max={15}
+        onChange={(steps) => set({ steps })}
+        newItem={() => ({ text: '', explain: '' })}
+        addLabel="Tambah langkah"
+        renderItem={(part, update) => (
+          <>
+            <SmallInput label="Langkah" value={part.text} onChange={(text) => update({ text })} />
+            <SmallInput
+              label="Kenapa langkah ini (opsional)"
+              value={part.explain}
+              onChange={(explain) => update({ explain })}
+            />
+          </>
+        )}
+      />
+    </>
+  ),
+  choice: ({ step, set, mediaId }) => (
+    <>
+      <QuestionFields step={step} set={set} mediaId={mediaId} />
+      <ListEditor
+        label="Pilihan (tandai satu yang benar; isi alasan untuk pilihan salah)"
+        items={step.choices}
+        min={2}
+        max={6}
+        onChange={(choices) => {
+          const correct = Math.min(step.correct, choices.length - 1)
+          set({ choices, correct })
+        }}
+        newItem={() => ({ text: '', why: '' })}
+        addLabel="Tambah pilihan"
+        renderItem={(choice, update, index) => (
+          <>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name={`benar-${step.id}`}
+                checked={step.correct === index}
+                onChange={() => set({ correct: index })}
+                className="size-4"
+              />
+              <span
+                className={
+                  step.correct === index ? 'font-semibold text-brand-700' : 'text-slate-600'
+                }
+              >
+                {step.correct === index ? 'Jawaban benar' : 'Jadikan jawaban benar'}
+              </span>
+            </label>
+            <SmallInput
+              label="Teks pilihan"
+              value={choice.text}
+              onChange={(text) => update({ text })}
+            />
+            {step.correct !== index && (
+              <SmallInput
+                label="Kenapa salah (ditampilkan ke siswa)"
+                value={choice.why}
+                onChange={(why) => update({ why })}
+              />
+            )}
+          </>
+        )}
+      />
+      <Explanation step={step} set={set} />
+    </>
+  ),
+  true_false: ({ step, set, mediaId }) => (
+    <>
+      <QuestionFields step={step} set={set} mediaId={mediaId} questionLabel="Pernyataan" />
+      <SelectField
+        label="Kunci"
+        value={step.answer ? 'true' : 'false'}
+        options={[
+          { value: 'true', label: 'Benar' },
+          { value: 'false', label: 'Salah' },
+        ]}
+        onChange={(e) => set({ answer: e.target.value === 'true' })}
+      />
+      <Area
+        label="Alasan jika siswa menjawab Benar (padahal salah)"
+        value={step.why_true}
+        onChange={(why_true) => set({ why_true })}
+        rows={2}
+      />
+      <Area
+        label="Alasan jika siswa menjawab Salah (padahal benar)"
+        value={step.why_false}
+        onChange={(why_false) => set({ why_false })}
+        rows={2}
+      />
+      <Explanation step={step} set={set} />
+    </>
+  ),
+  ordering: ({ step, set, mediaId }) => (
+    <>
+      <QuestionFields step={step} set={set} mediaId={mediaId} questionLabel="Perintah (opsional)" />
+      <LinesField
+        label="Butir dalam URUTAN BENAR (satu per baris; siswa melihatnya teracak)"
+        value={step.items}
+        onChange={(items) => set({ items })}
+        rows={5}
+      />
+      <Why step={step} set={set} />
+      <Explanation step={step} set={set} />
+    </>
+  ),
+  categorize: ({ step, set, mediaId }) => (
+    <>
+      <QuestionFields step={step} set={set} mediaId={mediaId} questionLabel="Perintah (opsional)" />
+      <LinesField
+        label="Wadah (2-4, satu per baris)"
+        value={step.categories}
+        onChange={(categories) =>
+          set({
+            categories,
+            items: step.items.map((item) => ({
+              ...item,
+              category: Math.min(item.category, Math.max(0, categories.length - 1)),
+            })),
+          })
+        }
+        rows={2}
+      />
+      <ListEditor
+        label="Butir"
+        items={step.items}
+        min={2}
+        max={12}
+        onChange={(items) => set({ items })}
+        newItem={() => ({ text: '', category: 0, why: '' })}
+        addLabel="Tambah butir"
+        renderItem={(item, update) => (
+          <>
+            <SmallInput
+              label="Teks butir"
+              value={item.text}
+              onChange={(text) => update({ text })}
+            />
+            <SelectField
+              aria-label="Wadah yang benar"
+              value={String(item.category)}
+              options={step.categories.map((label, i) => ({
+                value: String(i),
+                label: `Wadah: ${label}`,
+              }))}
+              onChange={(e) => update({ category: Number(e.target.value) })}
+            />
+            <SmallInput
+              label="Kenapa (jika salah wadah)"
+              value={item.why}
+              onChange={(why) => update({ why })}
+            />
+          </>
+        )}
+      />
+      <Explanation step={step} set={set} />
+    </>
+  ),
+  hotspot: ({ step, set, mediaId }) => (
+    <>
+      <QuestionFields step={step} set={set} mediaId={mediaId} />
+      <ImageField
+        label="Gambar"
+        value={step.image}
+        onChange={(image) => set({ image })}
+        mediaId={mediaId}
+      />
+      <CheckField
+        label="Tampilkan nama bagian di gambar"
+        checked={step.show_labels}
+        onChange={(show_labels) => set({ show_labels })}
+      />
+      <ListEditor
+        label="Bagian gambar (posisi & ukuran dalam persen lebar/tinggi gambar)"
+        items={step.areas}
+        min={2}
+        max={12}
+        onChange={(areas) => set({ areas })}
+        newItem={() => ({ x: 40, y: 40, w: 20, h: 15, label: '', correct: false, why: '' })}
+        addLabel="Tambah bagian"
+        renderItem={(area, update) => (
+          <>
+            <div className="grid grid-cols-4 gap-2">
+              {['x', 'y', 'w', 'h'].map((field) => (
+                <label key={field} className="text-xs text-slate-600">
+                  {{ x: 'Kiri %', y: 'Atas %', w: 'Lebar %', h: 'Tinggi %' }[field]}
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={area[field]}
+                    onChange={(e) => update({ [field]: Number(e.target.value) })}
+                    className="mt-0.5 block w-full rounded-md border-0 px-2 py-1 text-base ring-1 ring-slate-300 sm:text-sm"
+                  />
+                </label>
+              ))}
+            </div>
+            <SmallInput
+              label="Nama bagian"
+              value={area.label}
+              onChange={(label) => update({ label })}
+            />
+            <CheckField
+              label="Bagian ini jawaban benar"
+              checked={area.correct}
+              onChange={(correct) => update({ correct })}
+            />
+            {!area.correct && (
+              <SmallInput
+                label="Kenapa salah"
+                value={area.why}
+                onChange={(why) => update({ why })}
+              />
+            )}
+          </>
+        )}
+      />
+      <Explanation step={step} set={set} />
+    </>
+  ),
+  fill_blank: ({ step, set, mediaId }) => (
+    <>
+      <QuestionFields step={step} set={set} mediaId={mediaId} questionLabel="Perintah (opsional)" />
+      <Area
+        label="Kalimat dengan isian [[jawaban]]"
+        value={step.template}
+        onChange={(template) => set({ template })}
+        hint="Contoh: Hasil 7 % 3 adalah [[1]]. Jawaban lain yang juga benar dipisah |, mis. [[Jakarta|DKI Jakarta]]."
+      />
+      <CheckField
+        label="Huruf besar/kecil diperhatikan"
+        checked={step.case_sensitive}
+        onChange={(case_sensitive) => set({ case_sensitive })}
+      />
+      <Why step={step} set={set} />
+      <Explanation step={step} set={set} />
+    </>
+  ),
+  drag_drop: ({ step, set, mediaId }) => (
+    <>
+      <QuestionFields step={step} set={set} mediaId={mediaId} questionLabel="Perintah (opsional)" />
+      <Area
+        label="Kalimat dengan tempat kosong [[jawaban]]"
+        value={step.template}
+        onChange={(template) => set({ template })}
+        hint="Siswa menyeret/ketuk pilihan ke tempat kosong."
+      />
+      <LinesField
+        label="Pengecoh (satu per baris)"
+        value={step.distractors}
+        onChange={(distractors) => set({ distractors })}
+        rows={2}
+      />
+      <Why step={step} set={set} />
+      <Explanation step={step} set={set} />
+    </>
+  ),
+  matching: ({ step, set, mediaId }) => (
+    <>
+      <QuestionFields step={step} set={set} mediaId={mediaId} />
+      <ListEditor
+        label="Pasangan"
+        items={step.pairs}
+        min={2}
+        max={10}
+        onChange={(pairs) => set({ pairs })}
+        newItem={() => ({ left: '', right: '' })}
+        addLabel="Tambah pasangan"
+        renderItem={(pair, update) => (
+          <div className="grid grid-cols-2 gap-2">
+            <SmallInput label="Kiri" value={pair.left} onChange={(left) => update({ left })} />
+            <SmallInput label="Kanan" value={pair.right} onChange={(right) => update({ right })} />
+          </div>
+        )}
+      />
+      <LinesField
+        label="Pengecoh di kanan (opsional, satu per baris)"
+        value={step.distractors}
+        onChange={(distractors) => set({ distractors })}
+        rows={2}
+      />
+      <Why step={step} set={set} />
+      <Explanation step={step} set={set} />
+    </>
+  ),
+}
+FORMS.did_you_know = FORMS.text
+FORMS.flashcards = FORMS.flip_cards
+
+/** Isian khusus jenis langkah. `set(perubahan)` menggabungkan ke langkah. */
+export default function StepFields({ step, set, mediaId }) {
+  const Form = FORMS[step.kind]
+  if (!Form)
+    return <p className="text-sm text-slate-500">Jenis “{step.kind}” diatur oleh plugin.</p>
+  return <Form step={step} set={set} mediaId={mediaId} />
+}

@@ -1,23 +1,6 @@
 import { ImageOff } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import api from '../api/client'
-
-// Gambar yang sudah diunduh disimpan selama halaman terbuka agar tidak diunduh ulang.
-const cache = new Map()
-
-function load(url) {
-  if (!cache.has(url)) {
-    const promise = api
-      .get(url, { responseType: 'blob' })
-      .then((res) => URL.createObjectURL(res.data))
-      .catch((error) => {
-        cache.delete(url) // gagal: boleh dicoba lagi nanti
-        throw error
-      })
-    cache.set(url, promise)
-  }
-  return cache.get(url)
-}
+import { loadAuthImage } from '../api/images'
 
 /**
  * Gambar yang hanya bisa diambil lewat API (butuh token login), mis. gambar soal asesmen.
@@ -28,7 +11,7 @@ export default function AuthImage({ url, alt, className = '' }) {
 
   useEffect(() => {
     let ignore = false
-    load(url)
+    loadAuthImage(url)
       .then((src) => !ignore && setState({ url, src, failed: false }))
       .catch(() => !ignore && setState({ url, src: null, failed: true }))
     return () => {

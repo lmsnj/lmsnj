@@ -4,6 +4,7 @@ import DragDropInput from '../../components/interactive/DragDropInput'
 import FillBlankInput from '../../components/interactive/FillBlankInput'
 import MatchingInput from '../../components/interactive/MatchingInput'
 import { choiceLetter } from '../../utils/assessments'
+import useImageSrc from '../useImageSrc'
 import { Rich, StepImage } from './ExplainSteps'
 
 /** Pertanyaan + gambar (sama untuk semua latihan). */
@@ -239,8 +240,9 @@ export function HotspotStep({ step, value, onChange, review, user }) {
   const keyAreas = review?.key?.areas ?? []
   // 'loading' | 'ok' | 'error'. Bagian langsung bisa diketuk walau gambar masih/gagal dimuat.
   const [status, setStatus] = useState('loading')
-  const hasImage = /^https?:\/\//.test(step.image || '')
-  const imageShown = hasImage && status !== 'error'
+  const image = useImageSrc(step.image)
+  const hasImage = Boolean(step.image)
+  const imageShown = Boolean(image.src) && status !== 'error'
   return (
     <div className="space-y-3">
       <Rich text={step.text} user={user} className="font-semibold" />
@@ -249,7 +251,7 @@ export function HotspotStep({ step, value, onChange, review, user }) {
       >
         {imageShown && (
           <img
-            src={step.image}
+            src={image.src}
             alt=""
             onLoad={() => setStatus('ok')}
             onError={() => setStatus('error')}
@@ -260,7 +262,7 @@ export function HotspotStep({ step, value, onChange, review, user }) {
             }
           />
         )}
-        {hasImage && status === 'error' && (
+        {hasImage && (status === 'error' || image.failed) && (
           <p className="absolute inset-x-0 bottom-2 text-center text-[0.8em] text-slate-500">
             Gambar gagal dimuat. Bagian tetap bisa diketuk.
           </p>

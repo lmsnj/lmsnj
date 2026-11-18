@@ -1,11 +1,23 @@
 import { Bot, ChevronLeft, ChevronRight, Lightbulb, RotateCw, UserRound } from 'lucide-react'
 import { useState } from 'react'
+import AuthImage from '../../components/AuthImage'
 import RichText from '../../components/RichText'
 import { youtubeEmbedUrl } from '../../utils/media'
-import { personalize } from '../engine'
+import { assetUrl, personalize } from '../engine'
+import useImageSrc from '../useImageSrc'
 
-/** Gambar langkah: alamat https (unggahan Studio menyusul di tahap 3). */
+/** Gambar langkah: unggahan Studio ("asset:<id>") atau alamat https. */
 export function StepImage({ src, alt, className = '' }) {
+  const asset = assetUrl(src)
+  if (asset) {
+    return (
+      <AuthImage
+        url={asset}
+        alt={alt || ''}
+        className={`mx-auto max-h-80 w-auto max-w-full rounded-lg object-contain ${className}`}
+      />
+    )
+  }
   if (!src || !/^https?:\/\//.test(src)) return null
   return (
     <img
@@ -25,10 +37,11 @@ export function Rich({ text, user, className = '', as }) {
 
 /** Maskot: gambar pilihan sekolah, atau ikon robot bawaan dalam kotak berwarna. */
 export function Mascot({ mascot, mood, size = 'size-12' }) {
-  if (mascot?.image && /^https?:\/\//.test(mascot.image)) {
+  const { src } = useImageSrc(mascot?.image)
+  if (src) {
     return (
       <img
-        src={mascot.image}
+        src={src}
         alt={mascot.name || 'Maskot'}
         className={`${size} shrink-0 rounded-xl object-cover`}
       />

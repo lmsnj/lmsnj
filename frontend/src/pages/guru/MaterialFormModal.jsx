@@ -13,8 +13,9 @@ import TextField from '../../components/TextField'
 import useFetch from '../../hooks/useFetch'
 import useFormSubmit from '../../hooks/useFormSubmit'
 import { ALL, toOptions } from '../../utils/academic'
-import { CONTENT_TYPES } from '../../utils/constants'
+import { MATERIAL_TYPES } from '../../utils/constants'
 import { parseObjectives } from '../../utils/learningPath'
+import MediaMaterialFields from './MediaMaterialFields'
 
 // Daftar tugas/asesmen satu kelas-mapel untuk pilihan syarat (kosong jika kelas-mapel belum dipilih).
 const listFor = (api) => (params) =>
@@ -46,6 +47,10 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
     // Materi baru: refleksi wajib (bawaan).
     require_reflection: material?.require_reflection ?? true,
   })
+  const [mediaForm, setMediaForm] = useState({
+    interactive_media: material?.interactive_media ?? null,
+    media_settings: material?.media_settings ?? {},
+  })
   const [file, setFile] = useState(null)
   const [progress, setProgress] = useState(null)
   // Dari halaman kelas-mapel `assignmentId` sudah pasti; dari halaman gabungan guru memilih sendiri.
@@ -68,6 +73,12 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
         form.required_task && form.min_task_score !== '' ? Number(form.min_task_score) : null,
       required_assessment: form.required_assessment ? Number(form.required_assessment) : null,
     }
+    if (form.material_type === 'media') {
+      data.interactive_media = mediaForm.interactive_media
+      // Teks JSON agar tetap terbaca jika form dikirim multipart.
+      data.media_settings = JSON.stringify(mediaForm.media_settings)
+      data.url = ''
+    }
     if (file) data.file = file
     if (!isEdit) data.teaching_assignment = assignmentId || chosenAssignment
     setProgress(file ? 0 : null)
@@ -87,6 +98,7 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
   }
 
   const isPdf = form.material_type === 'pdf'
+  const isMedia = form.material_type === 'media'
 
   return (
     <FormModal
@@ -123,8 +135,8 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
       )}
       <fieldset>
         <legend className="mb-1 text-sm font-medium text-slate-700">Jenis materi</legend>
-        <div className="grid grid-cols-3 gap-2">
-          {Object.entries(CONTENT_TYPES).map(([value, { label }]) => (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {Object.entries(MATERIAL_TYPES).map(([value, { label }]) => (
             <label
               key={value}
               className={`cursor-pointer rounded-lg px-3 py-2 text-center text-sm font-medium ring-1 ${
@@ -164,7 +176,14 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
         rows={3}
       />
 
-      {isPdf ? (
+      {isMedia ? (
+        <MediaMaterialFields
+          value={mediaForm}
+          onChange={setMediaForm}
+          assessments={assessments.data?.results}
+          errors={errors}
+        />
+      ) : isPdf ? (
         <FileInput
           label="File PDF"
           accept="application/pdf,.pdf"

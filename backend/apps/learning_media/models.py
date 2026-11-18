@@ -11,6 +11,10 @@ kelas) dan per id stasiun/langkah, sehingga satu media bisa dipakai di banyak ke
 
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+
+from apps.common.files import RandomUploadPath, delete_file
 
 from .schema import SCHEMA_VERSION, empty_media
 
@@ -195,3 +199,33 @@ class InteractiveMediaBadge(StudentMediaRecord):
         constraints = [
             models.UniqueConstraint(fields=["material", "student", "code"], name="unique_media_badge")
         ]
+
+
+class InteractiveMediaAsset(models.Model):
+    """Gambar yang diunggah guru untuk media (dikompres saat diunggah, lihat assets.py). Dirujuk di isi
+    media sebagai "asset:<id>" dan hanya diambil lewat /api/media-assets/<id>/ (hak akses dicek)."""
+
+    media = models.ForeignKey(InteractiveMedia, on_delete=models.CASCADE, related_name="assets")
+    file = models.FileField("file", upload_to=RandomUploadPath("media_assets"))
+    original_filename = models.CharField("nama file asli", max_length=255, blank=True)
+    size = models.PositiveIntegerField("ukuran (byte)", default=0)
+    width = models.PositiveIntegerField(default=0)
+    height = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    created_at = models.DateTimeField("diunggah", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "gambar media"
+        verbose_name_plural = "gambar media"
+        ordering = ["-created_at", "-id"]
+
+    @property
+    def ref(self):
+        return f"asset:{self.id}"
+
+
+@receiver(post_delete, sender=InteractiveMediaAsset)
+def delete_asset_file(sender, instance, **kwargs):
+    delete_file(instance.file)

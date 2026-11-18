@@ -1,6 +1,7 @@
 import json
 from types import SimpleNamespace
 
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Max, Q
 from django.http import HttpResponse
@@ -8,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -15,14 +17,16 @@ from rest_framework.throttling import ScopedRateThrottle
 from apps.accounts.models import Role
 from apps.accounts.permissions import IsAdminOrTeacher, IsFoundation
 from apps.accounts.views import impersonator_id
+from apps.common.files import file_response
 from apps.common.mixins import ProtectedDeleteMixin
 from apps.materials import progress as learning
 from apps.materials.selectors import materials_for
 from apps.schools.context import active_school
 from apps.schools.models import School
 
+from . import assets as media_assets
 from . import schema, services
-from .models import InteractiveMedia, InteractiveMediaShare, InteractiveMediaVersion
+from .models import InteractiveMedia, InteractiveMediaAsset, InteractiveMediaShare, InteractiveMediaVersion
 from .selectors import can_edit, library_for, media_for
 from .serializers import (
     AnswerSerializer,
@@ -105,6 +109,16 @@ class LearningMediaViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             source = schema.validate_media(media.draft, full=True)
         except schema.MediaError as error:
             raise media_errors(error)
+        missing = media_assets.asset_ids(source) - set(media.assets.values_list("id", flat=True))
+        if missing:
+            raise ValidationError(
+                {
+                    "draft": [
+                        f"Gambar asset:{i} bukan milik media ini. Unggah ulang gambarnya."
+                        for i in sorted(missing)
+                    ]
+                }
+            )
         compiled = schema.compile_media(source)
         with transaction.atomic():
             InteractiveMedia.objects.select_for_update().filter(pk=media.pk).first()
@@ -219,7 +233,41 @@ class LearningMediaViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             draft=draft,
             created_by=request.user,
         )
+        mapping = {}
+        for asset in source.assets.filter(id__in=media_assets.asset_ids(draft)):
+            with asset.file.open("rb") as handle:
+                clone = InteractiveMediaAsset(
+                    media=copy, original_filename=asset.original_filename, size=asset.size,
+                    width=asset.width, height=asset.height, created_by=request.user,
+                )  # fmt: skip
+                clone.file.save(
+                    asset.original_filename or "gambar.webp", ContentFile(handle.read()), save=True
+                )
+            mapping[asset.id] = clone.id
+        if mapping:
+            copy.draft = media_assets.remap_assets(draft, mapping)
+            copy.save(update_fields=["draft"])
         return Response(MediaSerializer(copy, context=self.get_serializer_context()).data, status=201)
+
+    @action(detail=True, methods=["get", "post"], parser_classes=[MultiPartParser, FormParser])
+    def assets(self, request, pk=None):
+        """GET: gambar milik media ini. POST (multipart `file`): unggah gambar (dikompres otomatis)."""
+        if request.method == "GET":
+            media = self.get_object()
+            return Response([asset_data(asset) for asset in media.assets.all()])
+        media = self.editable_object()
+        upload = request.FILES.get("file")
+        if upload is None:
+            raise ValidationError({"file": "Pilih gambar yang akan diunggah."})
+        if media.assets.count() >= media_assets.MAX_ASSETS:
+            raise ValidationError({"file": f"Maksimal {media_assets.MAX_ASSETS} gambar per media."})
+        content, name, width, height = media_assets.compress(upload)
+        asset = InteractiveMediaAsset(
+            media=media, original_filename=name, size=content.size, width=width, height=height,
+            created_by=request.user,
+        )  # fmt: skip
+        asset.file.save(name, content, save=True)
+        return Response(asset_data(asset), status=201)
 
     @action(detail=True)
     def export(self, request, pk=None):
@@ -259,6 +307,53 @@ class LearningMediaViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
                 [InteractiveMediaShare(media=media, school_id=school_id) for school_id in ids - existing]
             )
         return Response({"schools": sorted(media.shares.values_list("school_id", flat=True))})
+
+
+def asset_data(asset):
+    return {
+        "id": asset.id,
+        "ref": asset.ref,
+        "url": f"/media-assets/{asset.id}/",
+        "original_filename": asset.original_filename,
+        "size": asset.size,
+        "width": asset.width,
+        "height": asset.height,
+    }
+
+
+class MediaAssetViewSet(viewsets.ViewSet):
+    """GET: file gambar (hak akses = boleh membuka medianya, atau siswa yang materinya memakai media ini).
+    DELETE: pembuat media/admin."""
+
+    permission_classes = [IsAuthenticated]
+
+    def _asset(self, request, pk):
+        asset = InteractiveMediaAsset.objects.select_related("media").filter(pk=pk).first()
+        if asset is None:
+            raise NotFound("Gambar tidak ditemukan.")
+        user, school = request.user, active_school(request)
+        media_id = asset.media_id
+        allowed = (
+            media_for(user, school).filter(pk=media_id).exists()
+            or library_for(user, school).filter(pk=media_id).exists()
+            or materials_for(user, school).filter(interactive_media_id=media_id).exists()
+        )
+        if not allowed:
+            raise NotFound("Gambar tidak ditemukan.")
+        return asset
+
+    def retrieve(self, request, pk=None):
+        asset = self._asset(request, pk)
+        response = file_response(asset.file, asset.original_filename or "gambar.webp")
+        response["Cache-Control"] = "private, max-age=86400"
+        return response
+
+    def destroy(self, request, pk=None):
+        asset = self._asset(request, pk)
+        if not can_edit(request.user, asset.media):
+            raise PermissionDenied("Hanya pembuat media atau admin yang dapat menghapus gambar.")
+        asset.delete()
+        return Response(status=204)
 
 
 class MediaPlayViewSet(viewsets.ViewSet):

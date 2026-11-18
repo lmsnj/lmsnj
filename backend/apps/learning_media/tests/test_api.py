@@ -1,7 +1,10 @@
 """API Studio (guru) dan pemutar (siswa): hak akses, terbit, progres, kunci stasiun, edit setelah terbit."""
 
+import shutil
+import tempfile
 from datetime import timedelta
 
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -23,6 +26,13 @@ from ..models import (
     InteractiveMediaReflection,
 )
 from .samples import correct_response, media, wrong_response
+
+# File unggahan test disimpan di folder sementara, bukan di media/.
+TEMP_MEDIA = tempfile.mkdtemp()
+
+
+def tearDownModule():
+    shutil.rmtree(TEMP_MEDIA, ignore_errors=True)
 
 
 def member(username, role, school, **extra):
@@ -438,3 +448,90 @@ class PlayTests(MediaTestCase):
         self.material.media_settings = {"leaderboard": False}
         self.material.save()
         self.assertEqual(self.client.get(url).status_code, 403)
+
+
+def png_upload(name="foto.png", size=(2400, 1200)):
+    import io
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", size, (31, 138, 76)).save(buffer, format="PNG")
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type="image/png")
+
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA)
+class AssetTests(MediaTestCase):
+    def upload(self, file=None):
+        return self.client.post(
+            reverse("learning-media-assets", args=[self.media.id]),
+            {"file": file or png_upload()},
+            format="multipart",
+        )
+
+    def test_upload_compresses_to_webp_and_limits_size(self):
+        response = self.upload()
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual((response.data["width"], response.data["height"]), (1600, 800))
+        self.assertTrue(response.data["original_filename"].endswith(".webp"))
+        self.assertEqual(response.data["ref"], f"asset:{response.data['id']}")
+        listing = self.client.get(reverse("learning-media-assets", args=[self.media.id]))
+        self.assertEqual(len(listing.data), 1)
+
+    def test_rejects_fake_image_and_non_owner(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        fake = SimpleUploadedFile("x.png", b"<svg onload=alert(1)>", content_type="image/png")
+        self.assertEqual(self.upload(fake).status_code, 400)
+        self.client.force_authenticate(self.other_teacher)
+        self.assertIn(self.upload().status_code, (403, 404))
+
+    def test_student_sees_asset_only_through_material(self):
+        asset_id = self.upload().data["id"]
+        url = reverse("media-asset-detail", args=[asset_id])
+        self.client.force_authenticate(self.student)
+        self.assertEqual(self.client.get(url).status_code, 404)
+        draft = media()
+        draft["parts"][0]["stations"][0]["steps"][1]["image"] = f"asset:{asset_id}"
+        self.client.force_authenticate(self.teacher)
+        self.client.patch(
+            reverse("learning-media-detail", args=[self.media.id]), {"draft": draft}, format="json"
+        )
+        self.make_material()
+        self.client.force_authenticate(self.student)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/webp")
+        other = School.objects.create(code="mtsnj", name="MTs", level=Level.MTS)
+        self.client.force_authenticate(member("luar", Role.TEACHER, other))
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_publish_rejects_foreign_asset_and_copy_remaps(self):
+        draft = media()
+        draft["parts"][0]["stations"][0]["steps"][1]["image"] = "asset:999"
+        self.client.patch(
+            reverse("learning-media-detail", args=[self.media.id]), {"draft": draft}, format="json"
+        )
+        self.assertEqual(self.publish().status_code, 400)
+        asset_id = self.upload().data["id"]
+        draft["parts"][0]["stations"][0]["steps"][1]["image"] = f"asset:{asset_id}"
+        self.client.patch(
+            reverse("learning-media-detail", args=[self.media.id]), {"draft": draft}, format="json"
+        )
+        self.assertEqual(self.publish().status_code, 201)
+        self.client.force_authenticate(self.other_teacher)
+        copy = self.client.post(reverse("learning-media-copy", args=[self.media.id])).data
+        copied = InteractiveMedia.objects.get(pk=copy["id"])
+        new_ref = copied.draft["parts"][0]["stations"][0]["steps"][1]["image"]
+        self.assertNotEqual(new_ref, f"asset:{asset_id}")
+        self.assertEqual(copied.assets.get().ref, new_ref)
+
+    def test_delete_asset_removes_file(self):
+        from ..models import InteractiveMediaAsset
+
+        asset = InteractiveMediaAsset.objects.get(pk=self.upload().data["id"])
+        storage, name = asset.file.storage, asset.file.name
+        self.assertTrue(storage.exists(name))
+        self.assertEqual(self.client.delete(reverse("media-asset-detail", args=[asset.id])).status_code, 204)
+        self.assertFalse(storage.exists(name))
