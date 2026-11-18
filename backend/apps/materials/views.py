@@ -19,7 +19,7 @@ from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.files import file_response
 from apps.schools.context import active_school
 
-from . import objective_quiz, objective_quiz_excel, plan_excel
+from . import code_excel, objective_quiz, objective_quiz_excel, plan_excel
 from . import progress as learning
 from . import sharing
 from .models import Chapter, Material, MaterialItem, MaterialProgress
@@ -224,7 +224,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
 
     def _owned_material(self, request):
         material = self.get_object()
-        ensure_team_member(request.user, material, "Hanya guru pengampu yang dapat mengatur kuis materi ini.")
+        ensure_team_member(request.user, material, "Hanya guru pengampu yang dapat mengatur materi ini.")
         return material
 
     # Siswa juga boleh POST (mengirim jawaban); hak akses diperiksa di dalam action.
@@ -287,6 +287,22 @@ class MaterialViewSet(viewsets.ModelViewSet):
             return len(items)
 
         return import_response(preview, is_dry_run(request), save)
+
+    @action(detail=True, url_path="code-template", permission_classes=[IsTeacher])
+    def code_template(self, request, pk=None):
+        """Template Excel soal Praktik, sudah berisi soal yang ada (atau contoh jika belum ada)."""
+        material = self._owned_material(request)
+        content = code_excel.build_code_template(material)
+        return template_response(content, f"Praktik - {material.title[:60]}.xlsx")
+
+    @action(detail=True, methods=["post"], url_path="code-import", permission_classes=[IsTeacher])
+    def code_import(self, request, pk=None):
+        """Impor soal Praktik dari Excel: judul sama = diganti, judul baru = dibuat (code_excel.py)."""
+        material = self._owned_material(request)
+        preview, plan = code_excel.check_code_file(request.FILES.get("file"), material, request)
+        return import_response(
+            preview, is_dry_run(request), lambda: code_excel.save_code_plan(plan, material, request)
+        )
 
     @action(detail=True, url_path="objective-quiz-template", permission_classes=[IsTeacher])
     def objective_quiz_template(self, request, pk=None):

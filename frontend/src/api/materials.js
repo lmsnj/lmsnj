@@ -79,6 +79,15 @@ export const materialsApi = {
     form.append('dry_run', dryRun ? 'true' : 'false')
     return api.post('/materials/plan-import/', form).then((res) => res.data)
   },
+  // Soal Praktik lewat Excel (template berisi soal yang ada).
+  codeTemplate: (id) =>
+    api.get(`/materials/${id}/code-template/`, { responseType: 'blob' }).then((res) => res.data),
+  importCode: (id, file, dryRun) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('dry_run', dryRun ? 'true' : 'false')
+    return api.post(`/materials/${id}/code-import/`, form).then((res) => res.data)
+  },
   // Salin materi ke kelas lain (mapel sama) sebagai draf. copyTargets = daftar kelas tujuan
   // [{ teaching_assignment, classroom_name, academic_year, teachers }].
   copyTargets: (teachingAssignment) =>
@@ -147,6 +156,9 @@ export const codeExercisesApi = {
   remove: (id) => api.delete(`/code-exercises/${id}/`),
   // Siswa: { code, checked, passed } -> { attempt, material }.
   attempt: (id, data) => api.post(`/code-exercises/${id}/attempt/`, data).then((res) => res.data),
+  // Matematika (diperiksa server): { answers } -> { results, attempt?, material? }.
+  check: (id, answers) =>
+    api.post(`/code-exercises/${id}/check/`, { answers }).then((res) => res.data),
   // Guru: pekerjaan semua siswa kelas -> { exercise, title, rows }.
   attempts: (id) => api.get(`/code-exercises/${id}/attempts/`).then((res) => res.data),
 }

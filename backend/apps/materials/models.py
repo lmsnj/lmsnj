@@ -215,11 +215,14 @@ class CodeLanguage(models.TextChoices):
     HTML = "html", "HTML/CSS/JS"
     PYTHON = "python", "Python"
     PHP = "php", "PHP"
+    FLOWCHART = "flowchart", "Flowchart"
+    MATH = "math", "Matematika"
 
 
 class CodeExercise(models.Model):
-    """Soal Praktik (menulis kode) di satu materi. Kode siswa dijalankan & diperiksa di BROWSER siswa
-    (bukan di server), jadi `checks` ikut dikirim ke siswa. Aturan bentuk `checks` di code_practice.py."""
+    """Soal Praktik di satu materi. Kode siswa dijalankan & diperiksa di BROWSER siswa (bukan di server), jadi
+    `checks` ikut dikirim ke siswa (aturan di code_practice.py). Pengecualian: Matematika diperiksa di SERVER
+    dan kuncinya tidak pernah dikirim ke siswa (math_check.py)."""
 
     material = models.ForeignKey(
         Material, verbose_name="materi", on_delete=models.CASCADE, related_name="exercises"
@@ -230,6 +233,8 @@ class CodeExercise(models.Model):
     instructions = models.TextField("petunjuk", blank=True)
     starter_code = models.TextField("kode awal", blank=True)
     checks = models.JSONField("pemeriksaan", default=list)
+    # Khusus Matematika: angka acak per siswa {"a": {"min", "max", "step"}} (lihat math_check.py).
+    variables = models.JSONField("variabel", default=dict, blank=True)
     created_at = models.DateTimeField("dibuat", auto_now_add=True)
     updated_at = models.DateTimeField("diubah", auto_now=True)
 

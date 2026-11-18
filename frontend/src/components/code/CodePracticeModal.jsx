@@ -8,9 +8,10 @@ import Button from '../Button'
 import Modal from '../Modal'
 import Spinner from '../Spinner'
 import CodeWorkspace from './CodeWorkspace'
+import MathWorkspace from './MathWorkspace'
 
 /**
- * Praktik satu materi: tab per soal (tanda centang jika lulus) + area kerja. Siswa: pekerjaan
+ * Praktik satu materi (kode atau Matematika): tab per soal (tanda centang jika lulus) + area kerja. Siswa: pekerjaan
  * disimpan, `onChange(materi)` dipanggil agar syarat "Lulus Praktik" langsung terlihat.
  * Guru (`preview`): mencoba soal tanpa menyimpan.
  */
@@ -25,6 +26,7 @@ export default function CodePracticeModal({ material, preview = false, onClose, 
   const list = exercises.data ?? []
   const current = list[active]
   const isPassed = (exercise) => passedIds.includes(exercise.id) || exercise.my_attempt?.passed
+  const Workspace = current?.language === 'math' ? MathWorkspace : CodeWorkspace
 
   return (
     <Modal
@@ -71,10 +73,19 @@ export default function CodePracticeModal({ material, preview = false, onClose, 
             </div>
           )}
           <p className="text-xs text-slate-500">
-            {LANGUAGE_LABELS[current.language]} • Tulis kode, klik <strong>Jalankan</strong> untuk
-            mencoba, lalu <strong>Periksa</strong>. Semua pemeriksaan harus lulus.
+            {current.language === 'math' ? (
+              <>
+                Matematika • Isi semua jawaban lalu klik <strong>Periksa</strong>. Semua jawaban
+                harus benar; boleh mencoba lagi.
+              </>
+            ) : (
+              <>
+                {LANGUAGE_LABELS[current.language]} • Tulis kode, klik <strong>Jalankan</strong>{' '}
+                untuk mencoba, lalu <strong>Periksa</strong>. Semua pemeriksaan harus lulus.
+              </>
+            )}
           </p>
-          <CodeWorkspace
+          <Workspace
             key={current.id}
             exercise={current}
             preview={preview}

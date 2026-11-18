@@ -109,6 +109,20 @@ class CodePracticeTests(APITestCase):
         res = self.create(self.siti, language="php", checks=[{"type": "exists", "selector": "h1"}])
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_flowchart_exercise(self):
+        starter = (
+            '{"version": 1, "blocks": [{"id": "s1", "type": "input", "variable": "n"}, '
+            '{"id": "s2", "type": "if", "condition": "n > 0", "yes": [], "no": []}]}'
+        )
+        checks = [{"input": "4", "output": "Genap"}]
+        res = self.create(self.siti, language="flowchart", starter_code=starter, checks=checks)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        self.assertIn('"type": "if"', res.data["starter_code"])
+        for bad in ["bukan json", '{"blocks": [{"id": "x", "type": "goto"}]}', '{"blocks": "x"}']:
+            res = self.create(self.siti, language="flowchart", starter_code=bad, checks=checks)
+            self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST, bad)
+            self.assertIn("starter_code", res.data)
+
     def test_invalid_checks(self):
         cases = [
             ([], "minimal satu"),

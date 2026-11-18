@@ -7,15 +7,20 @@ export const LANGUAGES = [
   { value: 'python', label: 'Python' },
   { value: 'php', label: 'PHP' },
   { value: 'html', label: 'HTML/CSS/JS' },
+  { value: 'flowchart', label: 'Flowchart' },
+  { value: 'math', label: 'Matematika' },
 ]
 
 /** Bahasa yang diperiksa lewat masukan -> keluaran (bukan pemeriksaan halaman HTML). */
 export function isIoLanguage(language) {
-  return language === 'python' || language === 'php'
+  return language === 'python' || language === 'php' || language === 'flowchart'
 }
 
 /** Nama perintah membaca masukan per bahasa (untuk label & petunjuk). */
-export const INPUT_HINTS = { python: 'input()', php: 'fgets(STDIN)' }
+export const INPUT_HINTS = { python: 'input()', php: 'fgets(STDIN)', flowchart: 'blok Masukan' }
+
+/** Perintah menampilkan hasil per bahasa (untuk petunjuk guru). */
+export const OUTPUT_HINTS = { python: 'print()', php: 'echo', flowchart: 'blok Keluaran' }
 
 export const LANGUAGE_LABELS = Object.fromEntries(LANGUAGES.map((l) => [l.value, l.label]))
 
@@ -43,6 +48,7 @@ export const FIELD_PLACEHOLDERS = {
 }
 
 export function emptyCheck(language) {
+  if (language === 'math') return emptyMathItem()
   return isIoLanguage(language)
     ? { input: '', output: '' }
     : { type: 'exists', selector: '', property: '', value: '', target: '' }
@@ -102,6 +108,7 @@ export function summarizeResults(results = []) {
 
 /** Pesan pemeriksaan yang belum dilengkapi guru di form (null = lengkap). */
 export function checkProblem(check, language) {
+  if (language === 'math') return mathItemProblem(check)
   if (isIoLanguage(language)) return check.output.trim() ? null : 'Isi keluaran yang diharapkan.'
   const type = HTML_CHECK_TYPES.find((t) => t.value === check.type)
   const missing = type.fields.filter((field) => !String(check[field] ?? '').trim())
@@ -290,6 +297,48 @@ export function splitPhpOutput(text) {
   return { output, error }
 }
 
+// ------------------------------------------------------------ Matematika (diperiksa di server)
+
+export function emptyMathItem() {
+  return { question: '', answer: '', tolerance: '' }
+}
+
+/** Pesan soal matematika yang belum lengkap di form guru (null = lengkap). */
+export function mathItemProblem(item) {
+  if (!item.question.trim()) return 'Tulis pertanyaannya.'
+  if (!item.answer.trim()) return 'Tulis rumus jawabannya.'
+  return null
+}
+
+/** {a: {min, max, step}} -> baris form [{name, min, max, step}] (urut nama). */
+export function variablesToRows(variables = {}) {
+  return Object.keys(variables)
+    .sort()
+    .map((name) => ({ name, ...variables[name] }))
+}
+
+/** Baris form -> {a: {min, max, step}}; baris tanpa nama dilewati. Angka koma (2,5) diterima. */
+export function rowsToVariables(rows) {
+  const toNumber = (value) => Number(String(value ?? '').replace(',', '.'))
+  return Object.fromEntries(
+    rows
+      .filter((row) => row.name.trim())
+      .map((row) => [
+        row.name.trim().toLowerCase(),
+        { min: toNumber(row.min), max: toNumber(row.max), step: toNumber(row.step || 1) },
+      ]),
+  )
+}
+
+/** Huruf variabel yang dipakai di teks soal ([a], [b]) tetapi belum ada di daftar variabel. */
+export function missingVariables(items, rows) {
+  const defined = new Set(rows.map((row) => row.name.trim().toLowerCase()))
+  const used = new Set(
+    items.flatMap((item) => [...item.question.matchAll(/\[([a-z])\]/g)].map((m) => m[1])),
+  )
+  return [...used].filter((name) => !defined.has(name)).sort()
+}
+
 /** Contoh soal untuk tombol "Gunakan contoh" di form guru (semuanya lolos validasi backend). */
 export const EXERCISE_TEMPLATES = [
   {
@@ -346,6 +395,102 @@ export const EXERCISE_TEMPLATES = [
         { input: '80', output: 'Lulus' },
         { input: '75', output: 'Lulus' },
         { input: '60', output: 'Remedial' },
+      ],
+    },
+  },
+  {
+    label: 'Flowchart: luas persegi panjang',
+    values: {
+      title: 'Luas Persegi Panjang',
+      language: 'flowchart',
+      instructions:
+        'Lengkapi flowchart: baca panjang dan lebar, hitung luasnya ke variabel luas, lalu tampilkan luas.',
+      starter_code:
+        '{"version": 1, "blocks": [{"id": "s1", "type": "input", "variable": "panjang"}, {"id": "s2", "type": "input", "variable": "lebar"}]}',
+      checks: [
+        { input: '5\n3', output: '15' },
+        { input: '10\n2,5', output: '25' },
+      ],
+    },
+  },
+  {
+    label: 'Flowchart: ganjil atau genap (Jika)',
+    values: {
+      title: 'Ganjil atau Genap',
+      language: 'flowchart',
+      instructions:
+        'Baca bilangan n. Jika n habis dibagi 2 (n mod 2 = 0) tampilkan "Genap", selain itu tampilkan "Ganjil".',
+      starter_code: '{"version": 1, "blocks": [{"id": "s1", "type": "input", "variable": "n"}]}',
+      checks: [
+        { input: '4', output: 'Genap' },
+        { input: '7', output: 'Ganjil' },
+        { input: '0', output: 'Genap' },
+      ],
+    },
+  },
+  {
+    label: 'Flowchart: jumlah 1 sampai n (Ulangi)',
+    values: {
+      title: 'Jumlah 1 sampai n',
+      language: 'flowchart',
+      instructions:
+        'Baca n, lalu dengan blok Ulangi jumlahkan 1 + 2 + ... + n ke variabel total dan tampilkan total.',
+      starter_code:
+        '{"version": 1, "blocks": [{"id": "s1", "type": "input", "variable": "n"}, {"id": "s2", "type": "assign", "variable": "total", "expression": "0"}]}',
+      checks: [
+        { input: '5', output: '15' },
+        { input: '10', output: '55' },
+      ],
+    },
+  },
+  {
+    label: 'Matematika: operasi bilangan (angka acak)',
+    values: {
+      title: 'Operasi Hitung Bilangan',
+      language: 'math',
+      instructions:
+        'Kerjakan setiap soal. Angka soalmu berbeda dengan temanmu. Jawaban boleh pecahan (1/2) atau desimal (0,5).',
+      starter_code: '',
+      variables: { a: { min: 2, max: 12, step: 1 }, b: { min: 2, max: 9, step: 1 } },
+      checks: [
+        { question: 'Hitung $[a] \\times [b]$.', answer: 'a*b', tolerance: '' },
+        {
+          question: 'Hitung $\\frac{[a]}{[b]}$ dalam bentuk paling sederhana.',
+          answer: 'a/b',
+          tolerance: '',
+        },
+        { question: 'Hitung $[a]^2 - [b]^2$.', answer: 'a^2 - b^2', tolerance: '' },
+      ],
+    },
+  },
+  {
+    label: 'Matematika: aljabar (sederhanakan)',
+    values: {
+      title: 'Menyederhanakan Bentuk Aljabar',
+      language: 'math',
+      instructions: 'Sederhanakan setiap bentuk aljabar berikut.',
+      starter_code: '',
+      variables: { a: { min: 2, max: 9, step: 1 }, b: { min: 1, max: 9, step: 1 } },
+      checks: [
+        { question: 'Sederhanakan $[a]x + [b]x$.', answer: '(a+b)x', tolerance: '' },
+        { question: 'Jabarkan $(x + [b])^2$.', answer: '(x+b)^2', tolerance: '' },
+      ],
+    },
+  },
+  {
+    label: 'Matematika: luas lingkaran (dibulatkan)',
+    values: {
+      title: 'Luas Lingkaran',
+      language: 'math',
+      instructions: 'Gunakan $\\pi = 3,14$. Tulis jawaban dengan dua angka di belakang koma.',
+      starter_code: '',
+      variables: { r: { min: 2, max: 20, step: 1 } },
+      checks: [
+        {
+          question: 'Hitung luas lingkaran berjari-jari $[r]$ cm.',
+          answer: '3.14*r^2',
+          tolerance: '0.01',
+        },
       ],
     },
   },

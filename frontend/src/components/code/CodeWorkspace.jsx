@@ -14,6 +14,7 @@ import Alert from '../Alert'
 import Button from '../Button'
 import RichText from '../RichText'
 import CodeEditor from './CodeEditor'
+import FlowchartEditor from './FlowchartEditor'
 import { LANGUAGE_NAMES, runCode } from './workerRunner'
 
 const CHECK_TIMEOUT = 8000
@@ -34,6 +35,9 @@ export default function CodeWorkspace({
   onSaved,
 }) {
   const isHtml = exercise.language === 'html'
+  const isFlow = exercise.language === 'flowchart'
+  // Flowchart: blok tempat error terakhir (ditandai merah di editor & diagram).
+  const [errorBlock, setErrorBlock] = useState(null)
   const engine = LANGUAGE_NAMES[exercise.language]
   const [code, setCodeState] = useState(
     initialCode ?? (exercise.my_attempt?.code || exercise.starter_code || ''),
@@ -117,6 +121,7 @@ export default function CodeWorkspace({
           },
         )
         setOutput({ text: result.output, error: result.error })
+        setErrorBlock(result.blockId ?? null)
       }
       await save(false, false)
     } catch (err) {
@@ -145,6 +150,7 @@ export default function CodeWorkspace({
         const outputs = await runCode(exercise.language, code, runs, {
           onStatus: (s) => setStatus(s === 'loading' ? `Menyiapkan ${engine}…` : 'Memeriksa…'),
         })
+        setErrorBlock(outputs.find((out) => out.blockId)?.blockId ?? null)
         checked = outputs.map((out, index) => {
           const expected = exercise.checks[index].output
           if (out.error) return { ok: false, detail: out.error }
@@ -195,13 +201,17 @@ export default function CodeWorkspace({
               <RotateCcw className="size-3.5" aria-hidden="true" /> Atur ulang
             </button>
           </div>
-          <CodeEditor
-            key={exercise.id}
-            value={code}
-            onChange={setCode}
-            language={exercise.language}
-            minHeight="18rem"
-          />
+          {isFlow ? (
+            <FlowchartEditor value={code} onChange={setCode} errorBlockId={errorBlock} />
+          ) : (
+            <CodeEditor
+              key={exercise.id}
+              value={code}
+              onChange={setCode}
+              language={exercise.language}
+              minHeight="18rem"
+            />
+          )}
         </div>
 
         <div className="min-w-0 space-y-2">
@@ -231,7 +241,13 @@ export default function CodeWorkspace({
                 className="block text-sm font-medium text-slate-700"
                 htmlFor={`stdin-${exercise.id}`}
               >
-                Masukan untuk <code>{INPUT_HINTS[exercise.language]}</code>{' '}
+                {isFlow ? (
+                  'Masukan untuk blok Masukan'
+                ) : (
+                  <>
+                    Masukan untuk <code>{INPUT_HINTS[exercise.language]}</code>
+                  </>
+                )}{' '}
                 <span className="font-normal text-slate-500">(satu baris = satu input)</span>
               </label>
               <textarea

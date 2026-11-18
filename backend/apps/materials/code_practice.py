@@ -17,12 +17,14 @@ Bentuk `checks` per bahasa:
     click   : klik elemen `selector`, lalu teks elemen `target` memuat `value`
 """
 
+import json
+
 from rest_framework.exceptions import ValidationError
 
 from .models import CodeLanguage
 
 # Bahasa yang diperiksa lewat masukan -> keluaran (bukan pemeriksaan halaman HTML).
-IO_LANGUAGES = {CodeLanguage.PYTHON, CodeLanguage.PHP}
+IO_LANGUAGES = {CodeLanguage.PYTHON, CodeLanguage.PHP, CodeLanguage.FLOWCHART}
 MAX_EXERCISES = 5
 MAX_CHECKS = 10
 MAX_CODE = 50_000
@@ -83,3 +85,54 @@ def clean_checks(language, checks):
                 raise ValidationError(f"Pemeriksaan {number}: isi {', '.join(missing)}.")
         cleaned.append(data)
     return cleaned
+
+
+# Flowchart disimpan sebagai teks JSON {"version": 1, "blocks": [...]} (lihat frontend
+# utils/flowchart/program.js). Flowchart awal dari guru diperiksa bentuknya di sini.
+FLOWCHART_FIELDS = {
+    "input": ["variable"],
+    "output": ["expression"],
+    "assign": ["variable", "expression"],
+    "if": ["condition"],
+    "while": ["condition"],
+    "for": ["variable", "from", "to", "step"],
+}
+FLOWCHART_BRANCHES = {"if": ["yes", "no"], "while": ["body"], "for": ["body"]}
+MAX_FLOWCHART_BLOCKS = 300
+MAX_FLOWCHART_DEPTH = 20
+
+
+def clean_flowchart(text):
+    """Periksa teks JSON flowchart (kosong = tanpa flowchart awal). Mengembalikan teks yang disimpan."""
+    if not str(text or "").strip():
+        return ""
+    try:
+        data = json.loads(text)
+    except ValueError:
+        raise ValidationError("Flowchart awal tidak valid.")
+    if not isinstance(data, dict) or not isinstance(data.get("blocks"), list):
+        raise ValidationError("Flowchart awal tidak valid.")
+    count = 0
+
+    def check(blocks, depth):
+        nonlocal count
+        if depth > MAX_FLOWCHART_DEPTH:
+            raise ValidationError("Flowchart awal terlalu bertingkat.")
+        for block in blocks:
+            count += 1
+            if count > MAX_FLOWCHART_BLOCKS:
+                raise ValidationError(f"Flowchart awal maksimal {MAX_FLOWCHART_BLOCKS} blok.")
+            kind = block.get("type") if isinstance(block, dict) else None
+            if kind not in FLOWCHART_FIELDS or not isinstance(block.get("id"), str):
+                raise ValidationError("Flowchart awal berisi blok yang tidak dikenal.")
+            for field in FLOWCHART_FIELDS[kind]:
+                if not isinstance(block.get(field, ""), str) or len(block.get(field, "")) > 500:
+                    raise ValidationError("Isi blok flowchart awal tidak valid.")
+            for branch in FLOWCHART_BRANCHES.get(kind, []):
+                children = block.get(branch, [])
+                if not isinstance(children, list):
+                    raise ValidationError("Flowchart awal tidak valid.")
+                check(children, depth + 1)
+
+    check(data["blocks"], 1)
+    return json.dumps({"version": 1, "blocks": data["blocks"]}, ensure_ascii=False)

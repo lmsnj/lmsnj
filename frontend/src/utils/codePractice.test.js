@@ -136,3 +136,28 @@ test('PHP: masukan aman dan pesan error menjadi "Baris N"', async () => {
   )
   assert.deepEqual(fatal, { output: 'halo', error: 'Baris 2: Error: Exception: rusak' })
 })
+
+test('Matematika: variabel, soal belum lengkap, dan contoh soal', async () => {
+  const { rowsToVariables, variablesToRows, missingVariables, checkProblem, EXERCISE_TEMPLATES } =
+    await import('./codePractice.js')
+  assert.deepEqual(
+    rowsToVariables([{ name: 'A', min: '1', max: '2,5', step: '' }, { name: ' ' }]),
+    {
+      a: { min: 1, max: 2.5, step: 1 },
+    },
+  )
+  assert.deepEqual(
+    variablesToRows({ b: { min: 1, max: 2, step: 1 }, a: { min: 0, max: 1, step: 1 } })[0].name,
+    'a',
+  )
+  assert.deepEqual(missingVariables([{ question: '[a] + [z] + [a]' }], [{ name: 'a' }]), ['z'])
+  assert.equal(checkProblem({ question: '', answer: 'a' }, 'math'), 'Tulis pertanyaannya.')
+  assert.equal(checkProblem({ question: 'x', answer: ' ' }, 'math'), 'Tulis rumus jawabannya.')
+  // Teks LaTeX contoh harus berisi garis miring terbalik sungguhan (bukan tab dari '\t').
+  for (const template of EXERCISE_TEMPLATES.filter((t) => t.values.language === 'math')) {
+    for (const item of template.values.checks) {
+      assert.ok(!/[\t\f]/.test(item.question), item.question)
+      assert.equal(missingVariables([item], variablesToRows(template.values.variables)).length, 0)
+    }
+  }
+})

@@ -11,7 +11,8 @@ import { getErrorMessage, getFieldErrors } from '../../utils/errors'
  * Pola impor soal kuis materi dari Excel: unduh template (sudah berisi soal yang ada beserta
  * kuncinya) -> isi/ubah -> Periksa -> Impor. Dipakai Kuis Capaian dan Latihan Pemahaman.
  * `importFile(file, dryRun)` memanggil API; `showObjective` = tampilkan kolom No Capaian di
- * pratinjau; `children` = keterangan di atas tombol template; `actions` = tombol tambahan di kaki.
+ * pratinjau; `kindLabel`/`textLabel` = judul kolom pratinjau; `children` = keterangan di atas tombol
+ * template; `actions` = tombol tambahan di kaki.
  */
 export default function QuizImportModal({
   title,
@@ -20,6 +21,8 @@ export default function QuizImportModal({
   importFile,
   hint,
   showObjective = false,
+  kindLabel = 'Jenis',
+  textLabel = 'Pertanyaan',
   actions,
   children,
   onClose,
@@ -105,8 +108,8 @@ export default function QuizImportModal({
                   <tr>
                     <th className="px-3 py-2">Baris</th>
                     {showObjective && <th className="px-3 py-2">Capaian</th>}
-                    <th className="px-3 py-2">Jenis</th>
-                    <th className="px-3 py-2">Pertanyaan</th>
+                    <th className="px-3 py-2">{kindLabel}</th>
+                    <th className="px-3 py-2">{textLabel}</th>
                     <th className="px-3 py-2">Status</th>
                   </tr>
                 </thead>

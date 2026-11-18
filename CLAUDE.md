@@ -185,7 +185,7 @@ Pola yang wajib dipakai ulang:
   materi kembar** (`merge_materials`: siswa yang menuntaskan materi kembar -> `unlocked` di materi yang
   dipertahankan, refleksi & pengesahan ikut, materi kembar dihapus).
 - **Praktik menulis kode** (MAT-CODE-A; `apps/materials/code_practice.py` + `code_views.py`): `CodeExercise` (1-5 per
-  materi, `language` html/python/php, `checks`) dan `CodeAttempt` (kode terakhir, `passed_code`, `passed_at`, `check_count`).
+  materi, `language` html/python/php/flowchart/math, `checks`, `variables`) dan `CodeAttempt` (kode terakhir, `passed_code`, `passed_at`, `check_count`).
   Kode siswa dijalankan & diperiksa di BROWSER (jangan pernah menjalankan kode siswa di server): HTML/CSS/JS di iframe
   `sandbox="allow-scripts allow-modals"` (tanpa allow-same-origin) + skrip `RUNNER` di `utils/codePractice.js`;
   Python & PHP di Web Worker (`workers/pythonWorker.js`, Pyodide disajikan sendiri dari `/pyodide/` lewat plugin di
@@ -194,8 +194,13 @@ Pola yang wajib dipakai ulang:
   Cerita Reflektif. Editor CodeMirror 6 (`components/code/CodeEditor.jsx`) dimuat lazy. PHP (MAT-CODE-B):
   `workers/phpWorker.js` (php-wasm 8.4 saja, proses baru per run, STDIN dari `phpPrelude`, pesan error lewat
   `splitPhpOutput`); worker dijalankan lewat `components/code/workerRunner.js::runCode`; `vite.config.js`:
-  `worker.format = 'es'`, `optimizeDeps.exclude: ['php-wasm']`. Rencana berikutnya: Matematika (cek di server),
-  Flowchart, impor Excel soal praktik.
+  `worker.format = 'es'`, `optimizeDeps.exclude: ['php-wasm']`. Matematika (MAT-CODE-C, `math_check.py`):
+  satu-satunya jenis yang diperiksa di SERVER (`/check/`, sympy) dan kuncinya (`checks`, `variables`) dihapus dari
+  respons siswa; siswa menerima `questions` berangka acak (`values_for`). JANGAN memakai sympify/parse_expr untuk
+  jawaban siswa (eval) — pakai `parse_math`. Flowchart (MAT-CODE-D): editor blok `FlowchartEditor` + diagram SVG
+  otomatis (`utils/flowchart/layout.js`), dijalankan `utils/flowchart/program.js::runProgram` (tanpa worker, batas
+  langkah), program = teks JSON. Impor Excel soal Praktik (MAT-CODE-E): `materials/code_excel.py`, lembar Soal +
+  Cek Program/Cek HTML/Soal Matematika/Variabel, judul sama = diganti, divalidasi `CodeExerciseSerializer`.
 - **Impor Bab, Materi & Tugas** (`apps/materials/plan_excel.py`, `docs/REQUIREMENTS.md` MAT-PLAN, tombol
   "Impor Excel" di tab Materi & Tugas -> `PlanImportModal`): satu file "Rencana Pembelajaran" per kelas-mapel
   (lembar Bab, Materi, Tugas). Template berisi data seluruh tim (atau contoh jika kosong, contohnya diuji lolos).
@@ -627,7 +632,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu (tim) |
 | GET/POST | `/api/materials/copy-targets/?teaching_assignment=`, `/api/materials/copy/` (`teaching_assignment`, `materials`, `target`) | Guru tim: salin materi ke kelas lain (mapel sama) sebagai draf |
 | POST   | `/api/materials/{id}/merge/` (`duplicate`) | Guru tim: gabungkan materi kembar ke materi ini |
-| CRUD   | `/api/code-exercises/` (`?material=`), `POST .../{id}/attempt/` (`code`, `checked`, `passed`), `GET .../{id}/attempts/` | Tulis: guru tim. Baca: guru tim/admin; siswa soal di materi terbuka (+ `my_attempt`). attempt: siswa (konten dibuka & Latihan lulus). attempts: guru tim/admin |
+| CRUD   | `/api/code-exercises/` (`?material=`), `POST .../{id}/attempt/` (`code`, `checked`, `passed`), `POST .../{id}/check/` (Matematika: `answers`), `GET .../{id}/attempts/` | Tulis: guru tim. Baca: guru tim/admin; siswa soal di materi terbuka (+ `my_attempt`). attempt: siswa (konten dibuka & Latihan lulus). attempts: guru tim/admin |
+| GET/POST | `/api/materials/{id}/code-template/`, `.../code-import/` (multipart `file`, `dry_run`) | Guru tim: template/impor soal Praktik materi (judul sama = diganti) |
 | GET/POST | `/api/materials/plan-template/?teaching_assignment=`, `/api/materials/plan-import/` (multipart `teaching_assignment`, `file`, `dry_run`) | Guru tim: template/impor Bab, Materi & Tugas (judul sama = diperbarui) |
 | CRUD   | `/api/chapters/` (filter `teaching_assignment`), `.../reorder/` (`teaching_assignment`, `chapters: [id urut]`) | Tulis: guru pengampu. Hapus: + admin. Baca: admin semua, guru miliknya, siswa bab berisi materi terbit di kelasnya (+ `progress`) |
 | CRUD   | `/api/material-items/` (multipart; filter `material`), `.../{id}/download/`, `.../reorder/` (`material`, `items: [id urut]`) | Tulis: guru pengampu materinya. Hapus: + admin. Baca/download: sama dengan materinya (siswa: materi tidak terkunci) |

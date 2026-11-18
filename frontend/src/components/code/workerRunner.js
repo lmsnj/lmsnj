@@ -2,6 +2,8 @@
 // Mesin bahasanya (Pyodide ~12 MB, PHP ~13 MB) diunduh sekali dari server LMS sendiri, lalu disimpan
 // browser. Kode siswa berjalan terpisah dari halaman: tidak bisa membaca token login, dan program yang
 // tidak berhenti bisa dimatikan.
+import { parseProgram, runProgram } from '../../utils/flowchart/program'
+
 const LOAD_TIMEOUT = 120_000
 const RUN_TIMEOUT = 8_000
 
@@ -22,12 +24,19 @@ const WORKERS = {
 const workers = {}
 let sequence = 0
 
+// Flowchart dijalankan langsung (penjalan JavaScript sendiri dengan batas langkah, tanpa worker).
+async function runFlowchart(code, runs) {
+  const program = parseProgram(code)
+  return runs.map(({ input }) => runProgram(program, input))
+}
+
 /**
  * runs = [{ input, showPrompt }] -> Promise<[{ output, error }]>. `onStatus('loading' | 'running')`.
  * Program yang berjalan terlalu lama (mis. perulangan tanpa akhir) dihentikan: worker dimatikan dan
  * dibuat ulang pada percobaan berikutnya.
  */
 export function runCode(language, code, runs, { onStatus } = {}) {
+  if (language === 'flowchart') return runFlowchart(code, runs)
   const spec = WORKERS[language]
   return new Promise((resolve, reject) => {
     if (!workers[language]) workers[language] = spec.create()
@@ -88,6 +97,7 @@ export function runCode(language, code, runs, { onStatus } = {}) {
   })
 }
 
-export const LANGUAGE_NAMES = Object.fromEntries(
-  Object.entries(WORKERS).map(([key, spec]) => [key, spec.name]),
-)
+export const LANGUAGE_NAMES = {
+  ...Object.fromEntries(Object.entries(WORKERS).map(([key, spec]) => [key, spec.name])),
+  flowchart: 'Flowchart',
+}

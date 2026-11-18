@@ -140,7 +140,7 @@ export default function MaterialsManager({
         variant="ghost"
         size="sm"
         onClick={() => setDialog({ type: 'code', material })}
-        title="Praktik menulis kode (Python, PHP, HTML/CSS/JS) dengan pemeriksaan otomatis"
+        title="Praktik: kode (Python, PHP, HTML/CSS/JS) atau Matematika, dengan pemeriksaan otomatis"
       >
         <Code2 className="size-4" aria-hidden="true" /> Praktik
         {material.code_exercise_count > 0 && ` (${material.code_exercise_count})`}

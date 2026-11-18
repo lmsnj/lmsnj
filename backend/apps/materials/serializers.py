@@ -11,8 +11,9 @@ from apps.assessments.models import Assessment
 from apps.common.files import delete_file, validate_upload
 from apps.tasks.models import Task
 
-from .code_practice import MAX_CODE, MAX_EXERCISES, clean_checks
-from .models import Chapter, CodeAttempt, CodeExercise, Material, MaterialItem, MaterialType
+from .code_practice import MAX_CODE, MAX_EXERCISES, clean_checks, clean_flowchart
+from .math_check import clean_math_items, clean_variables, questions_for
+from .models import Chapter, CodeAttempt, CodeExercise, CodeLanguage, Material, MaterialItem, MaterialType
 from .objective_quiz import practice_count, quiz_counts
 from .progress import chapter_progress, progress_for_request
 
@@ -469,8 +470,11 @@ class CodeExerciseSerializer(serializers.ModelSerializer):
     # Guru hanya boleh menambah soal ke materi kelas-mapel timnya (diisi di __init__).
     material = serializers.PrimaryKeyRelatedField(queryset=Material.objects.none())
     checks = serializers.JSONField()
+    variables = serializers.JSONField(required=False)
     # Khusus siswa: pekerjaannya sendiri (view menitipkan {id soal: CodeAttempt} di context).
     my_attempt = serializers.SerializerMethodField()
+    # Matematika: teks soal dengan angka milik pengguna yang login (kunci jawaban tidak ikut).
+    questions = serializers.SerializerMethodField()
 
     class Meta:
         model = CodeExercise
@@ -483,6 +487,8 @@ class CodeExerciseSerializer(serializers.ModelSerializer):
             "instructions",
             "starter_code",
             "checks",
+            "variables",
+            "questions",
             "my_attempt",
         ]
         read_only_fields = ["order"]
@@ -502,6 +508,21 @@ class CodeExerciseSerializer(serializers.ModelSerializer):
         attempt = attempts.get(obj.id)
         return CodeAttemptSerializer(attempt).data if attempt else None
 
+    def get_questions(self, obj):
+        request = self.context.get("request")
+        if obj.language != CodeLanguage.MATH or request is None:
+            return None
+        return questions_for(obj, request.user)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if instance.language == CodeLanguage.MATH and (request is None or request.user.role == Role.STUDENT):
+            # Kunci jawaban & rentang angka matematika hanya untuk guru.
+            data.pop("checks", None)
+            data.pop("variables", None)
+        return data
+
     def validate_material(self, value):
         if self.instance and value != self.instance.material:
             raise serializers.ValidationError("Soal praktik tidak bisa dipindah ke materi lain.")
@@ -517,6 +538,25 @@ class CodeExerciseSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         language = attrs.get("language", getattr(self.instance, "language", None))
         checks = attrs.get("checks", getattr(self.instance, "checks", None))
+        if language == CodeLanguage.MATH:
+            try:
+                attrs["variables"] = clean_variables(
+                    attrs.get("variables", getattr(self.instance, "variables", {}))
+                )
+            except serializers.ValidationError as error:
+                raise serializers.ValidationError({"variables": error.detail})
+            try:
+                attrs["checks"] = clean_math_items(checks, attrs["variables"])
+            except serializers.ValidationError as error:
+                raise serializers.ValidationError({"checks": error.detail})
+            attrs["starter_code"] = ""
+            return attrs
+        attrs["variables"] = {}
+        if language == CodeLanguage.FLOWCHART and "starter_code" in attrs:
+            try:
+                attrs["starter_code"] = clean_flowchart(attrs["starter_code"])
+            except serializers.ValidationError as error:
+                raise serializers.ValidationError({"starter_code": error.detail})
         try:
             attrs["checks"] = clean_checks(language, checks)
         except serializers.ValidationError as error:
@@ -530,3 +570,11 @@ class CodeAttemptInputSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=MAX_CODE, allow_blank=True, trim_whitespace=False)
     checked = serializers.BooleanField(default=False)
     passed = serializers.BooleanField(default=False)
+
+
+class MathAnswersSerializer(serializers.Serializer):
+    """Jawaban Praktik Matematika: satu teks per soal (urut)."""
+
+    answers = serializers.ListField(
+        child=serializers.CharField(max_length=300, allow_blank=True), max_length=20, allow_empty=False
+    )

@@ -35,7 +35,7 @@ COPIED_FIELDS = [
     "require_reflection",
 ]
 ITEM_FIELDS = ["title", "material_type", "original_filename", "url", "order"]
-EXERCISE_FIELDS = ["order", "title", "language", "instructions", "starter_code", "checks"]
+EXERCISE_FIELDS = ["order", "title", "language", "instructions", "starter_code", "checks", "variables"]
 
 
 def copy_targets(source, school):
