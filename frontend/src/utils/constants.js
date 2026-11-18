@@ -56,7 +56,13 @@ export const MATERIAL_TYPES = {
   pdf: { label: 'PDF', color: 'red' },
   video: { label: 'Video', color: 'blue' },
   link: { label: 'Link', color: 'gray' },
+  media: { label: 'Media Interaktif', color: 'green' },
 }
+
+// Jenis konten yang diunggah/ditautkan langsung (konten tambahan tidak boleh berupa media interaktif).
+export const CONTENT_TYPES = Object.fromEntries(
+  Object.entries(MATERIAL_TYPES).filter(([value]) => value !== 'media'),
+)
 
 // Tipe file untuk lampiran tugas & jawaban siswa; harus sama dengan ALLOWED_TASK_EXTENSIONS di backend.
 export const TASK_FILE_ACCEPT =

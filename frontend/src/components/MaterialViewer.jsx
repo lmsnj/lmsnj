@@ -1,7 +1,9 @@
-import { Circle, CircleCheck, Lock, Target } from 'lucide-react'
+import { Circle, CircleCheck, Lock, Sparkles, Target } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { materialItemsApi, materialsApi } from '../api/materials'
+import useAuth from '../hooks/useAuth'
+import { ROLE_HOME } from '../utils/constants'
 import { getErrorMessage } from '../utils/errors'
 import { countChecks, practiceState, toggleObjective } from '../utils/learningPath'
 import { saveBlob, youtubeEmbedUrl } from '../utils/media'
@@ -105,8 +107,40 @@ function VideoViewer({ content }) {
   )
 }
 
+// Media interaktif dibuka di halamannya sendiri (layar lebar, bisa layar penuh, lanjut dari terakhir).
+function MediaLauncher({ material }) {
+  const { user } = useAuth()
+  const check = material.progress?.checks?.find((item) => item.key === 'media')
+  return (
+    <div className="flex flex-wrap items-center gap-4 rounded-xl bg-brand-50 p-4 ring-1 ring-brand-200">
+      <span className="flex size-12 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+        <Sparkles className="size-6" aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-brand-700">Media Interaktif</p>
+        <p className="font-semibold text-slate-900">
+          {material.interactive_media_title || material.title}
+        </p>
+        {check && (
+          <p className="text-xs text-slate-600">
+            {check.label}: {check.done ? 'tuntas' : 'belum tuntas'}
+          </p>
+        )}
+      </div>
+      <Link
+        to={`${ROLE_HOME[user.role]}/media/${material.id}`}
+        className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+      >
+        {material.progress ? 'Mulai Belajar' : 'Pratinjau sebagai Siswa'}
+      </Link>
+    </div>
+  )
+}
+
 // Isi satu konten (utama atau tambahan) sesuai tipenya.
 function ContentBody({ material, contentItem }) {
+  if (!contentItem && material.material_type === 'media')
+    return <MediaLauncher material={material} />
   const content = contentItem ?? material
   if (content.material_type === 'pdf') {
     const load = contentItem
@@ -119,7 +153,7 @@ function ContentBody({ material, contentItem }) {
   return <ExternalLink url={content.url} label="Buka Link Materi" />
 }
 
-const TYPE_LABELS = { pdf: 'PDF', video: 'Video', link: 'Link' }
+const TYPE_LABELS = { pdf: 'PDF', video: 'Video', link: 'Link', media: 'Media' }
 
 // Pilihan konten jika materi punya konten tambahan. Tanda centang = sudah dibuka (khusus siswa).
 function ContentTabs({ material, currentId, onSelect }) {

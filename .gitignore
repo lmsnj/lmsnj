@@ -26,3 +26,4 @@ docs/jadwal/*.json
 
 # Bahan acuan media (berisi konfigurasi lama, jangan di-commit)
 media-source/
+backend/db-*.sqlite3

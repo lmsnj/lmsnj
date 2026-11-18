@@ -165,6 +165,7 @@ class LearningMediaViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
             raise ValidationError({"detail": "Buka pratinjau dulu."})
         return SimpleNamespace(
             media_id=media.id,
+            title=media.title,
             number=0,
             content=media.preview["content"],
             keys=media.preview["keys"],
@@ -364,6 +365,12 @@ class MediaPlayViewSet(viewsets.ViewSet):
         else:
             services.visit_station(ctx.material, ctx.student, station_id, data["step"], data["seconds"])
         return Response({"saved": True})
+
+    def leaderboard(self, request, material_id=None):
+        ctx = self._context(request, material_id)
+        if not services.settings_of(ctx.material)["leaderboard"]:
+            raise PermissionDenied("Papan peringkat dimatikan oleh guru.")
+        return Response(services.leaderboard(ctx.material, request.user))
 
     def reflection(self, request, material_id=None):
         ctx = self._context(request, material_id)

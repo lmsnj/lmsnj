@@ -35,6 +35,8 @@ const ExamEventPage = lazy(() => import('../pages/ExamEventPage'))
 const ExamCardsPrintPage = lazy(() => import('../pages/ExamCardsPrintPage'))
 const AccountCardsPrintPage = lazy(() => import('../pages/AccountCardsPrintPage'))
 const ChatPage = lazy(() => import('../pages/ChatPage'))
+const MediaPlayerPage = lazy(() => import('../pages/MediaPlayerPage'))
+const MediaSummaryPrintPage = lazy(() => import('../pages/MediaSummaryPrintPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const ReportPage = lazy(() => import('../pages/ReportPage'))
 const SessionsPage = lazy(() => import('../pages/SessionsPage'))
@@ -91,6 +93,9 @@ export default function AppRoutes() {
               <Route path="cetak/kartu-akun" element={<AccountCardsPrintPage />} />
             </Route>
           </Route>
+          <Route element={<SchoolRoute />}>
+            <Route path="cetak/ringkasan-media/:id" element={<MediaSummaryPrintPage />} />
+          </Route>
           <Route element={<DashboardLayout />}>
             <Route path="admin" element={<ProtectedRoute roles={ADMIN_ROLES} />}>
               <Route index element={<AdminHome />} />
@@ -108,6 +113,7 @@ export default function AppRoutes() {
                 <Route path="ujian" element={<ExamsPage />} />
                 <Route path="ujian/:id" element={<ExamEventPage />} />
                 <Route path="tahun-ajaran" element={<PromotionPage />} />
+                <Route path="media/:id" element={<MediaPlayerPage />} />
               </Route>
               <Route element={<ProtectedRoute roles={[ROLES.FOUNDATION]} />}>
                 <Route path="sekolah" element={<SchoolsPage />} />
@@ -124,6 +130,7 @@ export default function AppRoutes() {
               <Route path="tugas/:id" element={<TeacherTaskPage />} />
               <Route path="asesmen" element={<TeacherAssessmentsPage />} />
               <Route path="asesmen/:id" element={<AssessmentEditorPage />} />
+              <Route path="media/:id" element={<MediaPlayerPage />} />
               <Route path="jadwal" element={<TimetablePage />} />
               <Route path="sesi" element={<SessionsPage />} />
               <Route path="laporan" element={<ReportPage />} />
@@ -142,6 +149,7 @@ export default function AppRoutes() {
               <Route path="nilai" element={<StudentGradesPage />} />
               <Route path="asesmen" element={<StudentAssessmentsPage />} />
               <Route path="asesmen/:id" element={<StudentAssessmentPage />} />
+              <Route path="media/:id" element={<MediaPlayerPage />} />
               <Route path="jadwal" element={<TimetablePage />} />
               <Route path="sesi" element={<SessionsPage />} />
               <Route path="presensi" element={<StudentAttendancePage />} />

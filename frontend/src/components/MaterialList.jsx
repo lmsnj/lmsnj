@@ -1,4 +1,4 @@
-import { FileText, Link2, Lock, PlayCircle, Target } from 'lucide-react'
+import { FileText, Link2, Lock, PlayCircle, Sparkles, Target } from 'lucide-react'
 import { MATERIAL_TYPES } from '../utils/constants'
 import { progressStatus } from '../utils/learningPath'
 import { formatDate } from '../utils/media'
@@ -11,6 +11,7 @@ const TYPE_ICONS = {
   pdf: { icon: FileText, tile: 'bg-red-100 text-red-600' },
   video: { icon: PlayCircle, tile: 'bg-blue-100 text-blue-600' },
   link: { icon: Link2, tile: 'bg-emerald-100 text-emerald-600' },
+  media: { icon: Sparkles, tile: 'bg-violet-100 text-violet-600' },
 }
 
 // Ringkasan syarat capaian satu materi (untuk guru), mis. "3 capaian · tugas · disahkan guru".

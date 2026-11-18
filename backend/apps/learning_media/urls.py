@@ -15,6 +15,11 @@ urlpatterns = router.urls + [
         "materials/<int:material_id>/media/station/", play.as_view({"post": "station"}), name="media-station"
     ),
     path(
+        "materials/<int:material_id>/media/leaderboard/",
+        play.as_view({"get": "leaderboard"}),
+        name="media-leaderboard",
+    ),
+    path(
         "materials/<int:material_id>/media/reflection/",
         play.as_view({"post": "reflection"}),
         name="media-reflection",

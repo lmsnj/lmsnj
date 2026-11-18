@@ -7,6 +7,7 @@ import {
   Link2,
   PlayCircle,
   Users,
+  Sparkles,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { latestMaterials, pickTasks } from '../utils/classOverview'
@@ -20,6 +21,7 @@ const TYPE_ICONS = {
   pdf: { icon: FileText, tile: 'bg-red-100 text-red-600' },
   video: { icon: PlayCircle, tile: 'bg-blue-100 text-blue-600' },
   link: { icon: Link2, tile: 'bg-emerald-100 text-emerald-600' },
+  media: { icon: Sparkles, tile: 'bg-violet-100 text-violet-600' },
 }
 
 /** Panel abu-abu muda dengan judul, isi di kotak putih. */

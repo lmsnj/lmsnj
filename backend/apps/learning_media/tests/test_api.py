@@ -14,6 +14,7 @@ from apps.common.testing import default_school
 from apps.materials.models import Material, MaterialProgress
 from apps.schools.models import Level, School
 
+from .. import services
 from ..models import (
     InteractiveMedia,
     InteractiveMediaAttempt,
@@ -425,3 +426,15 @@ class PlayTests(MediaTestCase):
         )  # fmt: skip
         self.assertEqual(self.client.get(self.play_url).status_code, 403)
         self.assertFalse(MaterialProgress.objects.exists())
+
+    def test_leaderboard_rank_and_toggle(self):
+        self.solve("s1")
+        url = reverse("media-leaderboard", args=[self.material.id])
+        data = self.client.get(url).data
+        self.assertEqual(data["participants"], 1)
+        self.assertEqual(data["rows"][0]["name"], "Siswa1")
+        self.assertTrue(data["rows"][0]["is_me"])
+        self.assertEqual(services.short_name("Ahmad Fauzi Rahman"), "Ahmad F.")
+        self.material.media_settings = {"leaderboard": False}
+        self.material.save()
+        self.assertEqual(self.client.get(url).status_code, 403)

@@ -13,7 +13,7 @@ import TextField from '../../components/TextField'
 import useFetch from '../../hooks/useFetch'
 import useFormSubmit from '../../hooks/useFormSubmit'
 import { ALL, toOptions } from '../../utils/academic'
-import { MATERIAL_TYPES } from '../../utils/constants'
+import { CONTENT_TYPES } from '../../utils/constants'
 import { parseObjectives } from '../../utils/learningPath'
 
 // Daftar tugas/asesmen satu kelas-mapel untuk pilihan syarat (kosong jika kelas-mapel belum dipilih).
@@ -124,7 +124,7 @@ export default function MaterialFormModal({ material, assignmentId, onClose, onS
       <fieldset>
         <legend className="mb-1 text-sm font-medium text-slate-700">Jenis materi</legend>
         <div className="grid grid-cols-3 gap-2">
-          {Object.entries(MATERIAL_TYPES).map(([value, { label }]) => (
+          {Object.entries(CONTENT_TYPES).map(([value, { label }]) => (
             <label
               key={value}
               className={`cursor-pointer rounded-lg px-3 py-2 text-center text-sm font-medium ring-1 ${

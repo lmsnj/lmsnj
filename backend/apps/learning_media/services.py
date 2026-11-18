@@ -459,6 +459,7 @@ def player_data(material, version, user, student=None, preview=False):
     stations = list(schema.iter_stations(content))
     return {
         "material": material.id if material else None,
+        "title": material.title if material else getattr(version, "title", ""),
         "media": version.media_id,
         "version": version.number,
         "content": content,
@@ -484,3 +485,48 @@ def _test_info(test_id, student):
     if test is None:
         return None
     return {"id": test.id, "title": test.title, "done": bool(student) and _submitted(test.id, student)}
+
+
+# ---------------------------------------------------------------- papan peringkat
+
+
+def short_name(full_name):
+    """ "Ahmad Fauzi Rahman" -> "Ahmad F." (cukup untuk dikenali teman, tidak memajang nama lengkap)."""
+    words = str(full_name or "").split()
+    if not words:
+        return "Siswa"
+    return words[0] if len(words) == 1 else f"{words[0]} {words[1][0]}."
+
+
+def leaderboard(material, user, limit=10):
+    """Peringkat siswa kelas ini menurut bintang lalu jumlah stasiun selesai. Siswa yang belum
+    mulai tidak ditampilkan (fokus pada kemajuan, bukan mempermalukan)."""
+    from django.db.models import Count, Q, Sum
+
+    from apps.accounts.models import User
+
+    rows = (
+        InteractiveMediaProgress.objects.filter(material=material)
+        .values("student_id")
+        .annotate(stars=Sum("stars"), completed=Count("id", filter=Q(completed_at__isnull=False)))
+        .order_by("-stars", "-completed", "student_id")
+    )
+    names = dict(
+        User.objects.filter(pk__in=[row["student_id"] for row in rows]).values_list("id", "full_name")
+    )
+    board = []
+    for rank, row in enumerate(rows, start=1):
+        board.append(
+            {
+                "rank": rank,
+                "name": short_name(names.get(row["student_id"])),
+                "stars": row["stars"] or 0,
+                "completed": row["completed"],
+                "is_me": row["student_id"] == user.id,
+            }
+        )
+    top = board[:limit]
+    mine = next((row for row in board if row["is_me"]), None)
+    if mine and mine not in top:
+        top.append(mine)
+    return {"rows": top, "participants": len(board)}

@@ -10,7 +10,7 @@ import FormModal from '../../components/FormModal'
 import Modal from '../../components/Modal'
 import TextField from '../../components/TextField'
 import useFormSubmit from '../../hooks/useFormSubmit'
-import { MATERIAL_TYPES } from '../../utils/constants'
+import { CONTENT_TYPES, MATERIAL_TYPES } from '../../utils/constants'
 import { getErrorMessage } from '../../utils/errors'
 import { moveItem } from '../../utils/learningPath'
 
@@ -62,7 +62,7 @@ function ItemFormModal({ materialId, item, onClose, onSaved }) {
       <fieldset>
         <legend className="mb-1 text-sm font-medium text-slate-700">Jenis konten</legend>
         <div className="grid grid-cols-3 gap-2">
-          {Object.entries(MATERIAL_TYPES).map(([value, { label }]) => (
+          {Object.entries(CONTENT_TYPES).map(([value, { label }]) => (
             <label
               key={value}
               className={`cursor-pointer rounded-lg px-3 py-2 text-center text-sm font-medium ring-1 ${
