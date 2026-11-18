@@ -209,3 +209,63 @@ class MaterialProgress(models.Model):
 
     def __str__(self):
         return f"{self.student} - {self.material}"
+
+
+class CodeLanguage(models.TextChoices):
+    HTML = "html", "HTML/CSS/JS"
+    PYTHON = "python", "Python"
+    PHP = "php", "PHP"
+
+
+class CodeExercise(models.Model):
+    """Soal Praktik (menulis kode) di satu materi. Kode siswa dijalankan & diperiksa di BROWSER siswa
+    (bukan di server), jadi `checks` ikut dikirim ke siswa. Aturan bentuk `checks` di code_practice.py."""
+
+    material = models.ForeignKey(
+        Material, verbose_name="materi", on_delete=models.CASCADE, related_name="exercises"
+    )
+    order = models.PositiveIntegerField("urutan", default=0)
+    title = models.CharField("judul", max_length=200)
+    language = models.CharField("bahasa", max_length=10, choices=CodeLanguage.choices)
+    instructions = models.TextField("petunjuk", blank=True)
+    starter_code = models.TextField("kode awal", blank=True)
+    checks = models.JSONField("pemeriksaan", default=list)
+    created_at = models.DateTimeField("dibuat", auto_now_add=True)
+    updated_at = models.DateTimeField("diubah", auto_now=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+        verbose_name = "soal praktik"
+        verbose_name_plural = "soal praktik"
+
+    def __str__(self):
+        return self.title
+
+
+class CodeAttempt(models.Model):
+    """Pekerjaan satu siswa di satu soal praktik: kode terakhir, kode saat lulus, dan jumlah percobaan."""
+
+    exercise = models.ForeignKey(
+        CodeExercise, verbose_name="soal praktik", on_delete=models.CASCADE, related_name="attempts"
+    )
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="siswa",
+        on_delete=models.CASCADE,
+        related_name="code_attempts",
+    )
+    code = models.TextField("kode terakhir", blank=True)
+    passed_code = models.TextField("kode saat lulus", blank=True)
+    passed_at = models.DateTimeField("lulus", null=True, blank=True)
+    check_count = models.PositiveIntegerField("jumlah periksa", default=0)
+    updated_at = models.DateTimeField("diubah", auto_now=True)
+
+    class Meta:
+        verbose_name = "pekerjaan praktik"
+        verbose_name_plural = "pekerjaan praktik"
+        constraints = [
+            models.UniqueConstraint(fields=["exercise", "student"], name="unique_code_attempt"),
+        ]
+
+    def __str__(self):
+        return f"{self.student} - {self.exercise}"

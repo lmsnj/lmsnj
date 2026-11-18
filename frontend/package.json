@@ -12,12 +12,21 @@
     "test": "node --test \"src/**/*.test.js\""
   },
   "dependencies": {
+    "@codemirror/lang-html": "^6.4.12",
+    "@codemirror/lang-php": "^6.0.2",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@fontsource/noto-naskh-arabic": "^5.3.0",
     "axios": "^1.20.0",
+    "codemirror": "^6.0.2",
     "katex": "^0.18.9",
     "lucide-react": "^1.48.0",
     "mathlive": "^0.110.0",
+    "php-wasm": "^0.2.0",
+    "pyodide": "^314.0.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4"

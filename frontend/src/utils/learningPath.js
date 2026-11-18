@@ -68,8 +68,28 @@ export function practiceState(material) {
 }
 
 /**
+ * Keadaan Praktik (menulis kode) satu materi bagi siswa: { count, passedCount, passed, ready, blocked }.
+ * ready = konten sudah dibuka dan Latihan Pemahaman (jika ada) sudah lulus. blocked = Cerita Reflektif
+ * belum boleh ditulis karena Praktik belum lulus. Aturannya di backend (code_views.attempt / reflection).
+ */
+export function codingState(material) {
+  const count = material.code_exercise_count ?? 0
+  const progress = material.progress
+  const opened = progress?.checks?.find((check) => check.key === 'opened')
+  const coding = progress?.checks?.find((check) => check.key === 'coding')
+  const passed = Boolean(coding?.done)
+  return {
+    count,
+    passedCount: progress?.code_passed?.length ?? 0,
+    passed,
+    ready: Boolean(opened?.done) && !practiceState(material).blocked,
+    blocked: count > 0 && !passed,
+  }
+}
+
+/**
  * Daftar aktivitas satu materi (tampilan modul siswa), urut seperti langkah belajar:
- * isi materi (konten utama + konten tambahan) -> Latihan Pemahaman -> capaian (uji capaian jika
+ * isi materi (konten utama + konten tambahan) -> Latihan Pemahaman -> Praktik -> capaian (uji capaian jika
  * berkuis) -> tugas -> asesmen -> pengesahan guru. Cerita reflektif ditampilkan terpisah.
  * Setiap item: { key, kind, label, done, type?, contentItem?, index?, quizCount?, ready? }; untuk isi
  * materi `contentItem` = konten tambahan (null = konten utama materi).
@@ -108,6 +128,18 @@ export function moduleActivities(material) {
       quizCount: practice.count,
       ready: practice.ready,
       done: practice.passed,
+    })
+  }
+  const coding = codingState(material)
+  if (coding.count) {
+    items.push({
+      key: 'coding',
+      kind: 'coding',
+      label: 'Praktik',
+      quizCount: coding.count,
+      passedCount: coding.passedCount,
+      ready: coding.ready,
+      done: coding.passed,
     })
   }
   ;(material.objectives ?? []).forEach((text, index) => {

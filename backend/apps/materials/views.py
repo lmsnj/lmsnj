@@ -89,7 +89,7 @@ class MaterialViewSet(viewsets.ModelViewSet):
                 "required_assessment",
                 "chapter",
             )
-            .prefetch_related("items")
+            .prefetch_related("items", "exercises")
         )
 
     def perform_create(self, serializer):
@@ -154,11 +154,13 @@ class MaterialViewSet(viewsets.ModelViewSet):
         self.unlocked_for_student(material)
         serializer = ReflectionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # Alur belajar: konten -> Latihan Pemahaman -> Cerita Reflektif.
+        # Alur belajar: konten -> Latihan Pemahaman -> Praktik -> Cerita Reflektif.
         if not learning.check_done(request, material, "practice"):
             raise ValidationError(
                 {"reflection": "Selesaikan Latihan Pemahaman dulu, lalu tulis cerita reflektif."}
             )
+        if not learning.check_done(request, material, "coding"):
+            raise ValidationError({"reflection": "Selesaikan Praktik dulu, lalu tulis cerita reflektif."})
         progress = self._my_progress(material)
         progress.reflection = serializer.validated_data["reflection"]
         progress.reflected_at = timezone.now()

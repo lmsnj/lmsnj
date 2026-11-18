@@ -5,6 +5,7 @@ import {
   CircleCheck,
   ClipboardCheck,
   ClipboardList,
+  Code2,
   FileText,
   Link2,
   ListChecks,
@@ -13,11 +14,12 @@ import {
   PlayCircle,
   Target,
 } from 'lucide-react'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { materialsApi } from '../api/materials'
 import { getErrorMessage } from '../utils/errors'
 import {
+  codingState,
   countChecks,
   defaultModuleId,
   moduleActivities,
@@ -32,11 +34,16 @@ import ObjectiveQuiz from './ObjectiveQuiz'
 import PracticeQuiz from './PracticeQuiz'
 import ProgressBar from './ProgressBar'
 import ReflectionBox from './ReflectionBox'
+import Spinner from './Spinner'
+
+// Editor kode & Python di browser cukup besar: dimuat hanya saat siswa membuka Praktik.
+const CodePracticeModal = lazy(() => import('./code/CodePracticeModal'))
 
 const CONTENT_ICONS = { video: PlayCircle, pdf: FileText, link: Link2 }
 const TYPE_LABELS = { video: 'Video', pdf: 'PDF', link: 'Link' }
 const KIND_ICONS = {
   practice: PencilLine,
+  coding: Code2,
   quiz: Target,
   objective: ListChecks,
   task: ClipboardList,
@@ -133,7 +140,7 @@ function ActivityRow({ done, icon: Icon, children }) {
 
 const linkClass = 'text-left font-medium text-brand-700 hover:underline'
 
-function ActivityList({ material, onChange, onOpenContent, onOpenPractice }) {
+function ActivityList({ material, onChange, onOpenContent, onOpenPractice, onOpenCoding }) {
   const [quizOpen, setQuizOpen] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -183,6 +190,28 @@ function ActivityList({ material, onChange, onOpenContent, onOpenPractice }) {
                 <span className="ml-1 text-xs text-slate-500">
                   ({item.quizCount} soal
                   {item.done ? ', lulus' : item.ready ? '' : ', buka semua konten dulu'})
+                </span>
+              </ActivityRow>
+            )
+          }
+          if (item.kind === 'coding') {
+            return (
+              <ActivityRow key={item.key} done={item.done} icon={KIND_ICONS.coding}>
+                {item.ready ? (
+                  <button type="button" onClick={onOpenCoding} className={linkClass}>
+                    {item.label}
+                  </button>
+                ) : (
+                  <span className="font-medium text-slate-500">{item.label}</span>
+                )}
+                <span className="ml-1 text-xs text-slate-500">
+                  ({item.passedCount}/{item.quizCount} soal lulus
+                  {item.ready
+                    ? ''
+                    : material.practice_count
+                      ? ', lulus Latihan Pemahaman dulu'
+                      : ', buka semua konten dulu'}
+                  )
                 </span>
               </ActivityRow>
             )
@@ -271,7 +300,7 @@ function ActivityList({ material, onChange, onOpenContent, onOpenPractice }) {
 
 // Isi kolom kanan: judul materi, kemajuan, daftar aktivitas, dan cerita reflektif.
 /**
- * Isi "Daftar Aktivitas" satu materi yang terbuka: aktivitas (konten, Latihan Pemahaman, capaian,
+ * Isi "Daftar Aktivitas" satu materi yang terbuka: aktivitas (konten, Latihan Pemahaman, Praktik, capaian,
  * tugas, asesmen, pengesahan) lalu Cerita Reflektif, beserta penampil konten & latihannya.
  * Dipakai tampilan modul (per materi) dan tampilan bab (`ChapterModule`, di dalam akordeon).
  */
@@ -279,7 +308,9 @@ export function MaterialActivities({ material, onChange }) {
   // null = penampil tertutup; { itemId } = konten yang dibuka (itemId null = konten utama).
   const [viewing, setViewing] = useState(null)
   const [practicing, setPracticing] = useState(false)
+  const [coding, setCoding] = useState(false)
   const practice = practiceState(material)
+  const codingInfo = codingState(material)
   const progress = material.progress
   const reflectionCheck = progress.checks.find((check) => check.key === 'reflection')
 
@@ -293,6 +324,7 @@ export function MaterialActivities({ material, onChange }) {
             onChange={onChange}
             onOpenContent={(itemId) => setViewing({ itemId })}
             onOpenPractice={() => setPracticing(true)}
+            onOpenCoding={() => setCoding(true)}
           />
         </div>
       </div>
@@ -306,9 +338,11 @@ export function MaterialActivities({ material, onChange }) {
         <div className="mt-2 flex items-start gap-3">
           <DoneIcon done={Boolean(progress.reflection)} className="mt-7" />
           <div className="min-w-0 flex-1">
-            {practice.blocked && !progress.reflection ? (
+            {(practice.blocked || codingInfo.blocked) && !progress.reflection ? (
               <p className="mt-6 rounded-lg bg-slate-100 p-4 text-sm text-slate-500">
-                Cerita reflektif bisa ditulis setelah Latihan Pemahaman dijawab benar semua.
+                {practice.blocked
+                  ? 'Cerita reflektif bisa ditulis setelah Latihan Pemahaman dijawab benar semua.'
+                  : 'Cerita reflektif bisa ditulis setelah semua soal Praktik lulus.'}
               </p>
             ) : (
               // key: isi kotak diatur ulang saat pindah materi.
@@ -334,6 +368,21 @@ export function MaterialActivities({ material, onChange }) {
           onPassed={onChange}
           onClose={() => setPracticing(false)}
         />
+      )}
+      {coding && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40">
+              <Spinner />
+            </div>
+          }
+        >
+          <CodePracticeModal
+            material={material}
+            onChange={onChange}
+            onClose={() => setCoding(false)}
+          />
+        </Suspense>
       )}
       {viewing && (
         <MaterialViewer

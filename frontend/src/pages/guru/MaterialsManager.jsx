@@ -4,6 +4,7 @@ import {
   BookOpen,
   ClipboardCheck,
   ClipboardList,
+  Code2,
   Copy,
   FileSpreadsheet,
   Layers,
@@ -12,13 +13,14 @@ import {
   PencilLine,
   Sparkles,
 } from 'lucide-react'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { chaptersApi, materialsApi } from '../../api/materials'
 import Alert from '../../components/Alert'
 import Button from '../../components/Button'
 import DeleteDialog from '../../components/DeleteDialog'
 import MaterialList from '../../components/MaterialList'
 import MaterialViewer from '../../components/MaterialViewer'
+import Spinner from '../../components/Spinner'
 import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
 import { getErrorMessage } from '../../utils/errors'
@@ -33,6 +35,9 @@ import MergeMaterialModal from './MergeMaterialModal'
 import ObjectiveQuizImportModal from './ObjectiveQuizImportModal'
 import PlanImportModal from './PlanImportModal'
 import PracticeImportModal from './PracticeImportModal'
+
+// Editor kode (CodeMirror) hanya diunduh saat guru membuka Praktik.
+const CodeExercisesModal = lazy(() => import('./CodeExercisesModal'))
 
 // Bab hanya dimuat di halaman satu kelas-mapel.
 const listChapters = (params) =>
@@ -54,7 +59,7 @@ export default function MaterialsManager({
   summary,
 }) {
   const [notice, setNotice] = useState({ type: 'success', text: '' })
-  // { type: 'form' | 'items' | 'practice' | 'chapters' | 'plan' | 'copy' | 'merge' | 'view' | 'delete' | 'progress' |
+  // { type: 'form' | 'items' | 'practice' | 'code' | 'chapters' | 'plan' | 'copy' | 'merge' | 'view' | 'delete' | 'progress' |
   //   'ai' | 'quiz', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
   const materials = useFetch(materialsApi.list, {
@@ -130,6 +135,15 @@ export default function MaterialsManager({
       >
         <PencilLine className="size-4" aria-hidden="true" /> Latihan
         {material.practice_count > 0 && ` (${material.practice_count})`}
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setDialog({ type: 'code', material })}
+        title="Praktik menulis kode (Python, PHP, HTML/CSS/JS) dengan pemeriksaan otomatis"
+      >
+        <Code2 className="size-4" aria-hidden="true" /> Praktik
+        {material.code_exercise_count > 0 && ` (${material.code_exercise_count})`}
       </Button>
       <Button variant="ghost" size="sm" onClick={() => setDialog({ type: 'progress', material })}>
         <ListChecks className="size-4" aria-hidden="true" /> Progres
@@ -366,6 +380,15 @@ export default function MaterialsManager({
             materials.reload()
           }}
         />
+      )}
+      {dialog?.type === 'code' && (
+        <Suspense fallback={<Spinner />}>
+          <CodeExercisesModal
+            material={dialog.material}
+            onClose={closeDialog}
+            onChanged={() => materials.reload()}
+          />
+        </Suspense>
       )}
       {dialog?.type === 'progress' && (
         <MaterialProgressModal material={dialog.material} onClose={closeDialog} />

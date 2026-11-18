@@ -138,3 +138,15 @@ export const chaptersApi = {
       .post('/chapters/reorder/', { teaching_assignment: teachingAssignment, chapters: chapterIds })
       .then((res) => res.data),
 }
+
+// Praktik menulis kode di materi (soal guru + pekerjaan siswa).
+export const codeExercisesApi = {
+  list: (material) => api.get('/code-exercises/', { params: { material } }).then((res) => res.data),
+  create: (data) => api.post('/code-exercises/', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/code-exercises/${id}/`, data).then((res) => res.data),
+  remove: (id) => api.delete(`/code-exercises/${id}/`),
+  // Siswa: { code, checked, passed } -> { attempt, material }.
+  attempt: (id, data) => api.post(`/code-exercises/${id}/attempt/`, data).then((res) => res.data),
+  // Guru: pekerjaan semua siswa kelas -> { exercise, title, rows }.
+  attempts: (id) => api.get(`/code-exercises/${id}/attempts/`).then((res) => res.data),
+}

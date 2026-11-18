@@ -11,7 +11,8 @@ from apps.assessments.models import Assessment
 from apps.common.files import delete_file, validate_upload
 from apps.tasks.models import Task
 
-from .models import Chapter, Material, MaterialItem, MaterialType
+from .code_practice import MAX_CODE, MAX_EXERCISES, clean_checks
+from .models import Chapter, CodeAttempt, CodeExercise, Material, MaterialItem, MaterialType
 from .objective_quiz import practice_count, quiz_counts
 from .progress import chapter_progress, progress_for_request
 
@@ -259,6 +260,8 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
     objective_quiz = serializers.SerializerMethodField()
     # Jumlah soal Latihan Pemahaman (0 = tanpa latihan).
     practice_count = serializers.SerializerMethodField()
+    # Jumlah soal Praktik (menulis kode; 0 = tanpa praktik).
+    code_exercise_count = serializers.SerializerMethodField()
     required_task = serializers.PrimaryKeyRelatedField(
         queryset=Task.objects.all(), required=False, allow_null=True
     )
@@ -297,6 +300,7 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
             "concepts",
             "objective_quiz",
             "practice_count",
+            "code_exercise_count",
             "required_task",
             "required_task_title",
             "min_task_score",
@@ -348,6 +352,9 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
 
     def get_practice_count(self, obj):
         return practice_count(obj)
+
+    def get_code_exercise_count(self, obj):
+        return len(obj.exercises.all())
 
     def get_objective_quiz(self, obj):
         return quiz_counts(obj)
@@ -445,3 +452,81 @@ class ReflectionSerializer(serializers.Serializer):
                 f"Tulis minimal {MIN_REFLECTION} karakter: apa yang Anda pelajari dan apa yang masih sulit."
             )
         return value
+
+
+class CodeAttemptSerializer(serializers.ModelSerializer):
+    passed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CodeAttempt
+        fields = ["code", "passed", "passed_at", "check_count", "updated_at"]
+
+    def get_passed(self, obj):
+        return obj.passed_at is not None
+
+
+class CodeExerciseSerializer(serializers.ModelSerializer):
+    # Guru hanya boleh menambah soal ke materi kelas-mapel timnya (diisi di __init__).
+    material = serializers.PrimaryKeyRelatedField(queryset=Material.objects.none())
+    checks = serializers.JSONField()
+    # Khusus siswa: pekerjaannya sendiri (view menitipkan {id soal: CodeAttempt} di context).
+    my_attempt = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CodeExercise
+        fields = [
+            "id",
+            "material",
+            "order",
+            "title",
+            "language",
+            "instructions",
+            "starter_code",
+            "checks",
+            "my_attempt",
+        ]
+        read_only_fields = ["order"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request is not None:
+            self.fields["material"].queryset = Material.objects.filter(
+                teaching_assignment__in=team_assignments_for_request(request)
+            )
+
+    def get_my_attempt(self, obj):
+        attempts = self.context.get("my_attempts")
+        if attempts is None:
+            return None
+        attempt = attempts.get(obj.id)
+        return CodeAttemptSerializer(attempt).data if attempt else None
+
+    def validate_material(self, value):
+        if self.instance and value != self.instance.material:
+            raise serializers.ValidationError("Soal praktik tidak bisa dipindah ke materi lain.")
+        if not self.instance and value.exercises.count() >= MAX_EXERCISES:
+            raise serializers.ValidationError(f"Maksimal {MAX_EXERCISES} soal praktik per materi.")
+        return value
+
+    def validate_starter_code(self, value):
+        if len(value) > MAX_CODE:
+            raise serializers.ValidationError("Kode awal terlalu panjang.")
+        return value
+
+    def validate(self, attrs):
+        language = attrs.get("language", getattr(self.instance, "language", None))
+        checks = attrs.get("checks", getattr(self.instance, "checks", None))
+        try:
+            attrs["checks"] = clean_checks(language, checks)
+        except serializers.ValidationError as error:
+            raise serializers.ValidationError({"checks": error.detail})
+        return attrs
+
+
+class CodeAttemptInputSerializer(serializers.Serializer):
+    """Kiriman siswa: kode, dan hasil pemeriksaan di browser (checked = tombol Periksa ditekan)."""
+
+    code = serializers.CharField(max_length=MAX_CODE, allow_blank=True, trim_whitespace=False)
+    checked = serializers.BooleanField(default=False)
+    passed = serializers.BooleanField(default=False)

@@ -25,7 +25,7 @@ from apps.assessments.results import GRADED, PASSED, final_result, max_score_of
 from apps.schools.context import active_school
 from apps.tasks.models import Submission
 
-from .models import Material, MaterialProgress
+from .models import CodeAttempt, Material, MaterialProgress
 
 
 def chain_blockers(steps):
@@ -66,8 +66,8 @@ def open_post_test(chapter):
     return test if test and test.is_published else None
 
 
-def material_checks(material, progress, task_done, assessment_done):
-    """Daftar syarat satu materi: [{key, label, done}]."""
+def material_checks(material, progress, task_done, assessment_done, code_passed=frozenset()):
+    """Daftar syarat satu materi: [{key, label, done}]. `code_passed` = id soal Praktik yang sudah lulus."""
     item_ids = [item.id for item in material.items.all()]
     opened = bool(progress and progress.opened_at)
     if item_ids:
@@ -83,6 +83,15 @@ def material_checks(material, progress, task_done, assessment_done):
                 "key": "practice",
                 "label": f"Lulus Latihan Pemahaman ({practice_count} soal)",
                 "done": bool(progress and progress.practice_passed_at),
+            }
+        )
+    exercise_ids = [exercise.id for exercise in material.exercises.all()]
+    if exercise_ids:
+        checks.append(
+            {
+                "key": "coding",
+                "label": f"Lulus Praktik ({len(exercise_ids)} soal)",
+                "done": set(exercise_ids) <= set(code_passed),
             }
         )
     if material.objectives:
@@ -150,7 +159,7 @@ def progress_table(materials, student_ids):
     """Progres banyak siswa untuk materi-materi (boleh beberapa kelas-mapel).
 
     Mengembalikan {(material_id, student_id): {order_number, locked, locked_by, completed, unlocked,
-    teacher_approved, opened, opened_items, practice_passed, checked_objectives, note, reflection, reflected_at, checks}}.
+    teacher_approved, opened, opened_items, practice_passed, code_passed, checked_objectives, note, reflection, reflected_at, checks}}.
     """
     materials = sorted(materials, key=sort_key)
     progress = {
@@ -164,6 +173,11 @@ def progress_table(materials, student_ids):
             "task"
         )
     }
+    code_passed = {}
+    for exercise_id, student_id in CodeAttempt.objects.filter(
+        exercise__material__in=materials, student_id__in=student_ids, passed_at__isnull=False
+    ).values_list("exercise_id", "student_id"):
+        code_passed.setdefault(student_id, set()).add(exercise_id)
     assessments = {m.required_assessment for m in materials if m.required_assessment_id}
     assessments |= {open_post_test(m.chapter) for m in materials if open_post_test(m.chapter)}
     assessments = list(assessments)
@@ -181,7 +195,8 @@ def progress_table(materials, student_ids):
                 mine = progress.get((material.id, student_id))
                 task_done = _task_done(material, submissions.get((material.required_task_id, student_id)))
                 status = statuses.get((material.required_assessment_id, student_id))
-                checks = material_checks(material, mine, task_done, status in (PASSED, GRADED))
+                passed_codes = code_passed.get(student_id, set())
+                checks = material_checks(material, mine, task_done, status in (PASSED, GRADED), passed_codes)
                 unlocked = bool(mine and mine.unlocked)
                 rows.append(
                     {
@@ -190,6 +205,7 @@ def progress_table(materials, student_ids):
                         "opened": bool(mine and mine.opened_at),
                         "opened_items": list(mine.opened_items) if mine else [],
                         "practice_passed": bool(mine and mine.practice_passed_at),
+                        "code_passed": sorted(e.id for e in material.exercises.all() if e.id in passed_codes),
                         "checked_objectives": list(mine.checked_objectives) if mine else [],
                         "note": mine.note if mine else "",
                         "reflection": mine.reflection if mine else "",
@@ -220,7 +236,7 @@ def published_materials(teaching_assignment_ids):
     return list(
         Material.objects.filter(teaching_assignment_id__in=teaching_assignment_ids, is_published=True)
         .select_related("teaching_assignment", "required_task", "required_assessment", "chapter__post_test")
-        .prefetch_related("items")
+        .prefetch_related("items", "exercises")
         .order_by("order", "created_at", "id")
     )
 

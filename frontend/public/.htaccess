@@ -21,3 +21,14 @@ RewriteRule ^ index.html [L]
     Header set Cache-Control "no-cache"
   </FilesMatch>
 </IfModule>
+
+# Python di browser (Pyodide, folder /pyodide/): server harus mengirim jenis file yang benar,
+# kalau tidak browser menolak memuatnya.
+AddType application/wasm .wasm
+AddType text/javascript .mjs
+<IfModule mod_headers.c>
+  # File Pyodide besar (~12 MB) dan namanya tidak berubah per versi aplikasi: simpan seminggu di browser.
+  <FilesMatch "\.(wasm|zip)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>

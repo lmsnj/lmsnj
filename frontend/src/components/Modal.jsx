@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const SIZES = { md: 'max-w-lg', lg: 'max-w-4xl' }
+const SIZES = { md: 'max-w-lg', lg: 'max-w-4xl', xl: 'max-w-6xl' }
 
 // Tumpukan modal yang sedang terbuka. Tombol Escape hanya menutup modal paling atas
 // (mis. dialog rumus di atas form soal), agar isian di modal bawahnya tidak ikut hilang.

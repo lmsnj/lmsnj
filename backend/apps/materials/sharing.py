@@ -16,7 +16,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.academics.models import TeachingAssignment
 
-from .models import Chapter, Material, MaterialItem, MaterialProgress
+from .models import Chapter, CodeExercise, Material, MaterialItem, MaterialProgress
 from .progress import progress_table, sort_key
 
 # Kolom materi yang ikut disalin apa adanya. Syarat tugas/asesmen TIDAK disalin karena tugas & asesmen
@@ -35,6 +35,7 @@ COPIED_FIELDS = [
     "require_reflection",
 ]
 ITEM_FIELDS = ["title", "material_type", "original_filename", "url", "order"]
+EXERCISE_FIELDS = ["order", "title", "language", "instructions", "starter_code", "checks"]
 
 
 def copy_targets(source, school):
@@ -92,7 +93,7 @@ def _target_chapter(chapter, target, cache):
 
 
 def copy_materials(materials, target, user):
-    """Salin materi (beserta konten tambahan, capaian, kuis, latihan, dan babnya) ke kelas-mapel `target`.
+    """Salin materi (beserta konten tambahan, capaian, kuis, latihan, soal praktik, dan babnya) ke kelas-mapel `target`.
     Mengembalikan daftar materi baru."""
     team = target.team()
     last = Material.objects.filter(teaching_assignment__in=team).aggregate(last=Max("order"))["last"] or 0
@@ -120,6 +121,13 @@ def copy_materials(materials, target, user):
                     if item.file:
                         _copy_file(item.file, new_item.file, saved_files)
                     new_item.save()
+                # Soal Praktik ikut (pekerjaan siswa tidak).
+                CodeExercise.objects.bulk_create(
+                    CodeExercise(
+                        material=copy, **{field: getattr(exercise, field) for field in EXERCISE_FIELDS}
+                    )
+                    for exercise in material.exercises.all()
+                )
                 copies.append(copy)
     except Exception:
         # Data dibatalkan transaksi; file yang sudah tersalin dihapus agar tidak menjadi sampah.
