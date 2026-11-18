@@ -19,7 +19,7 @@ from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.files import file_response
 from apps.schools.context import active_school
 
-from . import objective_quiz, objective_quiz_excel
+from . import objective_quiz, objective_quiz_excel, plan_excel
 from . import progress as learning
 from . import sharing
 from .models import Chapter, Material, MaterialItem, MaterialProgress
@@ -415,6 +415,31 @@ class MaterialViewSet(viewsets.ModelViewSet):
             for number, material_id in enumerate(ids, start=1):
                 Material.objects.filter(pk=material_id).update(order=number)
         return Response({"detail": "Urutan materi disimpan."})
+
+    def _plan_assignment(self, request, source):
+        assignment_id = source.get("teaching_assignment")
+        if not str(assignment_id or "").isdigit():
+            raise ValidationError({"teaching_assignment": "Pilih kelas-mapel."})
+        return team_assignment_or_404(request, int(assignment_id))
+
+    @action(detail=False, url_path="plan-template", permission_classes=[IsTeacher])
+    def plan_template(self, request):
+        """?teaching_assignment= - template Excel Rencana Pembelajaran (lembar Bab, Materi, Tugas) yang
+        sudah berisi data kelas-mapel itu, atau contoh jika masih kosong."""
+        assignment = self._plan_assignment(request, request.query_params)
+        content = plan_excel.build_plan_template(assignment)
+        name = f"Rencana Pembelajaran - {assignment.subject.name} {assignment.classroom.name}"
+        return template_response(content, f"{name[:80]}.xlsx")
+
+    @action(detail=False, methods=["post"], url_path="plan-import", permission_classes=[IsTeacher])
+    def plan_import(self, request):
+        """Impor Rencana Pembelajaran (multipart teaching_assignment, file, dry_run). Judul sama =
+        diperbarui, judul baru = dibuat; disimpan hanya jika SEMUA baris benar (plan_excel.py)."""
+        assignment = self._plan_assignment(request, request.data)
+        preview, plan = plan_excel.check_plan_file(request.FILES.get("file"), assignment, request)
+        return import_response(
+            preview, is_dry_run(request), lambda: plan_excel.save_plan(plan, assignment, request)
+        )
 
     @action(detail=False, url_path="copy-targets", permission_classes=[IsTeacher])
     def copy_targets(self, request):

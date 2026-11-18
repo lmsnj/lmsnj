@@ -44,15 +44,9 @@ def cell_text(value):
     return str(value).strip()
 
 
-def build_template(
-    sheet_title, columns, guide_title, guide_lines, examples, max_rows=DEFAULT_MAX_ROWS, extra_sheets=()
-):
-    """Buat file template: lembar Petunjuk (dengan contoh) + lembar isian dengan dropdown.
-    `extra_sheets`: [(judul, baris_pertama_judul_kolom, [baris...])], mis. lembar Contekan Rumus."""
-    workbook = Workbook()
-    sheet = workbook.active
-    sheet.title = sheet_title
-    lists = None
+def fill_data_sheet(workbook, sheet, columns, max_rows=DEFAULT_MAX_ROWS):
+    """Isi judul kolom lembar isian (warna, lebar, format teks, dropdown). Nilai dropdown disimpan di
+    lembar tersembunyi "Daftar" (satu kolom per dropdown, jadi aman dipakai beberapa lembar isian)."""
     for index, column in enumerate(columns, start=1):
         cell = sheet.cell(row=1, column=index, value=f"{column.label}*" if column.required else column.label)
         cell.font = Font(bold=True, color="FFFFFF")
@@ -64,14 +58,19 @@ def build_template(
             for row in range(2, max_rows + 2):
                 sheet[f"{letter}{row}"].number_format = "@"
         if column.choices:
-            if lists is None:
+            if "Daftar" in workbook.sheetnames:
+                lists = workbook["Daftar"]
+                list_column = lists.max_column + 1
+            else:
                 lists = workbook.create_sheet("Daftar")
                 lists.sheet_state = "hidden"
+                list_column = 1
             for row, value in enumerate(column.choices, start=1):
-                lists.cell(row=row, column=index, value=value)
+                lists.cell(row=row, column=list_column, value=value)
+            list_letter = lists.cell(row=1, column=list_column).column_letter
             validation = DataValidation(
                 type="list",
-                formula1=f"Daftar!${letter}$1:${letter}${len(column.choices)}",
+                formula1=f"Daftar!${list_letter}$1:${list_letter}${len(column.choices)}",
                 allow_blank=not column.required,
             )
             validation.errorStyle = "warning"
@@ -79,6 +78,17 @@ def build_template(
             sheet.add_data_validation(validation)
             validation.add(f"{letter}2:{letter}{max_rows + 1}")
     sheet.freeze_panes = "A2"
+
+
+def build_template(
+    sheet_title, columns, guide_title, guide_lines, examples, max_rows=DEFAULT_MAX_ROWS, extra_sheets=()
+):
+    """Buat file template: lembar Petunjuk (dengan contoh) + lembar isian dengan dropdown.
+    `extra_sheets`: [(judul, baris_pertama_judul_kolom, [baris...])], mis. lembar Contekan Rumus."""
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = sheet_title
+    fill_data_sheet(workbook, sheet, columns, max_rows)
 
     guide = workbook.create_sheet("Petunjuk", 0)
     guide.cell(row=1, column=1, value=guide_title).font = Font(bold=True, size=13)
@@ -130,8 +140,8 @@ def template_response(content, filename):
     return response
 
 
-def read_rows(file, sheet_title, columns, max_rows=DEFAULT_MAX_ROWS):
-    """Baca lembar isian. Mengembalikan [{"row": nomor_baris, "data": {key: teks}}]."""
+def open_workbook(file):
+    """Buka file .xlsx unggahan (pesan error yang ramah jika bukan Excel)."""
     if file is None:
         raise ValidationError({"file": "Pilih file Excel yang akan diimpor."})
     if os.path.splitext(file.name)[1].lower() != ".xlsx":
@@ -142,8 +152,11 @@ def read_rows(file, sheet_title, columns, max_rows=DEFAULT_MAX_ROWS):
         workbook = load_workbook(file, read_only=True, data_only=True)
     except Exception:
         raise ValidationError({"file": "File tidak bisa dibaca. Pastikan file Excel .xlsx yang valid."})
+    return workbook
 
-    sheet = workbook[sheet_title] if sheet_title in workbook.sheetnames else workbook.active
+
+def sheet_rows(sheet, columns, max_rows=DEFAULT_MAX_ROWS):
+    """Baris berisi data di satu lembar: [{"row": nomor_baris, "data": {key: teks}}]."""
     rows = sheet.iter_rows(values_only=True)
     header = next(rows, None) or ()
     labels = {normalize(c.label): c.key for c in columns}
@@ -155,7 +168,10 @@ def read_rows(file, sheet_title, columns, max_rows=DEFAULT_MAX_ROWS):
     missing = [c.label for c in columns if c.required and c.key not in positions]
     if missing:
         raise ValidationError(
-            {"file": f"Kolom {', '.join(missing)} tidak ditemukan. Gunakan template yang disediakan."}
+            {
+                "file": f"Lembar '{sheet.title}': kolom {', '.join(missing)} tidak ditemukan. "
+                "Gunakan template yang disediakan."
+            }
         )
 
     result = []
@@ -168,8 +184,16 @@ def read_rows(file, sheet_title, columns, max_rows=DEFAULT_MAX_ROWS):
         result.append({"row": row_number, "data": {c.key: data.get(c.key, "") for c in columns}})
         if len(result) > max_rows:
             raise ValidationError(
-                {"file": f"Maksimal {max_rows} baris per file. Bagi menjadi beberapa file."}
+                {"file": f"Lembar '{sheet.title}': maksimal {max_rows} baris. Bagi menjadi beberapa file."}
             )
+    return result
+
+
+def read_rows(file, sheet_title, columns, max_rows=DEFAULT_MAX_ROWS):
+    """Baca lembar isian. Mengembalikan [{"row": nomor_baris, "data": {key: teks}}]."""
+    workbook = open_workbook(file)
+    sheet = workbook[sheet_title] if sheet_title in workbook.sheetnames else workbook.active
+    result = sheet_rows(sheet, columns, max_rows)
     workbook.close()
     if not result:
         raise ValidationError({"file": f"Tidak ada data di lembar '{sheet_title}'."})

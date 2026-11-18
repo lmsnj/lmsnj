@@ -64,6 +64,21 @@ export const materialsApi = {
     form.append('dry_run', dryRun ? 'true' : 'false')
     return api.post(`/materials/${id}/practice-import/`, form).then((res) => res.data)
   },
+  // Rencana Pembelajaran satu kelas-mapel (lembar Bab, Materi, Tugas) lewat Excel.
+  planTemplate: (teachingAssignment) =>
+    api
+      .get('/materials/plan-template/', {
+        params: { teaching_assignment: teachingAssignment },
+        responseType: 'blob',
+      })
+      .then((res) => res.data),
+  importPlan: (teachingAssignment, file, dryRun) => {
+    const form = new FormData()
+    form.append('teaching_assignment', teachingAssignment)
+    form.append('file', file)
+    form.append('dry_run', dryRun ? 'true' : 'false')
+    return api.post('/materials/plan-import/', form).then((res) => res.data)
+  },
   // Salin materi ke kelas lain (mapel sama) sebagai draf. copyTargets = daftar kelas tujuan
   // [{ teaching_assignment, classroom_name, academic_year, teachers }].
   copyTargets: (teachingAssignment) =>

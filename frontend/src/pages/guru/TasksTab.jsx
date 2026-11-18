@@ -1,3 +1,4 @@
+import { FileSpreadsheet } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { tasksApi } from '../../api/tasks'
@@ -6,12 +7,15 @@ import Button from '../../components/Button'
 import TaskList from '../../components/TaskList'
 import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
+import PlanImportModal from './PlanImportModal'
 import TaskFormModal from './TaskFormModal'
 
 // Tab "Tugas" di halaman kelas-mapel guru.
 export default function TasksTab({ assignmentId, openForm = false }) {
   const navigate = useNavigate()
   const [creating, setCreating] = useState(openForm)
+  const [importing, setImporting] = useState(false)
+  const [notice, setNotice] = useState('')
   const tasks = useFetch(tasksApi.list, { ...ALL, teaching_assignment: assignmentId })
 
   return (
@@ -20,9 +24,17 @@ export default function TasksTab({ assignmentId, openForm = false }) {
         <p className="text-sm text-slate-600">
           Klik tugas untuk melihat siapa saja yang sudah mengumpulkan.
         </p>
-        <Button onClick={() => setCreating(true)}>+ Buat Tugas</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => setImporting(true)}>
+            <FileSpreadsheet className="size-4" aria-hidden="true" /> Impor Excel
+          </Button>
+          <Button onClick={() => setCreating(true)}>+ Buat Tugas</Button>
+        </div>
       </div>
-      <Alert type="error">{tasks.error}</Alert>
+      <div className="mb-3 space-y-3">
+        <Alert type="success">{notice}</Alert>
+        <Alert type="error">{tasks.error}</Alert>
+      </div>
       <TaskList
         tasks={tasks.data?.results}
         loading={tasks.loading}
@@ -30,6 +42,17 @@ export default function TasksTab({ assignmentId, openForm = false }) {
         linkTo={(task) => `/guru/tugas/${task.id}`}
         emptyTitle="Belum ada tugas. Klik “Buat Tugas” untuk mulai."
       />
+      {importing && (
+        <PlanImportModal
+          assignmentId={assignmentId}
+          onClose={() => setImporting(false)}
+          onImported={(text) => {
+            setImporting(false)
+            setNotice(text)
+            tasks.reload()
+          }}
+        />
+      )}
       {creating && (
         <TaskFormModal
           assignmentId={assignmentId}

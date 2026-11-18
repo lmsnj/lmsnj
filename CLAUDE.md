@@ -184,6 +184,12 @@ Pola yang wajib dipakai ulang:
   hasil DRAF, file disalin, bab dicocokkan judul, syarat tugas/asesmen & progres tidak ikut) dan **Gabungkan
   materi kembar** (`merge_materials`: siswa yang menuntaskan materi kembar -> `unlocked` di materi yang
   dipertahankan, refleksi & pengesahan ikut, materi kembar dihapus).
+- **Impor Bab, Materi & Tugas** (`apps/materials/plan_excel.py`, `docs/REQUIREMENTS.md` MAT-PLAN, tombol
+  "Impor Excel" di tab Materi & Tugas -> `PlanImportModal`): satu file "Rencana Pembelajaran" per kelas-mapel
+  (lembar Bab, Materi, Tugas). Template berisi data seluruh tim (atau contoh jika kosong, contohnya diuji lolos).
+  Dicocokkan lewat JUDUL: sama = diperbarui, baru = dibuat; tidak ada yang dihapus; urutan baris = urutan.
+  Validasi memakai `MaterialSerializer`/`TaskSerializer`; materi PDF baru ditolak (file lewat form). Capaian &
+  konsep = satu per baris di sel. Lembar ganda memakai `common/excel.py::fill_data_sheet`, `open_workbook`, `sheet_rows`.
 - **Jadwal pelajaran mingguan** (`apps/schedule`, panduan `docs/jadwal/README.md`): **Timetable** (versi jadwal milik
   satu sekolah: `school`, `code` unik per sekolah, `academic_year`, `semester`, `effective_from`, `is_active` = satu
   yang aktif PER SEKOLAH). **TimeSlot**: `day` (Senin = 0 … Ahad = 6, sama dengan `date.weekday()`), `period`,
@@ -609,6 +615,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/materials/reorder/` (`teaching_assignment`, `materials: [id urut]`) | Guru pengampu (tim) |
 | GET/POST | `/api/materials/copy-targets/?teaching_assignment=`, `/api/materials/copy/` (`teaching_assignment`, `materials`, `target`) | Guru tim: salin materi ke kelas lain (mapel sama) sebagai draf |
 | POST   | `/api/materials/{id}/merge/` (`duplicate`) | Guru tim: gabungkan materi kembar ke materi ini |
+| GET/POST | `/api/materials/plan-template/?teaching_assignment=`, `/api/materials/plan-import/` (multipart `teaching_assignment`, `file`, `dry_run`) | Guru tim: template/impor Bab, Materi & Tugas (judul sama = diperbarui) |
 | CRUD   | `/api/chapters/` (filter `teaching_assignment`), `.../reorder/` (`teaching_assignment`, `chapters: [id urut]`) | Tulis: guru pengampu. Hapus: + admin. Baca: admin semua, guru miliknya, siswa bab berisi materi terbit di kelasnya (+ `progress`) |
 | CRUD   | `/api/material-items/` (multipart; filter `material`), `.../{id}/download/`, `.../reorder/` (`material`, `items: [id urut]`) | Tulis: guru pengampu materinya. Hapus: + admin. Baca/download: sama dengan materinya (siswa: materi tidak terkunci) |
 | POST   | `/api/material-items/{id}/open/` | Siswa (materi tidak terkunci); mengembalikan materi + progres |

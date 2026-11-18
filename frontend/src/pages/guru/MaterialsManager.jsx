@@ -5,6 +5,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Copy,
+  FileSpreadsheet,
   Layers,
   ListChecks,
   Merge,
@@ -30,6 +31,7 @@ import MaterialItemsModal from './MaterialItemsModal'
 import MaterialProgressModal from './MaterialProgressModal'
 import MergeMaterialModal from './MergeMaterialModal'
 import ObjectiveQuizImportModal from './ObjectiveQuizImportModal'
+import PlanImportModal from './PlanImportModal'
 import PracticeImportModal from './PracticeImportModal'
 
 // Bab hanya dimuat di halaman satu kelas-mapel.
@@ -52,7 +54,7 @@ export default function MaterialsManager({
   summary,
 }) {
   const [notice, setNotice] = useState({ type: 'success', text: '' })
-  // { type: 'form' | 'items' | 'practice' | 'chapters' | 'copy' | 'merge' | 'view' | 'delete' | 'progress' |
+  // { type: 'form' | 'items' | 'practice' | 'chapters' | 'plan' | 'copy' | 'merge' | 'view' | 'delete' | 'progress' |
   //   'ai' | 'quiz', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
   const materials = useFetch(materialsApi.list, {
@@ -218,6 +220,11 @@ export default function MaterialsManager({
             </Button>
           )}
           {canReorder && (
+            <Button variant="secondary" onClick={() => setDialog({ type: 'plan' })}>
+              <FileSpreadsheet className="size-4" aria-hidden="true" /> Impor Excel
+            </Button>
+          )}
+          {canReorder && (
             <Button variant="secondary" onClick={() => setDialog({ type: 'chapters' })}>
               <BookOpen className="size-4" aria-hidden="true" /> Bab
               {chapterList.length > 0 && ` (${chapterList.length})`}
@@ -302,6 +309,18 @@ export default function MaterialsManager({
           assignmentId={assignmentId}
           onClose={closeDialog}
           onChanged={() => {
+            chapters.reload()
+            materials.reload()
+          }}
+        />
+      )}
+      {dialog?.type === 'plan' && (
+        <PlanImportModal
+          assignmentId={assignmentId}
+          onClose={closeDialog}
+          onImported={(text) => {
+            closeDialog()
+            setNotice({ type: 'success', text })
             chapters.reload()
             materials.reload()
           }}
