@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "apps.exams",
     "apps.chat",
     "apps.assessments",
+    "apps.learning_media",
     "apps.branding",
 ]
 
@@ -208,6 +209,8 @@ REST_FRAMEWORK = {
         "login": "10/min",
         # Mencegah spam pesan di Ruang Obrolan.
         "chat": "30/min",
+        # Jawaban latihan Media Pembelajaran Interaktif (dinilai di server).
+        "media": "120/min",
     },
 }
 

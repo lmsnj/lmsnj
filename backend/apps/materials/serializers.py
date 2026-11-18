@@ -9,6 +9,9 @@ from apps.academics.selectors import team_assignments_for_request
 from apps.accounts.models import Role, User
 from apps.assessments.models import Assessment
 from apps.common.files import delete_file, validate_upload
+from apps.learning_media import services as media_services
+from apps.learning_media.models import InteractiveMedia
+from apps.schools.context import active_school
 from apps.tasks.models import Task
 
 from .code_practice import MAX_CODE, MAX_EXERCISES, clean_checks, clean_flowchart
@@ -42,11 +45,20 @@ def same_class_subject(content, assignment):
     return assignment is not None and content.teaching_assignment.class_subject == assignment.class_subject
 
 
-def validate_content(attrs, instance):
-    """Isi konten sesuai tipenya: PDF wajib file, video/link wajib URL. Dipakai materi & konten tambahan."""
+def validate_content(attrs, instance, allow_media=False):
+    """Isi konten sesuai tipenya: PDF wajib file, video/link wajib URL, media interaktif wajib memilih
+    media. Dipakai materi & konten tambahan (konten tambahan tidak boleh berupa media interaktif)."""
     material_type = attrs.get("material_type", getattr(instance, "material_type", None))
     has_file = bool(attrs.get("file")) or bool(instance and instance.file and "file" not in attrs)
     url = attrs.get("url", getattr(instance, "url", ""))
+    if material_type == MaterialType.MEDIA:
+        if not allow_media:
+            raise serializers.ValidationError(
+                {"material_type": "Konten tambahan tidak bisa berupa media interaktif."}
+            )
+        attrs["url"] = ""
+        attrs["file"] = None
+        return attrs
     if material_type == MaterialType.PDF:
         if not has_file:
             raise serializers.ValidationError({"file": "File PDF wajib diunggah."})
@@ -82,6 +94,18 @@ class FileContentMixin:
         if old_file and old_file.name != instance.file.name:
             delete_file(old_file)
         return instance
+
+
+class JSONTextField(serializers.JSONField):
+    """Objek JSON; form multipart mengirimnya sebagai teks JSON."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            try:
+                data = json.loads(data or "{}")
+            except ValueError:
+                raise serializers.ValidationError("Format pengaturan tidak valid.")
+        return super().to_internal_value(data)
 
 
 class ObjectivesField(serializers.ListField):
@@ -273,6 +297,14 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
     required_assessment_title = serializers.CharField(
         source="required_assessment.title", read_only=True, default=None
     )
+    # Media interaktif (material_type "media"): media terbit milik sekolah aktif (diisi di __init__).
+    interactive_media = serializers.PrimaryKeyRelatedField(
+        queryset=InteractiveMedia.objects.none(), required=False, allow_null=True
+    )
+    interactive_media_title = serializers.CharField(
+        source="interactive_media.title", read_only=True, default=None
+    )
+    media_settings = JSONTextField(required=False)
     # Konten tambahan (urut). Siswa harus membuka semuanya; isinya disembunyikan jika materi terkunci.
     items = serializers.SerializerMethodField()
     # Khusus siswa: urutan, terkunci/tidak, dan syarat capaian (lihat progress.py).
@@ -294,6 +326,9 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
             "has_file",
             "original_filename",
             "url",
+            "interactive_media",
+            "interactive_media_title",
+            "media_settings",
             "items",
             "is_published",
             "order",
@@ -324,6 +359,10 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
             assignments = team_assignments_for_request(request)
             self.fields["teaching_assignment"].queryset = assignments
             self.fields["chapter"].queryset = Chapter.objects.filter(teaching_assignment__in=assignments)
+            school = active_school(request)
+            self.fields["interactive_media"].queryset = (
+                InteractiveMedia.objects.filter(school=school) if school else InteractiveMedia.objects.none()
+            )
 
     def get_has_file(self, obj):
         return bool(obj.file)
@@ -394,7 +433,27 @@ class MaterialSerializer(FileContentMixin, serializers.ModelSerializer):
         chapter = attrs.get("chapter")
         if chapter is not None and not same_class_subject(chapter, assignment):
             raise serializers.ValidationError({"chapter": "Bab harus dari kelas-mapel yang sama."})
-        return validate_content(attrs, self.instance)
+        self._validate_media(attrs, assignment)
+        return validate_content(attrs, self.instance, allow_media=True)
+
+    def _validate_media(self, attrs, assignment):
+        material_type = attrs.get("material_type", getattr(self.instance, "material_type", None))
+        if material_type != MaterialType.MEDIA:
+            attrs["interactive_media"] = None
+            attrs["media_settings"] = {}
+            return
+        media = attrs.get("interactive_media", getattr(self.instance, "interactive_media", None))
+        if media is None:
+            raise serializers.ValidationError(
+                {"interactive_media": "Pilih media interaktif yang sudah diterbitkan."}
+            )
+        if assignment is not None and media.school_id != assignment.classroom.school_id:
+            raise serializers.ValidationError({"interactive_media": "Media harus milik sekolah kelas ini."})
+        if not media.versions.exists():
+            raise serializers.ValidationError({"interactive_media": "Media ini belum diterbitkan."})
+        if "media_settings" in attrs or self.instance is None:
+            raw = attrs.get("media_settings", getattr(self.instance, "media_settings", {}))
+            attrs["media_settings"] = media_services.validate_settings(raw, assignment)
 
 
 class ProgressRecordSerializer(serializers.Serializer):

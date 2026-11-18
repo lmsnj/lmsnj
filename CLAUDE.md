@@ -64,6 +64,8 @@ lms-smknj/
 │   │   ├── assessments/     # Lembar asesmen (kuis); services.py = aturan mengerjakan & menilai;
 │   │   │                    #   interactive.py = soal interaktif; videos.py = streaming video soal
 │   │   ├── exams/           # Acara ujian, syarat & pengecualian kartu ujian; services.py = aturan syarat
+│   │   ├── learning_media/  # Media Pembelajaran Interaktif: schema.py = isi JSON, steps.py = jenis langkah
+│   │   │                    #   & kontrak plugin, services.py = progres/bintang/kunci stasiun
 │   │   ├── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
 │   │   └── schools/         # Sekolah (multi-sekolah); context.py = sekolah aktif (header X-School / X-School-Code),
 │   │                        #   domains.py = aturan kode subdomain sekolah
@@ -263,6 +265,19 @@ Pola yang wajib dipakai ulang:
   tercapai. Siswa: jika ada bab, `StudentSubjectPage` memakai `components/ChapterModule.jsx` (daftar bab kiri,
   akordeon materi + kartu Post Test kanan); tanpa bab tetap `MaterialModule`. Guru: tombol "Bab" ->
   `ChaptersModal`, pilihan "Bab" di form materi, daftar materi dikelompokkan per bab.
+- **Media Pembelajaran Interaktif (MPI)** (`apps/learning_media`, `docs/REQUIREMENTS.md` MPI-*): Media → Bagian →
+  Stasiun → Langkah sebagai DATA JSON (`schema.py`, `schema_version`), bukan kode. `InteractiveMedia` (`school`
+  kosong = Pustaka Super Admin, dibagikan lewat `InteractiveMediaShare`; diubah pembuatnya/admin) menyimpan `draft`
+  (simpan = cek ringan; pratinjau/terbit = cek lengkap, pesan per lokasi). Terbit = `InteractiveMediaVersion` baru
+  (`source` draf, `content` untuk siswa, `keys` kunci terpisah). Id bagian/stasiun/langkah TETAP; progres per id,
+  jadi edit setelah terbit aman (bintang & selesai tidak pernah turun). Dipasang di kelas sebagai Materi
+  `material_type = "media"` (`interactive_media` PROTECT + `media_settings`: unlock sequential/free, schedule,
+  leaderboard, pretest/posttest = asesmen kelas-mapel sama) → syarat `media` di `progress.material_checks`.
+  Jenis langkah = subkelas `steps.StepKind` + `register()` (kontrak plugin mapel); isian/seret/jodoh memakai
+  `assessments/interactive.py`. Semua latihan dinilai di SERVER dengan kunci versi yang dipakai siswa; id pilihan
+  acak saat terbit, urutan diacak per siswa (seed materi-siswa). Bintang: `services.stars_for` (salah, petunjuk,
+  buka jawaban). Guru/admin = pratinjau tidak disimpan; "masuk sebagai" = lihat saja (`impersonator_id`).
+  `client_uid` mencegah jawaban ganda dari antrean offline.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
 - **Submission** (pengumpulan): `task` (PROTECT), `student` (PROTECT), `text_answer`, `file` + `original_filename`, `is_late` (disimpan saat mengumpulkan), `submitted_at`. Satu per (tugas, siswa).
   - Aturan (`apps/tasks/services.py`): sebelum tenggat siswa boleh kumpul/ganti/batal; setelah tenggat pengumpulan pertama diterima dan ditandai terlambat jika `allow_late`, pengumpulan yang sudah ada terkunci. Minimal ada teks atau file.
@@ -679,6 +694,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET/PATCH | `/api/branding/` (multipart `school_name`, `slogan`, `app_name`, `logo`, `remove_logo`) | GET publik (halaman login), PATCH admin yayasan. Isinya identitas yayasan/aplikasi |
 | GET    | `/api/branding/logo/` | Publik; alamat diberi `?v=` (cache lama aman) |
 | GET/PATCH | `/api/assessment-attempts/{id}/`, `.../grade/` | Guru pengampu (grade), admin (lihat) |
+| CRUD   | `/api/learning-media/` (`?library=1`, `?subject=`), `.../{id}/publish/` (`note`), `.../versions/`, `.../restore/` (`number`), `.../preview/` (`draft` opsional), `.../preview-answer/`, `.../preview-reveal/`, `.../copy/`, `.../export/`, `.../shares/` (GET/PUT `schools`) | Guru & admin sekolah (ubah: pembuat/admin); Super Admin di mode Super Admin = Pustaka; shares: Super Admin |
+| GET/POST | `/api/materials/{id}/media/`, `.../answer/` (`version`, `station`, `step`, `response`, `hint_level`, `client_uid`), `.../reveal/`, `.../station/` (`action` visit/restart/finish, `step`, `seconds`), `.../reflection/` (`station`, `text`) | Siswa kelas itu (disimpan, 120/menit); guru/admin & "masuk sebagai" = tidak disimpan |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
 
 ## Progres
@@ -713,5 +730,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
       ruang obrolan, lembar asesmen
 - [x] Soal interaktif (lihat `docs/REQUIREMENTS.md` QA-INT-00..04): isian singkat, tarik & lepas,
       menjodohkan, video interaktif
+- [ ] Media Pembelajaran Interaktif (MPI, `docs/REQUIREMENTS.md`)
+  - [x] Tahap 1: skema data dinamis & API (backend)
+  - [ ] Tahap 2-8: pemutar, Studio, impor, plugin Flowgorithm, isi X RPL 1, laporan, embed HTML5
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar

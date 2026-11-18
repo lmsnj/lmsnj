@@ -12,6 +12,8 @@ class MaterialType(models.TextChoices):
     PDF = "pdf", "PDF"
     VIDEO = "video", "Video"
     LINK = "link", "Link"
+    # Media Pembelajaran Interaktif (apps/learning_media). Hanya untuk materi, bukan konten tambahan.
+    MEDIA = "media", "Media Interaktif"
 
 
 class Chapter(models.Model):
@@ -71,6 +73,17 @@ class Material(models.Model):
     original_filename = models.CharField("nama file asli", max_length=255, blank=True)
     url = models.URLField("URL", max_length=500, blank=True)
     is_published = models.BooleanField("terbit", default=False)
+    interactive_media = models.ForeignKey(
+        "learning_media.InteractiveMedia",
+        verbose_name="media interaktif",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="materials",
+    )
+    # Pengaturan media untuk kelas ini (aturan buka, jadwal, papan peringkat, Tes Awal/Akhir);
+    # lihat learning_media/services.py::validate_settings.
+    media_settings = models.JSONField("pengaturan media", default=dict, blank=True)
 
     # Urutan & capaian (lihat progress.py). Materi ke-N terbuka bagi siswa setelah capaian materi
     # sebelumnya (di kelas-mapel yang sama) terpenuhi.

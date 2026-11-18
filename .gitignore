@@ -23,3 +23,6 @@ Thumbs.db
 # Data jadwal berisi nama guru; simpan lokal saja (lihat docs/jadwal/README.md)
 docs/jadwal/*.json
 *password*.csv
+
+# Bahan acuan media (berisi konfigurasi lama, jangan di-commit)
+media-source/

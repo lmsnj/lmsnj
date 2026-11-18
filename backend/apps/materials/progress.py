@@ -22,6 +22,7 @@ from apps.academics.selectors import teaching_assignments_for
 from apps.accounts.models import Role
 from apps.assessments.models import Attempt
 from apps.assessments.results import GRADED, PASSED, final_result, max_score_of
+from apps.learning_media import services as media_services
 from apps.schools.context import active_school
 from apps.tasks.models import Submission
 
@@ -66,8 +67,9 @@ def open_post_test(chapter):
     return test if test and test.is_published else None
 
 
-def material_checks(material, progress, task_done, assessment_done, code_passed=frozenset()):
-    """Daftar syarat satu materi: [{key, label, done}]. `code_passed` = id soal Praktik yang sudah lulus."""
+def material_checks(material, progress, task_done, assessment_done, code_passed=frozenset(), media=None):
+    """Daftar syarat satu materi: [{key, label, done}]. `code_passed` = id soal Praktik yang sudah lulus.
+    `media` = (jumlah stasiun wajib, jumlah yang sudah selesai) untuk materi media interaktif."""
     item_ids = [item.id for item in material.items.all()]
     opened = bool(progress and progress.opened_at)
     if item_ids:
@@ -76,6 +78,15 @@ def material_checks(material, progress, task_done, assessment_done, code_passed=
     else:
         label = "Membuka materi"
     checks = [{"key": "opened", "label": label, "done": opened}]
+    if media is not None and media[0]:
+        required, done = media
+        checks.append(
+            {
+                "key": "media",
+                "label": f"Menyelesaikan {required} stasiun media interaktif",
+                "done": done >= required,
+            }
+        )
     practice_count = len((material.practice_quiz or {}).get("content", []))
     if practice_count:
         checks.append(
@@ -178,6 +189,9 @@ def progress_table(materials, student_ids):
         exercise__material__in=materials, student_id__in=student_ids, passed_at__isnull=False
     ).values_list("exercise_id", "student_id"):
         code_passed.setdefault(student_id, set()).add(exercise_id)
+    media_materials = [m for m in materials if m.material_type == "media" and m.interactive_media_id]
+    media_versions = media_services.latest_versions(m.interactive_media_id for m in media_materials)
+    media_done = media_services.completed_stations(media_materials, student_ids) if media_materials else {}
     assessments = {m.required_assessment for m in materials if m.required_assessment_id}
     assessments |= {open_post_test(m.chapter) for m in materials if open_post_test(m.chapter)}
     assessments = list(assessments)
@@ -196,7 +210,18 @@ def progress_table(materials, student_ids):
                 task_done = _task_done(material, submissions.get((material.required_task_id, student_id)))
                 status = statuses.get((material.required_assessment_id, student_id))
                 passed_codes = code_passed.get(student_id, set())
-                checks = material_checks(material, mine, task_done, status in (PASSED, GRADED), passed_codes)
+                media = None
+                version = (
+                    media_versions.get(material.interactive_media_id)
+                    if material.material_type == "media"
+                    else None
+                )
+                if version is not None:
+                    required = set(version.required_stations)
+                    media = (len(required), len(required & media_done.get((material.id, student_id), set())))
+                checks = material_checks(
+                    material, mine, task_done, status in (PASSED, GRADED), passed_codes, media
+                )
                 unlocked = bool(mine and mine.unlocked)
                 rows.append(
                     {
