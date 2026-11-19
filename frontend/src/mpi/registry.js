@@ -16,6 +16,7 @@ import {
   VideoStep,
   WorkedExampleStep,
 } from './steps/ExplainSteps'
+import { EmbedStep, EmbedTaskStep } from './steps/EmbedSteps'
 import {
   CategorizeStep,
   ChoiceStep,
@@ -31,6 +32,7 @@ const STEPS = {
   dialog: { Component: DialogStep, label: 'Dialog maskot' },
   video: { Component: VideoStep, label: 'Video' },
   link: { Component: LinkStep, label: 'Tautan' },
+  embed: { Component: EmbedStep, label: 'Konten HTML5/H5P' },
   flip_cards: { Component: FlipCardsStep, label: 'Kartu bolak-balik' },
   flashcards: { Component: FlashcardsStep, label: 'Flashcard' },
   worked_example: { Component: WorkedExampleStep, label: 'Contoh langkah demi langkah' },
@@ -42,6 +44,11 @@ const STEPS = {
   fill_blank: { Component: InteractiveStep, label: 'Isian rumpang' },
   drag_drop: { Component: InteractiveStep, label: 'Tarik & lepas' },
   matching: { Component: InteractiveStep, label: 'Pasangkan' },
+  embed_task: {
+    Component: EmbedTaskStep,
+    label: 'Tugas HTML5/H5P',
+    isAnswered: (_, value) => value?.completed === true,
+  },
 }
 
 export function registerStep(kind, definition) {

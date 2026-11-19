@@ -107,8 +107,15 @@ def is_video(url):
     return parsed.path.lower().endswith(VIDEO_EXTENSIONS)
 
 
+def is_h5p(url):
+    """Alamat embed H5P (mis. https://h5p.org/h5p/embed/123 atau situs Moodle/WordPress .../h5p/embed/...)."""
+    parsed = urlparse(url)
+    return parsed.scheme == "https" and "/h5p/embed" in parsed.path.lower()
+
+
 def read_links(text, default_title, part_title=None):
-    """Satu tautan per baris: 'Judul | https://...' atau alamatnya saja. Baris '# Judul' = stasiun baru."""
+    """Satu tautan per baris: 'Judul | https://...' atau alamatnya saja. Baris '# Judul' = stasiun baru.
+    Video -> langkah video, embed H5P -> langkah konten HTML5/H5P, lainnya -> tombol tautan."""
     result = ImportResult()
     builder = Builder(default_title, part_title)
     count = 0
@@ -130,7 +137,19 @@ def read_links(text, default_title, part_title=None):
         if count > MAX_LINKS:
             result.errors.append(f"Maksimal {MAX_LINKS} tautan sekali impor.")
             break
-        if is_video(url):
+        if is_h5p(url):
+            builder.add(
+                {
+                    "id": "",
+                    "kind": "embed",
+                    "title": title[:200],
+                    "hints": [],
+                    "url": url,
+                    "body": "",
+                    "height": 480,
+                }
+            )
+        elif is_video(url):
             builder.add(
                 {
                     "id": "",

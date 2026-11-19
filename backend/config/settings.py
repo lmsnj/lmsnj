@@ -230,6 +230,11 @@ CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
 # pengembangan: ^http://[a-z0-9-]+\.localhost:5173$ (smknj.localhost:5173, admin.localhost:5173).
 # Di produksi API biasanya satu alamat dengan frontend (/api), jadi tidak perlu diisi.
 CORS_ALLOWED_ORIGIN_REGEXES = env_list("CORS_ALLOWED_ORIGIN_REGEXES")
+
+# Konten HTML5/H5P di Media Interaktif dimuat dalam iframe sandbox. Konten TIDAK boleh berasal dari domain LMS
+# sendiri (iframe ber-origin sama bisa keluar dari sandbox). Isi domain dasar, mis. "sigmateknologi.my.id"
+# (domain & semua subdomainnya ditolak); host di ALLOWED_HOSTS dan CORS_ALLOWED_ORIGINS juga selalu ditolak.
+EMBED_BLOCKED_DOMAINS = env_list("EMBED_BLOCKED_DOMAINS")
 # Header X-School = sekolah aktif yang dipilih pengguna; X-School-Code = kode sekolah dari
 # subdomain (lihat apps/schools/context.py dan domains.py).
 CORS_ALLOW_HEADERS = (*default_headers, "x-school", "x-school-code")

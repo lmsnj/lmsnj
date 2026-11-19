@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kuis Simbol Flowchart</title>
+<!--
+  Contoh konten HTML5 untuk langkah "Tugas HTML5/H5P" (mode bridge) di Media Interaktif LMS Sigma.
+  Simpan berkas ini di hosting terpisah (GitHub Pages, Netlify), lalu tempel alamat https-nya di Studio.
+  Spesifikasi pesan: docs/mpi-bridge.md.
+-->
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; color: #1e293b; background: #f8fafc; }
+  h1 { font-size: 1.2rem; margin: 0 0 4px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px #0002; }
+  button.pilihan { display: block; width: 100%; margin: 8px 0; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; font-size: 1rem; text-align: left; cursor: pointer; }
+  button.pilihan:hover { border-color: #1f8a4c; }
+  .bar { height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; margin: 8px 0 16px; }
+  .bar div { height: 100%; background: #1f8a4c; width: 0; transition: width .3s; }
+  .catatan { color: #64748b; font-size: .85rem; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1 id="sapa">Kuis Simbol Flowchart</h1>
+  <p class="catatan" id="status">Menunggu LMS…</p>
+  <div class="bar"><div id="isi"></div></div>
+  <div id="soal"></div>
+</div>
+<script>
+  // ---- Bridge LMS Sigma -------------------------------------------------------------------------------
+  // 1) Tunggu pesan "mpi:init" dari LMS, simpan origin & nonce-nya.
+  // 2) Kirim pesan HANYA ke origin itu (jangan "*"), selalu dengan source "mpi-content" dan nonce yang sama.
+  var lms = null; // { origin, nonce }
+  function kirim(type, data) {
+    if (!lms) return;
+    var pesan = Object.assign({ source: 'mpi-content', type: type, nonce: lms.nonce }, data || {});
+    window.parent.postMessage(pesan, lms.origin);
+  }
+  window.addEventListener('message', function (event) {
+    var d = event.data;
+    if (!d || d.source !== 'lms-sigma' || d.type !== 'mpi:init' || lms) return;
+    lms = { origin: event.origin, nonce: d.nonce };
+    if (d.user && d.user.nickname) document.getElementById('sapa').textContent = 'Halo, ' + d.user.nickname + '!';
+    document.getElementById('status').textContent = 'Terhubung dengan LMS. Jawab semua soal.';
+    kirim('mpi:ready');
+    laporTinggi();
+  });
+  // Pakai tinggi body (scrollHeight dokumen tidak pernah lebih kecil dari tinggi iframe, jadi tidak bisa mengecil).
+  function laporTinggi() { kirim('mpi:resize', { height: Math.ceil(document.body.getBoundingClientRect().height) + 32 }); }
+  if (window.ResizeObserver) new ResizeObserver(laporTinggi).observe(document.body);
+
+  // ---- Isi kuis ---------------------------------------------------------------------------------------
+  var SOAL = [
+    { q: 'Simbol jajaran genjang biru untuk membaca isian adalah …', o: ['Input', 'Output', 'If'], a: 0 },
+    { q: 'Simbol belah ketupat untuk memilih jalan adalah …', o: ['While', 'If', 'Declare'], a: 1 },
+    { q: 'Simbol untuk menampilkan hasil di Console adalah …', o: ['Assign', 'Input', 'Output'], a: 2 }
+  ];
+  var nomor = 0, benar = 0;
+  function tampil() {
+    var kotak = document.getElementById('soal');
+    document.getElementById('isi').style.width = (nomor / SOAL.length * 100) + '%';
+    if (nomor >= SOAL.length) {
+      kotak.innerHTML = '<p><b>Selesai!</b> Benar ' + benar + ' dari ' + SOAL.length + '.</p>' +
+        '<p class="catatan">Hasil sudah dikirim ke LMS. Kembali ke pemutar lalu tekan Periksa.</p>';
+      kirim('mpi:complete', { score: benar, max: SOAL.length });
+      return;
+    }
+    var s = SOAL[nomor];
+    kotak.innerHTML = '<p><b>' + (nomor + 1) + '.</b> ' + s.q + '</p>';
+    s.o.forEach(function (teks, i) {
+      var b = document.createElement('button');
+      b.className = 'pilihan';
+      b.textContent = teks;
+      b.onclick = function () {
+        if (i === s.a) benar++;
+        nomor++;
+        kirim('mpi:progress', { value: nomor / SOAL.length });
+        tampil();
+      };
+      kotak.appendChild(b);
+    });
+  }
+  tampil();
+</script>
+</body>
+</html>

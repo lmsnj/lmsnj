@@ -510,6 +510,75 @@ const FORMS = {
     </>
   ),
 }
+const EMBED_HINT =
+  'Alamat https dari situs lain, mis. embed H5P.org (.../h5p/embed/123), GitHub Pages, atau Netlify. Konten dari ' +
+  'alamat LMS ini ditolak demi keamanan.'
+
+function EmbedFields({ step, set }) {
+  return (
+    <>
+      <Text
+        label="Alamat konten"
+        type="url"
+        value={step.url}
+        onChange={(url) => set({ url })}
+        hint={EMBED_HINT}
+      />
+      <NumberField
+        label="Tinggi awal (piksel)"
+        value={step.height}
+        min={200}
+        max={1200}
+        onChange={(height) => set({ height })}
+        hint="Konten H5P dan konten yang memakai bridge menyesuaikan tingginya sendiri."
+      />
+    </>
+  )
+}
+
+FORMS.embed = ({ step, set }) => (
+  <>
+    <EmbedFields step={step} set={set} />
+    <Area
+      label="Keterangan / tugas"
+      value={step.body}
+      onChange={(body) => set({ body })}
+      rows={2}
+    />
+  </>
+)
+FORMS.embed_task = ({ step, set, mediaId }) => (
+  <>
+    <QuestionFields step={step} set={set} mediaId={mediaId} questionLabel="Perintah" />
+    <EmbedFields step={step} set={set} />
+    <SelectField
+      label="Cara menandai selesai"
+      value={step.completion ?? 'manual'}
+      onChange={(event) => set({ completion: event.target.value })}
+      options={[
+        {
+          value: 'manual',
+          label: 'Siswa mencentang "sudah selesai" (konten apa saja, mis. H5P.org)',
+        },
+        {
+          value: 'bridge',
+          label: 'Dilaporkan konten lewat bridge LMS Sigma (mpi:complete, boleh dengan skor)',
+        },
+      ]}
+      hint="Laporan dari browser tidak bisa dibuktikan server: pakai untuk latihan, bukan ujian. Lihat docs/mpi-bridge.md."
+    />
+    {step.completion === 'bridge' && (
+      <NumberField
+        label="Skor minimal (%) — 0 = cukup selesai"
+        value={step.min_score}
+        min={0}
+        max={100}
+        onChange={(min_score) => set({ min_score })}
+      />
+    )}
+    <Explanation step={step} set={set} />
+  </>
+)
 FORMS.did_you_know = FORMS.text
 FORMS.flashcards = FORMS.flip_cards
 

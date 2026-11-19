@@ -295,6 +295,9 @@ Pola yang wajib dipakai ulang:
   WAJIB identik (pesan, batas, urutan hitung langkah) — ubah keduanya bersamaan dan tambahkan kasus ke
   `conformance.json` (dipakai test kedua sisi). Jangan pernah memakai eval untuk program siswa. Uji tersembunyi
   hanya di kunci versi. Contoh plugin kedua: `exposure` (DKV).
+  Konten HTML5/H5P (MPI-K): langkah `embed`/`embed_task` di iframe sandbox dari ORIGIN LAIN (alamat domain LMS ditolak:
+  `steps.blocked_embed_host`, setting `EMBED_BLOCKED_DOMAINS`; pemutar `mpi/bridge.js::isSafeEmbed`). Pesan bridge
+  divalidasi (asal iframe + origin + nonce); laporan skor dari browser tidak terbukti -> hanya untuk latihan.
   Laporan (MPI-J): `reports.py` (N-Gain dari nilai pengerjaan pertama Tes Awal/Akhir), halaman `MediaReportPage`.
   Isi siap impor ada di `docs/mpi/` (dibuat skrip, dijaga `ContentTests`); ubah lewat skripnya lalu buat ulang.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
@@ -754,7 +757,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
       ruang obrolan, lembar asesmen
 - [x] Soal interaktif (lihat `docs/REQUIREMENTS.md` QA-INT-00..04): isian singkat, tarik & lepas,
       menjodohkan, video interaktif
-- [ ] Media Pembelajaran Interaktif (MPI, `docs/REQUIREMENTS.md`)
+- [x] Media Pembelajaran Interaktif (MPI, `docs/REQUIREMENTS.md`; panduan `docs/PANDUAN-GURU-MPI.md`, `docs/PANDUAN-SISWA-MPI.md`)
   - [x] Tahap 1: skema data dinamis & API (backend)
   - [x] Tahap 2: pemutar langkah siswa (mobile-first) + papan peringkat + Lembar Ringkas
   - [x] Tahap 3: Studio Penyusun + gambar unggahan + pilihan media di form Materi
@@ -762,6 +765,6 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] Tahap 5: plugin Flowgorithm (interpreter kembar JS/Python, susun/isi program, lab, .fprg) + plugin exposure DKV
   - [x] Tahap 6: isi "Petualangan Flowgorithm" (`docs/mpi/`, impor JSON) + Tes Awal/Akhir + langkah tebak output
   - [x] Tahap 7: laporan media (progres, kesulitan, N-Gain, tidak aktif + pengingat obrolan, refleksi, Excel)
-  - [ ] Tahap 8: embed HTML5/H5P + bridge
+  - [x] Tahap 8: konten HTML5/H5P (embed, embed_task) + bridge postMessage (`docs/mpi-bridge.md`); unggah ZIP ke subdomain konten = rencana
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar

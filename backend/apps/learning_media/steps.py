@@ -15,7 +15,9 @@ Plugin mapel (mis. Flowgorithm, simulator exposure DKV) cukup membuat subkelas `
 import random
 import re
 import secrets
+from urllib.parse import urlparse
 
+from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
 from apps.assessments import interactive
@@ -618,3 +620,127 @@ class MatchingStep(InteractiveStep):
         return "; ".join(
             f"{left.get(a, '?')} → {right.get(b, '?')}" for a, b in response.get("pairs", {}).items()
         )
+
+
+# ---------------------------------------------------------------- konten HTML5 / H5P (embed)
+
+
+def _host_matches(host, pattern):
+    pattern = pattern.strip().lower().lstrip("*")
+    if not pattern:
+        return False
+    if pattern.startswith("."):
+        return host == pattern[1:] or host.endswith(pattern)
+    return host == pattern or host.endswith("." + pattern)
+
+
+def blocked_embed_host(host):
+    """Host milik LMS sendiri (tidak boleh dimuat di iframe sandbox: origin sama = sandbox bisa dijebol)."""
+    host = (host or "").lower()
+    patterns = list(getattr(settings, "EMBED_BLOCKED_DOMAINS", []))
+    patterns += [h for h in settings.ALLOWED_HOSTS if h not in ("*",)]
+    patterns += [urlparse(origin).hostname or "" for origin in getattr(settings, "CORS_ALLOWED_ORIGINS", [])]
+    if any(_host_matches(host, pattern) for pattern in patterns):
+        return True
+    return any(
+        re.match(regex, f"https://{host}") for regex in getattr(settings, "CORS_ALLOWED_ORIGIN_REGEXES", [])
+    )
+
+
+def embed_url(value):
+    url = text(value, "Alamat konten", required=True)
+    parsed = urlparse(url)
+    # Mencoba di laptop (DEBUG): konten lokal boleh http://127.x.x.x (origin berbeda dari LMS).
+    loopback = settings.DEBUG and parsed.scheme == "http" and (parsed.hostname or "").startswith("127.")
+    if (parsed.scheme != "https" and not loopback) or not parsed.hostname:
+        raise StepError("Alamat konten harus diawali https:// (mis. H5P.org, GitHub Pages, Netlify).")
+    if parsed.username or parsed.password:
+        raise StepError("Alamat konten tidak boleh berisi nama pengguna/kata sandi.")
+    if not loopback and blocked_embed_host(parsed.hostname):
+        raise StepError("Konten tidak boleh dari alamat LMS ini sendiri. Pakai hosting konten terpisah.")
+    return url
+
+
+def embed_height(value):
+    return number(value, "Tinggi (piksel)", 200, 1200, default=480)
+
+
+@register
+class EmbedStep(StepKind):
+    """Konten HTML5/H5P dari situs lain di iframe sandbox (tanpa nilai). Lihat docs/mpi-bridge.md."""
+
+    kind, label = "embed", "Konten HTML5/H5P"
+
+    def validate(self, step):
+        return {
+            "url": embed_url(step.get("url")),
+            "body": text(step.get("body"), "Keterangan", MAX_TEXT),
+            "height": embed_height(step.get("height")),
+        }
+
+
+@register
+class EmbedTaskStep(GradedStep):
+    """Tugas di konten HTML5/H5P. Selesai dilaporkan konten lewat bridge (`mpi:complete`, boleh dengan skor)
+    atau dikonfirmasi siswa sendiri ("manual"). Laporan dari browser tidak bisa dibuktikan server, jadi
+    jenis ini cocok untuk latihan, bukan ujian."""
+
+    kind, label = "embed_task", "Tugas HTML5/H5P"
+    COMPLETIONS = ("bridge", "manual")
+
+    def validate(self, step):
+        completion = step.get("completion") or "bridge"
+        if completion not in self.COMPLETIONS:
+            raise StepError(
+                "Cara selesai harus 'bridge' (dilaporkan konten) atau 'manual' (dikonfirmasi siswa)."
+            )
+        return {
+            **self.question(step),
+            "url": embed_url(step.get("url")),
+            "height": embed_height(step.get("height")),
+            "completion": completion,
+            "min_score": number(step.get("min_score"), "Skor minimal (%)", 0, 100, default=0),
+        }
+
+    def compile(self, step):
+        public, explanation = self.split(step)
+        return public, {"explanation": explanation}
+
+    def clean(self, public, response):
+        completed = response.get("completed")
+        score, maximum = response.get("score"), response.get("max")
+        if not isinstance(completed, bool):
+            raise InvalidResponse()
+        for value in (score, maximum):
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0 or value > 1e6
+            ):
+                raise InvalidResponse()
+        if (score is None) != (maximum is None) or (
+            maximum is not None and (maximum <= 0 or score > maximum)
+        ):
+            raise InvalidResponse()
+        return {"completed": completed, "score": score, "max": maximum}
+
+    def grade(self, public, key, response):
+        if not response["completed"]:
+            return False, {"completed": False}, ["Selesaikan dulu kontennya sampai muncul tanda selesai."]
+        percent = None
+        if response["score"] is not None:
+            percent = round(response["score"] / response["max"] * 100)
+        needed = public["min_score"] if public["completion"] == "bridge" else 0
+        if needed and (percent is None or percent < needed):
+            shown = "tanpa skor" if percent is None else f"{percent}%"
+            return (
+                False,
+                {"completed": True, "percent": percent},
+                [f"Skor {shown} belum mencapai {needed}%. Coba kerjakan lagi kontennya."],
+            )
+        return True, {"completed": True, "percent": percent}, []
+
+    def answer_text(self, public, response):
+        if not response.get("completed"):
+            return "belum selesai"
+        if response.get("score") is None:
+            return "selesai"
+        return f"selesai, skor {response['score']:g}/{response['max']:g}"

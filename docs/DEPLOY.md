@@ -50,6 +50,7 @@ ALLOWED_HOSTS=sigmateknologi.my.id,.sigmateknologi.my.id
 CORS_ALLOWED_ORIGINS=https://admin.sigmateknologi.my.id
 CSRF_TRUSTED_ORIGINS=https://admin.sigmateknologi.my.id
 HTTPS=True            # False jika belum memakai sertifikat SSL (mis. hanya di jaringan lokal)
+EMBED_BLOCKED_DOMAINS=sigmateknologi.my.id   # konten HTML5 Media Interaktif tidak boleh dari domain LMS sendiri
 ```
 
 Siapkan database, file statis, dan akun **Admin Yayasan** pertama (`createsuperuser`
