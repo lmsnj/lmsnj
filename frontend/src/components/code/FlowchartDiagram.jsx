@@ -10,10 +10,12 @@ const STYLES = {
   loop: 'fill-orange-50 stroke-orange-600',
 }
 const ERROR_STYLE = 'fill-red-50 stroke-red-600'
+const ACTIVE_STYLE = 'fill-yellow-100 stroke-yellow-600'
 
-function Shape({ node, highlighted }) {
+function Shape({ node, highlighted, active }) {
   const { x, y, w, h } = node
-  const className = `${highlighted ? ERROR_STYLE : STYLES[node.shape]} stroke-[1.5]`
+  const style = highlighted ? ERROR_STYLE : active ? ACTIVE_STYLE : STYLES[node.shape]
+  const className = `${style} ${active ? 'stroke-[3]' : 'stroke-[1.5]'}`
   switch (node.shape) {
     case 'terminal':
       return <rect x={x} y={y} width={w} height={h} rx={h / 2} className={className} />
@@ -47,11 +49,13 @@ function Shape({ node, highlighted }) {
 
 /**
  * Gambar flowchart (SVG) yang dibuat otomatis dari susunan blok. Ukuran asli dipertahankan agar teks
- * terbaca; bila lebih lebar dari layar, area ini bisa digeser. `highlightId` = blok yang error.
+ * terbaca; bila lebih lebar dari layar, area ini bisa digeser. `highlightId` = blok yang error,
+ * `activeId` = blok yang sedang dijalankan (mode langkah).
  */
 export default function FlowchartDiagram({
   program,
   highlightId = null,
+  activeId = null,
   title = 'Diagram flowchart',
 }) {
   const layout = useMemo(() => layoutProgram(program), [program])
@@ -90,7 +94,11 @@ export default function FlowchartDiagram({
         ))}
         {layout.nodes.map((node, index) => (
           <g key={node.id ?? `dot-${index}`}>
-            <Shape node={node} highlighted={node.id && node.id === highlightId} />
+            <Shape
+              node={node}
+              highlighted={node.id && node.id === highlightId}
+              active={node.id && node.id === activeId}
+            />
             {node.text && (
               <text
                 x={node.x + node.w / 2}

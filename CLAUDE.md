@@ -289,6 +289,12 @@ Pola yang wajib dipakai ulang:
   dibuat baru; replace) -> cek ringan (wajib) & lengkap (catatan) -> diterapkan ke draf; gambar diunggah saat diterapkan.
   Template Excel = isi draf + kolom Id (bolak-balik identik, ada test); jenis khusus Studio (hotspot/plugin) dipertahankan
   lewat Id. Wizard `mpi/studio/ImportMediaModal.jsx`. Langkah `link` (Tautan) dibuat untuk impor tautan.
+  **Plugin mapel** (MPI-H): backend `apps/learning_media/plugins/` (dimuat `LearningMediaConfig.ready()`), frontend
+  `src/mpi/plugins/index.js` (diimpor MediaPlayer & Studio: `registerStep`, `registerStudioKind`, `registerStepForm`).
+  Flowgorithm: interpreter JS (`plugins/flowgorithm/interpreter.js`) dan Python (`plugins/flowgorithm/interpreter.py`)
+  WAJIB identik (pesan, batas, urutan hitung langkah) — ubah keduanya bersamaan dan tambahkan kasus ke
+  `conformance.json` (dipakai test kedua sisi). Jangan pernah memakai eval untuk program siswa. Uji tersembunyi
+  hanya di kunci versi. Contoh plugin kedua: `exposure` (DKV).
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
 - **Submission** (pengumpulan): `task` (PROTECT), `student` (PROTECT), `text_answer`, `file` + `original_filename`, `is_late` (disimpan saat mengumpulkan), `submitted_at`. Satu per (tugas, siswa).
   - Aturan (`apps/tasks/services.py`): sebelum tenggat siswa boleh kumpul/ganti/batal; setelah tenggat pengumpulan pertama diterima dan ditandai terlambat jika `allow_late`, pengumpulan yang sudah ada terkunci. Minimal ada teks atau file.
@@ -708,6 +714,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | CRUD   | `/api/learning-media/` (`?library=1`, `?subject=`), `.../{id}/publish/` (`note`), `.../versions/`, `.../restore/` (`number`), `.../preview/` (`draft` opsional), `.../preview-answer/`, `.../preview-reveal/`, `.../copy/`, `.../export/`, `.../shares/` (GET/PUT `schools`) | Guru & admin sekolah (ubah: pembuat/admin); Super Admin di mode Super Admin = Pustaka; shares: Super Admin |
 | GET/POST | `/api/learning-media/{id}/assets/` (multipart `file`), GET/DELETE `/api/media-assets/{id}/` | Unggah/hapus: pembuat media/admin. Lihat: yang boleh membuka media, siswa lewat materinya |
 | GET/POST | `/api/learning-media/{id}/import-template/`, `.../import/` (`source` excel/json/word/pptx/pdf/links/bank, `mode` append/replace, `file` / `text` / `assessment` + `questions`, `dry_run`) | Pembuat media/admin: template Excel berisi draf / periksa & terapkan impor ke draf |
+| POST   | `/api/learning-media/fprg/` (multipart `file`) | Guru & admin: file Flowgorithm .fprg -> program MPI (`program`, `warnings`) |
 | GET    | `/api/materials/{id}/media/leaderboard/` | Siswa/guru kelas itu; 403 jika dimatikan guru |
 | GET/POST | `/api/materials/{id}/media/`, `.../answer/` (`version`, `station`, `step`, `response`, `hint_level`, `client_uid`), `.../reveal/`, `.../station/` (`action` visit/restart/finish, `step`, `seconds`), `.../reflection/` (`station`, `text`) | Siswa kelas itu (disimpan, 120/menit); guru/admin & "masuk sebagai" = tidak disimpan |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
@@ -749,6 +756,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] Tahap 2: pemutar langkah siswa (mobile-first) + papan peringkat + Lembar Ringkas
   - [x] Tahap 3: Studio Penyusun + gambar unggahan + pilihan media di form Materi
   - [x] Tahap 4: impor (Excel/CSV, JSON, Word, PPTX, PDF, tautan, bank soal) + langkah Tautan
-  - [ ] Tahap 5-8: plugin Flowgorithm, isi X RPL 1, laporan, embed HTML5
+  - [x] Tahap 5: plugin Flowgorithm (interpreter kembar JS/Python, susun/isi program, lab, .fprg) + plugin exposure DKV
+  - [ ] Tahap 6-8: isi X RPL 1, laporan, embed HTML5
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar

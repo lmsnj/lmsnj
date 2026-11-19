@@ -2,6 +2,7 @@ import SelectField from '../../components/SelectField'
 import TextAreaField from '../../components/TextAreaField'
 import TextField from '../../components/TextField'
 import { CheckField, ImageField, LinesField, ListEditor, NumberField, SmallInput } from './fields'
+import { PLUGIN_FORMS } from './forms'
 
 const SPEAKERS = [
   { value: 'mascot', label: 'Maskot' },
@@ -514,7 +515,7 @@ FORMS.flashcards = FORMS.flip_cards
 
 /** Isian khusus jenis langkah. `set(perubahan)` menggabungkan ke langkah. */
 export default function StepFields({ step, set, mediaId }) {
-  const Form = FORMS[step.kind]
+  const Form = FORMS[step.kind] ?? PLUGIN_FORMS[step.kind]
   if (!Form)
     return <p className="text-sm text-slate-500">Jenis “{step.kind}” diatur oleh plugin.</p>
   return <Form step={step} set={set} mediaId={mediaId} />

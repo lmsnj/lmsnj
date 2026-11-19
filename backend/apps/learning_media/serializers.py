@@ -105,7 +105,7 @@ class ImportSerializer(serializers.Serializer):
     """Impor isi media. Sumber file: excel/json/word/pptx/pdf (`file`); tautan: `text`; bank soal:
     `assessment` + `questions` (kosong = semua soal)."""
 
-    SOURCES = ("excel", "json", "word", "pptx", "pdf", "links", "bank")
+    SOURCES = ("excel", "json", "word", "pptx", "pdf", "fprg", "links", "bank")
 
     source = serializers.ChoiceField(choices=SOURCES)
     mode = serializers.ChoiceField(choices=("append", "replace"), default="append")
@@ -127,7 +127,8 @@ class SharesSerializer(serializers.Serializer):
 
 
 class AnswerSerializer(serializers.Serializer):
-    version = serializers.IntegerField(required=False, min_value=1)
+    # 0 = pratinjau Studio (versi bernomor 0); kosong/0 di pemutar = versi terbit terakhir.
+    version = serializers.IntegerField(required=False, min_value=0)
     station = serializers.CharField(max_length=40)
     step = serializers.CharField(max_length=40)
     response = serializers.JSONField()
@@ -136,7 +137,8 @@ class AnswerSerializer(serializers.Serializer):
 
 
 class RevealSerializer(serializers.Serializer):
-    version = serializers.IntegerField(required=False, min_value=1)
+    # 0 = pratinjau Studio (versi bernomor 0); kosong/0 di pemutar = versi terbit terakhir.
+    version = serializers.IntegerField(required=False, min_value=0)
     station = serializers.CharField(max_length=40)
     step = serializers.CharField(max_length=40)
 
@@ -144,7 +146,8 @@ class RevealSerializer(serializers.Serializer):
 class StationActionSerializer(serializers.Serializer):
     ACTIONS = ("visit", "restart", "finish")
 
-    version = serializers.IntegerField(required=False, min_value=1)
+    # 0 = pratinjau Studio (versi bernomor 0); kosong/0 di pemutar = versi terbit terakhir.
+    version = serializers.IntegerField(required=False, min_value=0)
     station = serializers.CharField(max_length=40)
     action = serializers.ChoiceField(choices=ACTIONS)
     step = serializers.CharField(required=False, allow_blank=True, max_length=40, default="")
@@ -152,6 +155,7 @@ class StationActionSerializer(serializers.Serializer):
 
 
 class ReflectionSerializer(serializers.Serializer):
-    version = serializers.IntegerField(required=False, min_value=1)
+    # 0 = pratinjau Studio (versi bernomor 0); kosong/0 di pemutar = versi terbit terakhir.
+    version = serializers.IntegerField(required=False, min_value=0)
     station = serializers.CharField(max_length=40)
     text = serializers.CharField(max_length=2000, allow_blank=True)

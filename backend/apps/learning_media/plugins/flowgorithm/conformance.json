@@ -1,0 +1,3283 @@
+{
+ "cases": [
+  {
+   "name": "aritmetika & presedensi",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "1 + 2 * 3"
+     },
+     {
+      "t": "output",
+      "expr": "(1 + 2) * 3"
+     },
+     {
+      "t": "output",
+      "expr": "7 / 2"
+     },
+     {
+      "t": "output",
+      "expr": "7 % 3"
+     },
+     {
+      "t": "output",
+      "expr": "7 mod 3"
+     },
+     {
+      "t": "output",
+      "expr": "-7 % 3"
+     },
+     {
+      "t": "output",
+      "expr": "2 ^ 10"
+     },
+     {
+      "t": "output",
+      "expr": "-2 ^ 2"
+     },
+     {
+      "t": "output",
+      "expr": "2 ^ 3 ^ 2"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "7",
+    "9",
+    "3.5",
+    "1",
+    "1",
+    "-1",
+    "1024",
+    "-4",
+    "512"
+   ],
+   "error": ""
+  },
+  {
+   "name": "format angka 12 digit",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "0.1 + 0.2"
+     },
+     {
+      "t": "output",
+      "expr": "1 / 3"
+     },
+     {
+      "t": "output",
+      "expr": "10 / 4"
+     },
+     {
+      "t": "output",
+      "expr": "1000000 * 1000000"
+     },
+     {
+      "t": "output",
+      "expr": "2 ^ 70"
+     },
+     {
+      "t": "output",
+      "expr": "1 / 1000000"
+     },
+     {
+      "t": "output",
+      "expr": "1 / 10000000"
+     },
+     {
+      "t": "output",
+      "expr": "pi"
+     },
+     {
+      "t": "output",
+      "expr": "3.0"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "0.3",
+    "0.333333333333",
+    "2.5",
+    "1000000000000",
+    "1.18059162072e+21",
+    "0.000001",
+    "1e-7",
+    "3.14159265359",
+    "3"
+   ],
+   "error": ""
+  },
+  {
+   "name": "gabung teks dengan &",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "String",
+      "names": [
+       "nama"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "nama",
+      "expr": "\"Bita\""
+     },
+     {
+      "t": "output",
+      "expr": "\"Halo, \" & nama & \"!\""
+     },
+     {
+      "t": "output",
+      "expr": "\"Nilai: \" & 7 / 2"
+     },
+     {
+      "t": "output",
+      "expr": "\"Benar? \" & (3 > 2)"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "Halo, Bita!",
+    "Nilai: 3.5",
+    "Benar? true"
+   ],
+   "error": ""
+  },
+  {
+   "name": "perbandingan & logika",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "3 == 3"
+     },
+     {
+      "t": "output",
+      "expr": "3 != 3"
+     },
+     {
+      "t": "output",
+      "expr": "\"a\" < \"b\""
+     },
+     {
+      "t": "output",
+      "expr": "not (1 > 2)"
+     },
+     {
+      "t": "output",
+      "expr": "1 < 2 and 2 < 1"
+     },
+     {
+      "t": "output",
+      "expr": "1 < 2 or 2 < 1"
+     },
+     {
+      "t": "output",
+      "expr": "true == false"
+     },
+     {
+      "t": "output",
+      "expr": "\"Ab\" == \"ab\""
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "true",
+    "false",
+    "true",
+    "true",
+    "false",
+    "true",
+    "false",
+    "false"
+   ],
+   "error": ""
+  },
+  {
+   "name": "hubung singkat and/or",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "x"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "x",
+      "expr": "0"
+     },
+     {
+      "t": "output",
+      "expr": "x != 0 and 10 / x > 1"
+     },
+     {
+      "t": "output",
+      "expr": "x == 0 or 10 / x > 1"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "false",
+    "true"
+   ],
+   "error": ""
+  },
+  {
+   "name": "nama tidak peka huruf besar",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "Umur"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "umur",
+      "expr": "12"
+     },
+     {
+      "t": "output",
+      "expr": "UMUR + 1"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "13"
+   ],
+   "error": ""
+  },
+  {
+   "name": "Integer membuang pecahan",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "n"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "n",
+      "expr": "3.9"
+     },
+     {
+      "t": "output",
+      "expr": "n"
+     },
+     {
+      "t": "assign",
+      "target": "n",
+      "expr": "-3.9"
+     },
+     {
+      "t": "output",
+      "expr": "n"
+     },
+     {
+      "t": "assign",
+      "target": "n",
+      "expr": "7 / 2"
+     },
+     {
+      "t": "output",
+      "expr": "n"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "3",
+    "-3",
+    "3"
+   ],
+   "error": ""
+  },
+  {
+   "name": "Real menyimpan pecahan",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Real",
+      "names": [
+       "r"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "r",
+      "expr": "7 / 2"
+     },
+     {
+      "t": "output",
+      "expr": "r"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "3.5"
+   ],
+   "error": ""
+  },
+  {
+   "name": "nilai awal per tipe",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "Real",
+      "names": [
+       "b"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "String",
+      "names": [
+       "c"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "Boolean",
+      "names": [
+       "d"
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "a"
+     },
+     {
+      "t": "output",
+      "expr": "b"
+     },
+     {
+      "t": "output",
+      "expr": "\"[\" & c & \"]\""
+     },
+     {
+      "t": "output",
+      "expr": "d"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "0",
+    "0",
+    "[]",
+    "false"
+   ],
+   "error": ""
+  },
+  {
+   "name": "String tidak bisa diisi angka",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "String",
+      "names": [
+       "s"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "s",
+      "expr": "5"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Variabel s bertipe String, hanya bisa diisi teks (pakai tanda kutip)."
+  },
+  {
+   "name": "Integer tidak bisa diisi teks",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "n"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "n",
+      "expr": "\"5\""
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Variabel n bertipe Integer, hanya bisa diisi bilangan."
+  },
+  {
+   "name": "membandingkan angka dengan teks",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "5 == \"5\""
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Tidak bisa membandingkan angka dengan teks."
+  },
+  {
+   "name": "plus untuk teks ditolak",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "\"a\" + \"b\""
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Operator + hanya untuk angka. Untuk menggabungkan teks pakai &."
+  },
+  {
+   "name": "bagi nol",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "5 / 0"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Tidak bisa dibagi nol."
+  },
+  {
+   "name": "sisa bagi nol",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "5 % 0"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Tidak bisa dibagi nol."
+  },
+  {
+   "name": "sama dengan tunggal",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "1 = 1"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Untuk membandingkan, pakai == (dua sama dengan)."
+  },
+  {
+   "name": "garis bawah",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "uang_jajan"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Garis bawah (_) tidak boleh dipakai di Flowgorithm."
+  },
+  {
+   "name": "kutip belum ditutup",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "\"halo"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Tanda kutip ganda belum ditutup."
+  },
+  {
+   "name": "ekspresi kosong",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": ""
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Isian masih kosong."
+  },
+  {
+   "name": "kurung kurang",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "(1 + 2"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Seharusnya ada \")\" di sini."
+  },
+  {
+   "name": "token sisa",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "1 2"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Ada bagian ekspresi yang tidak dipahami: \"2\"."
+  },
+  {
+   "name": "karakter asing",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "1 # 2"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Ada karakter yang tidak dikenal: #"
+  },
+  {
+   "name": "variabel belum dibuat",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "x + 1"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Variabel \"x\" belum dibuat. Buat dulu dengan Declare."
+  },
+  {
+   "name": "variabel dibuat dua kali",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "Real",
+      "names": [
+       "A"
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Variabel \"A\" sudah dibuat."
+  },
+  {
+   "name": "nama variabel salah",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "2kali"
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Nama variabel \"2kali\" tidak boleh: harus diawali huruf, tanpa spasi dan garis bawah."
+  },
+  {
+   "name": "kata khusus",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "integer"
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "\"integer\" adalah kata yang sudah dipakai Flowgorithm."
+  },
+  {
+   "name": "syarat if bukan boolean",
+   "program": {
+    "body": [
+     {
+      "t": "if",
+      "cond": "1 + 1",
+      "yes": [
+       {
+        "t": "output",
+        "expr": "\"x\""
+       }
+      ],
+      "no": []
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Syarat If harus bernilai true atau false."
+  },
+  {
+   "name": "not bukan boolean",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "not 5"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "not hanya untuk nilai true atau false."
+  },
+  {
+   "name": "input sesuai tipe",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "Real",
+      "names": [
+       "b"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "String",
+      "names": [
+       "c"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "Boolean",
+      "names": [
+       "d"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "a"
+     },
+     {
+      "t": "input",
+      "target": "b"
+     },
+     {
+      "t": "input",
+      "target": "c"
+     },
+     {
+      "t": "input",
+      "target": "d"
+     },
+     {
+      "t": "output",
+      "expr": "a + b"
+     },
+     {
+      "t": "output",
+      "expr": "c & d"
+     }
+    ]
+   },
+   "inputs": [
+    " 7 ",
+    "2.5",
+    "  Rani  ",
+    "TRUE"
+   ],
+   "out": [
+    "9.5",
+    "Ranitrue"
+   ],
+   "error": ""
+  },
+  {
+   "name": "input Integer harus bulat",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "a"
+     }
+    ]
+   },
+   "inputs": [
+    "3.5"
+   ],
+   "out": [],
+   "error": "Isian untuk a harus bilangan bulat."
+  },
+  {
+   "name": "input Real harus angka",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Real",
+      "names": [
+       "a"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "a"
+     }
+    ]
+   },
+   "inputs": [
+    "tiga"
+   ],
+   "out": [],
+   "error": "Isian untuk a harus bilangan."
+  },
+  {
+   "name": "input Boolean",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Boolean",
+      "names": [
+       "a"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "a"
+     }
+    ]
+   },
+   "inputs": [
+    "ya"
+   ],
+   "out": [],
+   "error": "Isian untuk a harus true atau false."
+  },
+  {
+   "name": "isian habis",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "\"Angka?\""
+     },
+     {
+      "t": "input",
+      "target": "a"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "Angka?"
+   ],
+   "error": "Program meminta isian, tetapi tidak ada isian tersedia."
+  },
+  {
+   "name": "if bersarang",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "n"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "n"
+     },
+     {
+      "t": "if",
+      "cond": "n >= 90",
+      "yes": [
+       {
+        "t": "output",
+        "expr": "\"A\""
+       }
+      ],
+      "no": [
+       {
+        "t": "if",
+        "cond": "n >= 75",
+        "yes": [
+         {
+          "t": "output",
+          "expr": "\"B\""
+         }
+        ],
+        "no": [
+         {
+          "t": "output",
+          "expr": "\"C\""
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [
+    "80"
+   ],
+   "out": [
+    "B"
+   ],
+   "error": ""
+  },
+  {
+   "name": "while",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "i",
+      "expr": "1"
+     },
+     {
+      "t": "while",
+      "cond": "i <= 3",
+      "body": [
+       {
+        "t": "output",
+        "expr": "i"
+       },
+       {
+        "t": "assign",
+        "target": "i",
+        "expr": "i + 1"
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "1",
+    "2",
+    "3"
+   ],
+   "error": ""
+  },
+  {
+   "name": "while tidak pernah jalan",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "i",
+      "expr": "5"
+     },
+     {
+      "t": "while",
+      "cond": "i < 3",
+      "body": [
+       {
+        "t": "output",
+        "expr": "i"
+       }
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "\"selesai\""
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "selesai"
+   ],
+   "error": ""
+  },
+  {
+   "name": "do while jalan minimal sekali",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "i",
+      "expr": "5"
+     },
+     {
+      "t": "do",
+      "body": [
+       {
+        "t": "output",
+        "expr": "i"
+       }
+      ],
+      "cond": "i < 3"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "5"
+   ],
+   "error": ""
+  },
+  {
+   "name": "for naik dengan langkah",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "2",
+      "to": "10",
+      "step": "3",
+      "body": [
+       {
+        "t": "output",
+        "expr": "i"
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "2",
+    "5",
+    "8"
+   ],
+   "error": ""
+  },
+  {
+   "name": "for turun",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "3",
+      "to": "1",
+      "step": "-1",
+      "body": [
+       {
+        "t": "output",
+        "expr": "i"
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "3",
+    "2",
+    "1"
+   ],
+   "error": ""
+  },
+  {
+   "name": "for langkah kosong = 1",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "1",
+      "to": "3",
+      "step": "",
+      "body": [
+       {
+        "t": "output",
+        "expr": "i"
+       }
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "i"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "error": ""
+  },
+  {
+   "name": "for langkah nol",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "1",
+      "to": "3",
+      "step": "0",
+      "body": [
+       {
+        "t": "output",
+        "expr": "i"
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Langkah (Step) tidak boleh 0."
+  },
+  {
+   "name": "for Real",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Real",
+      "names": [
+       "x"
+      ]
+     },
+     {
+      "t": "for",
+      "v": "x",
+      "from": "0",
+      "to": "1",
+      "step": "0.25",
+      "body": [
+       {
+        "t": "output",
+        "expr": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "0",
+    "0.25",
+    "0.5",
+    "0.75",
+    "1"
+   ],
+   "error": ""
+  },
+  {
+   "name": "loop tak berhenti",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "i",
+      "expr": "1"
+     },
+     {
+      "t": "while",
+      "cond": "i <= 5",
+      "body": [
+       {
+        "t": "assign",
+        "target": "i",
+        "expr": "i - 1"
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Program tidak berhenti sendiri (loop tak berhenti). Cek perubahan nilai di dalam perulangan."
+  },
+  {
+   "name": "komentar dilewati",
+   "program": {
+    "body": [
+     {
+      "t": "cm",
+      "text": "catatan"
+     },
+     {
+      "t": "output",
+      "expr": "\"ok\""
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "ok"
+   ],
+   "error": ""
+  },
+  {
+   "name": "array & indeks",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "String",
+      "names": [
+       "buah"
+      ],
+      "size": 3
+     },
+     {
+      "t": "assign",
+      "target": "buah[0]",
+      "expr": "\"Apel\""
+     },
+     {
+      "t": "assign",
+      "target": "buah[1]",
+      "expr": "\"Jeruk\""
+     },
+     {
+      "t": "assign",
+      "target": "buah[2]",
+      "expr": "\"Jambu\""
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "0",
+      "to": "2",
+      "step": "1",
+      "body": [
+       {
+        "t": "output",
+        "expr": "i & \": \" & buah[i]"
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "0: Apel",
+    "1: Jeruk",
+    "2: Jambu"
+   ],
+   "error": ""
+  },
+  {
+   "name": "array nilai awal",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ],
+      "size": 2
+     },
+     {
+      "t": "output",
+      "expr": "a[0] + a[1]"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "0"
+   ],
+   "error": ""
+  },
+  {
+   "name": "indeks di luar laci",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ],
+      "size": 3
+     },
+     {
+      "t": "output",
+      "expr": "a[3]"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Laci nomor 3 tidak ada. Indeks a hanya 0 sampai 2."
+  },
+  {
+   "name": "indeks pecahan",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ],
+      "size": 3
+     },
+     {
+      "t": "output",
+      "expr": "a[1.5]"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Nomor laci harus bilangan bulat."
+  },
+  {
+   "name": "array tanpa indeks",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ],
+      "size": 3
+     },
+     {
+      "t": "output",
+      "expr": "a"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "\"a\" adalah array. Tulis nomor lacinya, contoh a[0]."
+  },
+  {
+   "name": "bukan array",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "a[0]"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "\"a\" bukan array."
+  },
+  {
+   "name": "input ke laci array",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ],
+      "size": 2
+     },
+     {
+      "t": "input",
+      "target": "a[1]"
+     },
+     {
+      "t": "output",
+      "expr": "a[1] * 2"
+     }
+    ]
+   },
+   "inputs": [
+    "21"
+   ],
+   "out": [
+    "42"
+   ],
+   "error": ""
+  },
+  {
+   "name": "fungsi dengan return",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "luas"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "luas",
+      "expr": "kuadrat(6)"
+     },
+     {
+      "t": "output",
+      "expr": "luas"
+     },
+     {
+      "t": "output",
+      "expr": "\"Luas: \" & kuadrat(4)"
+     }
+    ],
+    "funcs": {
+     "kuadrat": {
+      "params": [
+       [
+        "sisi",
+        "Integer"
+       ]
+      ],
+      "type": "Integer",
+      "body": [
+       {
+        "t": "decl",
+        "type": "Integer",
+        "names": [
+         "hasil"
+        ]
+       },
+       {
+        "t": "assign",
+        "target": "hasil",
+        "expr": "sisi * sisi"
+       }
+      ],
+      "ret": "hasil"
+     }
+    }
+   },
+   "inputs": [],
+   "out": [
+    "36",
+    "Luas: 16"
+   ],
+   "error": ""
+  },
+  {
+   "name": "parameter dikonversi ke tipenya",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "tambah(7.9, 5)"
+     }
+    ],
+    "funcs": {
+     "Tambah": {
+      "params": [
+       [
+        "a",
+        "Integer"
+       ],
+       [
+        "b",
+        "Integer"
+       ]
+      ],
+      "type": "Integer",
+      "body": [],
+      "ret": "a + b"
+     }
+    }
+   },
+   "inputs": [],
+   "out": [
+    "12"
+   ],
+   "error": ""
+  },
+  {
+   "name": "prosedur dengan output",
+   "program": {
+    "body": [
+     {
+      "t": "call",
+      "expr": "sapa(\"Ani\")"
+     }
+    ],
+    "funcs": {
+     "sapa": {
+      "params": [
+       [
+        "nama",
+        "String"
+       ]
+      ],
+      "body": [
+       {
+        "t": "output",
+        "expr": "\"Halo \" & nama"
+       }
+      ],
+      "ret": ""
+     }
+    }
+   },
+   "inputs": [],
+   "out": [
+    "Halo Ani"
+   ],
+   "error": ""
+  },
+  {
+   "name": "fungsi tanpa return dipakai di ekspresi",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "sapa()"
+     }
+    ],
+    "funcs": {
+     "sapa": {
+      "params": [],
+      "body": [],
+      "ret": ""
+     }
+    }
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Fungsi sapa tidak mengembalikan nilai."
+  },
+  {
+   "name": "jumlah argumen salah",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "f(1, 2)"
+     }
+    ],
+    "funcs": {
+     "f": {
+      "params": [
+       [
+        "a",
+        "Integer"
+       ]
+      ],
+      "body": [],
+      "ret": "a"
+     }
+    }
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Fungsi f butuh 1 argumen."
+  },
+  {
+   "name": "rekursi faktorial",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "fak(10)"
+     }
+    ],
+    "funcs": {
+     "fak": {
+      "params": [
+       [
+        "n",
+        "Integer"
+       ]
+      ],
+      "type": "Integer",
+      "body": [
+       {
+        "t": "decl",
+        "type": "Integer",
+        "names": [
+         "h"
+        ]
+       },
+       {
+        "t": "if",
+        "cond": "n <= 1",
+        "yes": [
+         {
+          "t": "assign",
+          "target": "h",
+          "expr": "1"
+         }
+        ],
+        "no": [
+         {
+          "t": "assign",
+          "target": "h",
+          "expr": "n * fak(n - 1)"
+         }
+        ]
+       }
+      ],
+      "ret": "h"
+     }
+    }
+   },
+   "inputs": [],
+   "out": [
+    "3628800"
+   ],
+   "error": ""
+  },
+  {
+   "name": "rekursi tak berhenti",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "f(1)"
+     }
+    ],
+    "funcs": {
+     "f": {
+      "params": [
+       [
+        "n",
+        "Integer"
+       ]
+      ],
+      "body": [],
+      "ret": "f(n + 1)"
+     }
+    }
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Fungsi memanggil dirinya terlalu dalam (rekursi tak berhenti)."
+  },
+  {
+   "name": "fungsi tidak ditemukan",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "hitung(1)"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Fungsi \"hitung\" tidak ditemukan."
+  },
+  {
+   "name": "input di dalam fungsi",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "f()"
+     }
+    ],
+    "funcs": {
+     "f": {
+      "params": [],
+      "body": [
+       {
+        "t": "decl",
+        "type": "Integer",
+        "names": [
+         "a"
+        ]
+       },
+       {
+        "t": "input",
+        "target": "a"
+       }
+      ],
+      "ret": "a"
+     }
+    }
+   },
+   "inputs": [
+    "1"
+   ],
+   "out": [],
+   "error": "Input tidak bisa dipakai di dalam fungsi."
+  },
+  {
+   "name": "fungsi bawaan",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "Abs(-3)"
+     },
+     {
+      "t": "output",
+      "expr": "Int(7.8)"
+     },
+     {
+      "t": "output",
+      "expr": "Sqrt(16)"
+     },
+     {
+      "t": "output",
+      "expr": "Len(\"halo\")"
+     },
+     {
+      "t": "output",
+      "expr": "ToString(2.5) & \"!\""
+     },
+     {
+      "t": "output",
+      "expr": "ToInteger(\"42\") + 1"
+     },
+     {
+      "t": "output",
+      "expr": "ToReal(\"2.5\") * 2"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "3",
+    "7",
+    "4",
+    "4",
+    "2.5!",
+    "43",
+    "5"
+   ],
+   "error": ""
+  },
+  {
+   "name": "akar negatif",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "Sqrt(-1)"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Akar dari bilangan negatif tidak bisa dihitung."
+  },
+  {
+   "name": "ToInteger gagal",
+   "program": {
+    "body": [
+     {
+      "t": "output",
+      "expr": "ToInteger(\"3.5\")"
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "\"3.5\" tidak bisa diubah menjadi Integer."
+  },
+  {
+   "name": "teks terlalu panjang",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "String",
+      "names": [
+       "s"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "s",
+      "expr": "\"abcdefghij\""
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "1",
+      "to": "12",
+      "step": "1",
+      "body": [
+       {
+        "t": "assign",
+        "target": "s",
+        "expr": "s & s"
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [],
+   "error": "Teks terlalu panjang (maks. 10000 karakter)."
+  },
+  {
+   "name": "output terlalu banyak",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i"
+      ]
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "1",
+      "to": "600",
+      "step": "1",
+      "body": [
+       {
+        "t": "output",
+        "expr": "i"
+       }
+      ]
+     }
+    ]
+   },
+   "inputs": [],
+   "out": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "57",
+    "58",
+    "59",
+    "60",
+    "61",
+    "62",
+    "63",
+    "64",
+    "65",
+    "66",
+    "67",
+    "68",
+    "69",
+    "70",
+    "71",
+    "72",
+    "73",
+    "74",
+    "75",
+    "76",
+    "77",
+    "78",
+    "79",
+    "80",
+    "81",
+    "82",
+    "83",
+    "84",
+    "85",
+    "86",
+    "87",
+    "88",
+    "89",
+    "90",
+    "91",
+    "92",
+    "93",
+    "94",
+    "95",
+    "96",
+    "97",
+    "98",
+    "99",
+    "100",
+    "101",
+    "102",
+    "103",
+    "104",
+    "105",
+    "106",
+    "107",
+    "108",
+    "109",
+    "110",
+    "111",
+    "112",
+    "113",
+    "114",
+    "115",
+    "116",
+    "117",
+    "118",
+    "119",
+    "120",
+    "121",
+    "122",
+    "123",
+    "124",
+    "125",
+    "126",
+    "127",
+    "128",
+    "129",
+    "130",
+    "131",
+    "132",
+    "133",
+    "134",
+    "135",
+    "136",
+    "137",
+    "138",
+    "139",
+    "140",
+    "141",
+    "142",
+    "143",
+    "144",
+    "145",
+    "146",
+    "147",
+    "148",
+    "149",
+    "150",
+    "151",
+    "152",
+    "153",
+    "154",
+    "155",
+    "156",
+    "157",
+    "158",
+    "159",
+    "160",
+    "161",
+    "162",
+    "163",
+    "164",
+    "165",
+    "166",
+    "167",
+    "168",
+    "169",
+    "170",
+    "171",
+    "172",
+    "173",
+    "174",
+    "175",
+    "176",
+    "177",
+    "178",
+    "179",
+    "180",
+    "181",
+    "182",
+    "183",
+    "184",
+    "185",
+    "186",
+    "187",
+    "188",
+    "189",
+    "190",
+    "191",
+    "192",
+    "193",
+    "194",
+    "195",
+    "196",
+    "197",
+    "198",
+    "199",
+    "200",
+    "201",
+    "202",
+    "203",
+    "204",
+    "205",
+    "206",
+    "207",
+    "208",
+    "209",
+    "210",
+    "211",
+    "212",
+    "213",
+    "214",
+    "215",
+    "216",
+    "217",
+    "218",
+    "219",
+    "220",
+    "221",
+    "222",
+    "223",
+    "224",
+    "225",
+    "226",
+    "227",
+    "228",
+    "229",
+    "230",
+    "231",
+    "232",
+    "233",
+    "234",
+    "235",
+    "236",
+    "237",
+    "238",
+    "239",
+    "240",
+    "241",
+    "242",
+    "243",
+    "244",
+    "245",
+    "246",
+    "247",
+    "248",
+    "249",
+    "250",
+    "251",
+    "252",
+    "253",
+    "254",
+    "255",
+    "256",
+    "257",
+    "258",
+    "259",
+    "260",
+    "261",
+    "262",
+    "263",
+    "264",
+    "265",
+    "266",
+    "267",
+    "268",
+    "269",
+    "270",
+    "271",
+    "272",
+    "273",
+    "274",
+    "275",
+    "276",
+    "277",
+    "278",
+    "279",
+    "280",
+    "281",
+    "282",
+    "283",
+    "284",
+    "285",
+    "286",
+    "287",
+    "288",
+    "289",
+    "290",
+    "291",
+    "292",
+    "293",
+    "294",
+    "295",
+    "296",
+    "297",
+    "298",
+    "299",
+    "300",
+    "301",
+    "302",
+    "303",
+    "304",
+    "305",
+    "306",
+    "307",
+    "308",
+    "309",
+    "310",
+    "311",
+    "312",
+    "313",
+    "314",
+    "315",
+    "316",
+    "317",
+    "318",
+    "319",
+    "320",
+    "321",
+    "322",
+    "323",
+    "324",
+    "325",
+    "326",
+    "327",
+    "328",
+    "329",
+    "330",
+    "331",
+    "332",
+    "333",
+    "334",
+    "335",
+    "336",
+    "337",
+    "338",
+    "339",
+    "340",
+    "341",
+    "342",
+    "343",
+    "344",
+    "345",
+    "346",
+    "347",
+    "348",
+    "349",
+    "350",
+    "351",
+    "352",
+    "353",
+    "354",
+    "355",
+    "356",
+    "357",
+    "358",
+    "359",
+    "360",
+    "361",
+    "362",
+    "363",
+    "364",
+    "365",
+    "366",
+    "367",
+    "368",
+    "369",
+    "370",
+    "371",
+    "372",
+    "373",
+    "374",
+    "375",
+    "376",
+    "377",
+    "378",
+    "379",
+    "380",
+    "381",
+    "382",
+    "383",
+    "384",
+    "385",
+    "386",
+    "387",
+    "388",
+    "389",
+    "390",
+    "391",
+    "392",
+    "393",
+    "394",
+    "395",
+    "396",
+    "397",
+    "398",
+    "399",
+    "400",
+    "401",
+    "402",
+    "403",
+    "404",
+    "405",
+    "406",
+    "407",
+    "408",
+    "409",
+    "410",
+    "411",
+    "412",
+    "413",
+    "414",
+    "415",
+    "416",
+    "417",
+    "418",
+    "419",
+    "420",
+    "421",
+    "422",
+    "423",
+    "424",
+    "425",
+    "426",
+    "427",
+    "428",
+    "429",
+    "430",
+    "431",
+    "432",
+    "433",
+    "434",
+    "435",
+    "436",
+    "437",
+    "438",
+    "439",
+    "440",
+    "441",
+    "442",
+    "443",
+    "444",
+    "445",
+    "446",
+    "447",
+    "448",
+    "449",
+    "450",
+    "451",
+    "452",
+    "453",
+    "454",
+    "455",
+    "456",
+    "457",
+    "458",
+    "459",
+    "460",
+    "461",
+    "462",
+    "463",
+    "464",
+    "465",
+    "466",
+    "467",
+    "468",
+    "469",
+    "470",
+    "471",
+    "472",
+    "473",
+    "474",
+    "475",
+    "476",
+    "477",
+    "478",
+    "479",
+    "480",
+    "481",
+    "482",
+    "483",
+    "484",
+    "485",
+    "486",
+    "487",
+    "488",
+    "489",
+    "490",
+    "491",
+    "492",
+    "493",
+    "494",
+    "495",
+    "496",
+    "497",
+    "498",
+    "499",
+    "500"
+   ],
+   "error": "Output terlalu banyak (maks. 500 baris)."
+  }
+ ],
+ "checks": [
+  {
+   "name": "k1 Luas dan Keliling",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "p",
+       "l"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "p"
+     },
+     {
+      "t": "input",
+      "target": "l"
+     },
+     {
+      "t": "output",
+      "expr": "\"Luas: \" & p * l"
+     },
+     {
+      "t": "output",
+      "expr": "\"Keliling: \" & 2 * (p + l)"
+     }
+    ]
+   },
+   "tests": [
+    {
+     "inputs": [
+      "5",
+      "3"
+     ],
+     "expected": [
+      "Luas: 15",
+      "Keliling: 16"
+     ]
+    },
+    {
+     "inputs": [
+      "10",
+      "2"
+     ],
+     "expected": [
+      "Luas: 20",
+      "Keliling: 24"
+     ]
+    },
+    {
+     "inputs": [
+      "7",
+      "7"
+     ],
+     "expected": [
+      "Luas: 49",
+      "Keliling: 28"
+     ]
+    }
+   ],
+   "compare": "tail"
+  },
+  {
+   "name": "k2 Celsius ke Fahrenheit",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Real",
+      "names": [
+       "c",
+       "f"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "c"
+     },
+     {
+      "t": "assign",
+      "target": "f",
+      "expr": "c * 9 / 5 + 32"
+     },
+     {
+      "t": "output",
+      "expr": "\"Fahrenheit: \" & f"
+     }
+    ]
+   },
+   "tests": [
+    {
+     "inputs": [
+      "100"
+     ],
+     "expected": [
+      "Fahrenheit: 212"
+     ]
+    },
+    {
+     "inputs": [
+      "0"
+     ],
+     "expected": [
+      "Fahrenheit: 32"
+     ]
+    },
+    {
+     "inputs": [
+      "37"
+     ],
+     "expected": [
+      "Fahrenheit: 98.6"
+     ]
+    }
+   ],
+   "compare": "tail"
+  },
+  {
+   "name": "k3 Lulus atau Remedial",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "nilai"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "nilai"
+     },
+     {
+      "t": "if",
+      "cond": "nilai >= 75",
+      "yes": [
+       {
+        "t": "output",
+        "expr": "\"Lulus\""
+       }
+      ],
+      "no": [
+       {
+        "t": "output",
+        "expr": "\"Remedial\""
+       }
+      ]
+     }
+    ]
+   },
+   "tests": [
+    {
+     "inputs": [
+      "80"
+     ],
+     "expected": [
+      "Lulus"
+     ]
+    },
+    {
+     "inputs": [
+      "75"
+     ],
+     "expected": [
+      "Lulus"
+     ]
+    },
+    {
+     "inputs": [
+      "74"
+     ],
+     "expected": [
+      "Remedial"
+     ]
+    },
+    {
+     "inputs": [
+      "40"
+     ],
+     "expected": [
+      "Remedial"
+     ]
+    }
+   ],
+   "compare": "tail"
+  },
+  {
+   "name": "k4 Predikat Nilai",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "nilai"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "nilai"
+     },
+     {
+      "t": "if",
+      "cond": "nilai >= 90",
+      "yes": [
+       {
+        "t": "output",
+        "expr": "\"A\""
+       }
+      ],
+      "no": [
+       {
+        "t": "if",
+        "cond": "nilai >= 80",
+        "yes": [
+         {
+          "t": "output",
+          "expr": "\"B\""
+         }
+        ],
+        "no": [
+         {
+          "t": "if",
+          "cond": "nilai >= 70",
+          "yes": [
+           {
+            "t": "output",
+            "expr": "\"C\""
+           }
+          ],
+          "no": [
+           {
+            "t": "output",
+            "expr": "\"D\""
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "tests": [
+    {
+     "inputs": [
+      "95"
+     ],
+     "expected": [
+      "A"
+     ]
+    },
+    {
+     "inputs": [
+      "90"
+     ],
+     "expected": [
+      "A"
+     ]
+    },
+    {
+     "inputs": [
+      "85"
+     ],
+     "expected": [
+      "B"
+     ]
+    },
+    {
+     "inputs": [
+      "80"
+     ],
+     "expected": [
+      "B"
+     ]
+    },
+    {
+     "inputs": [
+      "72"
+     ],
+     "expected": [
+      "C"
+     ]
+    },
+    {
+     "inputs": [
+      "50"
+     ],
+     "expected": [
+      "D"
+     ]
+    }
+   ],
+   "compare": "tail"
+  },
+  {
+   "name": "k5 Jumlah 1 sampai n",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "n",
+       "i",
+       "total"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "n"
+     },
+     {
+      "t": "assign",
+      "target": "total",
+      "expr": "0"
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "1",
+      "to": "n",
+      "step": "1",
+      "body": [
+       {
+        "t": "assign",
+        "target": "total",
+        "expr": "total + i"
+       }
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "\"Jumlah: \" & total"
+     }
+    ]
+   },
+   "tests": [
+    {
+     "inputs": [
+      "5"
+     ],
+     "expected": [
+      "Jumlah: 15"
+     ]
+    },
+    {
+     "inputs": [
+      "10"
+     ],
+     "expected": [
+      "Jumlah: 55"
+     ]
+    },
+    {
+     "inputs": [
+      "1"
+     ],
+     "expected": [
+      "Jumlah: 1"
+     ]
+    },
+    {
+     "inputs": [
+      "100"
+     ],
+     "expected": [
+      "Jumlah: 5050"
+     ]
+    }
+   ],
+   "compare": "tail"
+  },
+  {
+   "name": "k6 Hitung Mundur",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "n"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "n"
+     },
+     {
+      "t": "while",
+      "cond": "n >= 1",
+      "body": [
+       {
+        "t": "output",
+        "expr": "n"
+       },
+       {
+        "t": "assign",
+        "target": "n",
+        "expr": "n - 1"
+       }
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "\"Selesai\""
+     }
+    ]
+   },
+   "tests": [
+    {
+     "inputs": [
+      "3"
+     ],
+     "expected": [
+      "3",
+      "2",
+      "1",
+      "Selesai"
+     ]
+    },
+    {
+     "inputs": [
+      "5"
+     ],
+     "expected": [
+      "5",
+      "4",
+      "3",
+      "2",
+      "1",
+      "Selesai"
+     ]
+    },
+    {
+     "inputs": [
+      "1"
+     ],
+     "expected": [
+      "1",
+      "Selesai"
+     ]
+    }
+   ],
+   "compare": "tail"
+  },
+  {
+   "name": "k7 Nilai Terbesar",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i",
+       "terbesar"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "a"
+      ],
+      "size": 5
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "0",
+      "to": "4",
+      "step": "1",
+      "body": [
+       {
+        "t": "input",
+        "target": "a[i]"
+       }
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "terbesar",
+      "expr": "a[0]"
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "1",
+      "to": "4",
+      "step": "1",
+      "body": [
+       {
+        "t": "if",
+        "cond": "a[i] > terbesar",
+        "yes": [
+         {
+          "t": "assign",
+          "target": "terbesar",
+          "expr": "a[i]"
+         }
+        ],
+        "no": []
+       }
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "\"Terbesar: \" & terbesar"
+     }
+    ]
+   },
+   "tests": [
+    {
+     "inputs": [
+      "3",
+      "9",
+      "2",
+      "7",
+      "5"
+     ],
+     "expected": [
+      "Terbesar: 9"
+     ]
+    },
+    {
+     "inputs": [
+      "8",
+      "1",
+      "2",
+      "3",
+      "4"
+     ],
+     "expected": [
+      "Terbesar: 8"
+     ]
+    },
+    {
+     "inputs": [
+      "-4",
+      "-8",
+      "-1",
+      "-9",
+      "-3"
+     ],
+     "expected": [
+      "Terbesar: -1"
+     ]
+    },
+    {
+     "inputs": [
+      "6",
+      "6",
+      "6",
+      "6",
+      "6"
+     ],
+     "expected": [
+      "Terbesar: 6"
+     ]
+    }
+   ],
+   "compare": "tail"
+  },
+  {
+   "name": "k8 Prima atau Bukan",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "n",
+       "i"
+      ]
+     },
+     {
+      "t": "decl",
+      "type": "Boolean",
+      "names": [
+       "prima"
+      ]
+     },
+     {
+      "t": "input",
+      "target": "n"
+     },
+     {
+      "t": "assign",
+      "target": "prima",
+      "expr": "true"
+     },
+     {
+      "t": "if",
+      "cond": "n < 2",
+      "yes": [
+       {
+        "t": "assign",
+        "target": "prima",
+        "expr": "false"
+       }
+      ],
+      "no": []
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "2",
+      "to": "n - 1",
+      "step": "1",
+      "body": [
+       {
+        "t": "if",
+        "cond": "n % i == 0",
+        "yes": [
+         {
+          "t": "assign",
+          "target": "prima",
+          "expr": "false"
+         }
+        ],
+        "no": []
+       }
+      ]
+     },
+     {
+      "t": "if",
+      "cond": "prima",
+      "yes": [
+       {
+        "t": "output",
+        "expr": "\"Prima\""
+       }
+      ],
+      "no": [
+       {
+        "t": "output",
+        "expr": "\"Bukan prima\""
+       }
+      ]
+     }
+    ]
+   },
+   "tests": [
+    {
+     "inputs": [
+      "7"
+     ],
+     "expected": [
+      "Prima"
+     ]
+    },
+    {
+     "inputs": [
+      "9"
+     ],
+     "expected": [
+      "Bukan prima"
+     ]
+    },
+    {
+     "inputs": [
+      "2"
+     ],
+     "expected": [
+      "Prima"
+     ]
+    },
+    {
+     "inputs": [
+      "1"
+     ],
+     "expected": [
+      "Bukan prima"
+     ]
+    },
+    {
+     "inputs": [
+      "13"
+     ],
+     "expected": [
+      "Prima"
+     ]
+    },
+    {
+     "inputs": [
+      "15"
+     ],
+     "expected": [
+      "Bukan prima"
+     ]
+    },
+    {
+     "inputs": [
+      "0"
+     ],
+     "expected": [
+      "Bukan prima"
+     ]
+    }
+   ],
+   "compare": "tail"
+  }
+ ],
+ "blanks": [
+  {
+   "name": "urutan bagian kosong",
+   "program": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i",
+       "total"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "{{}}",
+      "expr": "0"
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "1",
+      "to": "{{}}",
+      "step": "1",
+      "body": [
+       {
+        "t": "assign",
+        "target": "total",
+        "expr": "total + {{}}"
+       }
+      ]
+     },
+     {
+      "t": "if",
+      "cond": "{{}} > 10",
+      "yes": [
+       {
+        "t": "output",
+        "expr": "\"besar\""
+       }
+      ],
+      "no": [
+       {
+        "t": "output",
+        "expr": "{{}}"
+       }
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "dua(total) & {{}}"
+     }
+    ],
+    "funcs": {
+     "dua": {
+      "params": [
+       [
+        "n",
+        "Integer"
+       ]
+      ],
+      "body": [
+       {
+        "t": "assign",
+        "target": "n",
+        "expr": "n * {{}}"
+       }
+      ],
+      "ret": "{{}}"
+     }
+    }
+   },
+   "answers": [
+    "total",
+    "4",
+    "i",
+    "total",
+    "total",
+    "\"\"",
+    "2",
+    "n"
+   ],
+   "count": 8,
+   "filled": {
+    "body": [
+     {
+      "t": "decl",
+      "type": "Integer",
+      "names": [
+       "i",
+       "total"
+      ]
+     },
+     {
+      "t": "assign",
+      "target": "total",
+      "expr": "0"
+     },
+     {
+      "t": "for",
+      "v": "i",
+      "from": "1",
+      "to": "4",
+      "step": "1",
+      "body": [
+       {
+        "t": "assign",
+        "target": "total",
+        "expr": "total + i"
+       }
+      ]
+     },
+     {
+      "t": "if",
+      "cond": "total > 10",
+      "yes": [
+       {
+        "t": "output",
+        "expr": "\"besar\""
+       }
+      ],
+      "no": [
+       {
+        "t": "output",
+        "expr": "total"
+       }
+      ]
+     },
+     {
+      "t": "output",
+      "expr": "dua(total) & \"\""
+     }
+    ],
+    "funcs": {
+     "dua": {
+      "params": [
+       [
+        "n",
+        "Integer"
+       ]
+      ],
+      "body": [
+       {
+        "t": "assign",
+        "target": "n",
+        "expr": "n * 2"
+       }
+      ],
+      "ret": "n"
+     }
+    }
+   },
+   "out": [
+    "10",
+    "20"
+   ]
+  }
+ ]
+}

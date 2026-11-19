@@ -9,21 +9,12 @@ import {
   newStep,
   removeFromList,
   samePath,
+  GRADED_KINDS as GRADED,
   STATION_TEMPLATES,
   STEP_KINDS,
 } from '../studio'
 import { IconButton } from './fields'
 
-const GRADED = new Set([
-  'choice',
-  'true_false',
-  'ordering',
-  'categorize',
-  'hotspot',
-  'fill_blank',
-  'drag_drop',
-  'matching',
-])
 const LISTS = [
   { id: 'steps', label: 'Langkah' },
   { id: 'remedial', label: 'Belajar ulang' },

@@ -29,6 +29,12 @@ export const learningMediaApi = {
     api.put(`/learning-media/${id}/shares/`, { schools }).then((res) => res.data),
   exportJson: (id) =>
     api.get(`/learning-media/${id}/export/`, { responseType: 'blob' }).then((res) => res.data),
+  // File Flowgorithm asli (.fprg) -> program MPI { program, warnings } (untuk program awal/kunci).
+  fprg: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post('/learning-media/fprg/', form).then((res) => res.data)
+  },
   // Impor isi (Excel/CSV, JSON, Word, PowerPoint, PDF, tautan, bank soal). dryRun = Periksa saja.
   importTemplate: (id) =>
     api

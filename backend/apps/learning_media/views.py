@@ -293,6 +293,20 @@ class LearningMediaViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
 
     # ------------------------------------------------------------ impor
 
+    @action(detail=False, methods=["post"], parser_classes=[MultiPartParser, FormParser])
+    def fprg(self, request):
+        """Ubah file Flowgorithm asli (.fprg) menjadi program MPI (untuk program awal/kunci di Studio)."""
+        from .plugins.flowgorithm.fprg import FprgError, parse_fprg
+
+        upload = request.FILES.get("file")
+        if upload is None or not upload.name.lower().endswith(".fprg"):
+            raise ValidationError({"file": "Pilih file Flowgorithm (.fprg)."})
+        try:
+            program, warnings = parse_fprg(upload.read())
+        except FprgError as error:
+            raise ValidationError({"file": str(error)})
+        return Response({"program": program, "warnings": warnings})
+
     @action(detail=True, url_path="import-template")
     def import_template(self, request, pk=None):
         """Template Excel berisi isi draf (atau contoh jika masih kosong), untuk diubah lalu diimpor ulang."""

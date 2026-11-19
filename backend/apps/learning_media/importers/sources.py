@@ -64,6 +64,38 @@ def _drop_foreign(value):
     return "" if value == "asset:x" else value
 
 
+# ---------------------------------------------------------------- Flowgorithm (.fprg)
+
+
+def read_fprg(file, part_title=None):
+    """File Flowgorithm asli -> langkah lab program (bisa dijalankan & diubah siswa)."""
+    from ..plugins.flowgorithm.fprg import FprgError, parse_fprg
+
+    result = ImportResult()
+    name = (file.name or "program").rsplit(".", 1)[0][:200] or "Program Flowgorithm"
+    try:
+        program, warnings = parse_fprg(file.read())
+    except FprgError as error:
+        result.errors.append(str(error))
+        return result
+    result.warnings.extend(warnings)
+    builder = Builder(name, part_title)
+    builder.add(
+        {
+            "id": "",
+            "kind": "flowgorithm_demo",
+            "title": name,
+            "hints": [],
+            "body": "Jalankan program ini langkah demi langkah, lalu amati isi variabel dan hasilnya.",
+            "program": program,
+            "inputs": [],
+            "editable": True,
+        }
+    )
+    result.parts = builder.result_parts()
+    return result
+
+
 # ---------------------------------------------------------------- tautan
 
 

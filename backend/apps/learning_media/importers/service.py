@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 from .. import schema
 from . import documents, excel, merge, outline, sources, upload_images
 
-SOURCES = ("excel", "json", "word", "pptx", "pdf", "links", "bank")
+SOURCES = ("excel", "json", "word", "pptx", "pdf", "fprg", "links", "bank")
 # Ekstensi & ukuran maksimal (MB) per sumber berbentuk file.
 FILE_RULES = {
     "excel": ((".xlsx", ".csv"), 10),
@@ -15,6 +15,7 @@ FILE_RULES = {
     "word": ((".docx",), 25),
     "pptx": ((".pptx",), 40),
     "pdf": ((".pdf",), 25),
+    "fprg": ((".fprg",), 1),
 }
 MAX_PROBLEMS = 50
 
@@ -42,6 +43,8 @@ def read_source(media, data, user, school):
             return excel.read_csv(file, media.draft) if ext == ".csv" else excel.read_excel(file, media.draft)
         if source == "json":
             return sources.read_json(file, media)
+        if source == "fprg":
+            return sources.read_fprg(file, last_part)
         return {"word": documents.read_docx, "pptx": documents.read_pptx, "pdf": documents.read_pdf}[source](
             file
         )

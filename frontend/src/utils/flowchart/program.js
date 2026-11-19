@@ -132,6 +132,8 @@ export function countBlocks(blocks) {
 
 /** Teks singkat blok untuk diagram. */
 export function blockText(block) {
+  // Diagram dari dialek lain (mis. plugin Flowgorithm MPI) membawa teksnya sendiri.
+  if (block.label) return block.label
   switch (block.type) {
     case 'input': return `Masukan ${block.variable || '?'}`
     case 'output': return `Keluaran ${block.expression || '?'}`

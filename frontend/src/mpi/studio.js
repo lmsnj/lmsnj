@@ -109,6 +109,25 @@ const STEP_DEFAULTS = {
 
 export const STEP_KINDS = Object.keys(STEP_DEFAULTS)
 
+// Jenis latihan (dinilai). Plugin menambah jenisnya lewat registerStudioKind.
+export const GRADED_KINDS = new Set([
+  'choice',
+  'true_false',
+  'ordering',
+  'categorize',
+  'hotspot',
+  'fill_blank',
+  'drag_drop',
+  'matching',
+])
+
+/** Plugin mapel: daftarkan isi awal jenis langkahnya agar muncul di pilihan "+ Langkah" Studio. */
+export function registerStudioKind(kind, make, graded = false) {
+  STEP_DEFAULTS[kind] = make
+  if (!STEP_KINDS.includes(kind)) STEP_KINDS.push(kind)
+  if (graded) GRADED_KINDS.add(kind)
+}
+
 export function newStep(kind) {
   const make = STEP_DEFAULTS[kind]
   if (!make) throw new Error(`Jenis langkah tidak dikenal: ${kind}`)
@@ -297,16 +316,7 @@ export function draftStats(draft) {
   let stations = 0
   let steps = 0
   let practice = 0
-  const graded = new Set([
-    'choice',
-    'true_false',
-    'ordering',
-    'categorize',
-    'hotspot',
-    'fill_blank',
-    'drag_drop',
-    'matching',
-  ])
+  const graded = GRADED_KINDS
   for (const part of draft.parts ?? []) {
     for (const station of part.stations ?? []) {
       stations += 1
@@ -334,6 +344,7 @@ export const IMPORT_SOURCES = {
   word: { accept: '.docx', maxMb: 25 },
   pptx: { accept: '.pptx', maxMb: 40 },
   pdf: { accept: '.pdf,application/pdf', maxMb: 25 },
+  fprg: { accept: '.fprg', maxMb: 1 },
   links: {},
   bank: {},
 }

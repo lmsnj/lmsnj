@@ -11,6 +11,8 @@ import TextField from '../components/TextField'
 import useAuth from '../hooks/useAuth'
 import useFetch from '../hooks/useFetch'
 import MediaPlayer from '../mpi/MediaPlayer'
+// Jenis langkah plugin mapel (Flowgorithm, exposure) harus terdaftar sebelum Studio digambar.
+import '../mpi/plugins'
 import { MediaSettingsEditor, PartEditor, StationEditor, StepEditor } from '../mpi/studio/Editors'
 import { draftStats, getAt, updateAt } from '../mpi/studio'
 import ImportMediaModal from '../mpi/studio/ImportMediaModal'

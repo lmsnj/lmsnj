@@ -6,6 +6,7 @@ import {
   Link2,
   Presentation,
   ScrollText,
+  Workflow,
 } from 'lucide-react'
 import { useState } from 'react'
 import { assessmentsApi } from '../../api/assessments'
@@ -48,6 +49,12 @@ const SOURCES = [
     icon: ScrollText,
     label: 'PDF',
     description: 'Satu halaman = satu langkah teks. PDF hasil pindai tidak berisi teks.',
+  },
+  {
+    id: 'fprg',
+    icon: Workflow,
+    label: 'Flowgorithm (.fprg)',
+    description: 'Program Flowgorithm asli menjadi langkah lab yang bisa dijalankan siswa.',
   },
   {
     id: 'links',

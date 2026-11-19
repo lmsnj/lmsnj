@@ -30,6 +30,7 @@ import {
 } from './engine'
 import { flush } from './offlineQueue'
 import StationMap from './StationMap'
+import './plugins'
 import StepPlayer from './StepPlayer'
 import { Mascot, Rich } from './steps/ExplainSteps'
 
