@@ -1,0 +1,6600 @@
+{
+ "format": "lms-sigma-media",
+ "title": "Petualangan Flowgorithm",
+ "description": "Belajar algoritma & pemrograman dasar dengan Flowgorithm bersama Bita (X RPL).",
+ "media": {
+  "schema_version": 1,
+  "mascot": {
+   "name": "Bita",
+   "image": ""
+  },
+  "glossary": [
+   {
+    "term": "Algoritma",
+    "meaning": "Urutan langkah yang jelas, logis, dan berhenti untuk menyelesaikan masalah."
+   },
+   {
+    "term": "Program",
+    "meaning": "Algoritma yang ditulis supaya bisa dijalankan komputer."
+   },
+   {
+    "term": "Flowchart",
+    "meaning": "Diagram alur: langkah-langkah digambar dengan simbol dan panah."
+   },
+   {
+    "term": "Flowgorithm",
+    "meaning": "Aplikasi gratis untuk menggambar dan menjalankan flowchart."
+   },
+   {
+    "term": "Variabel",
+    "meaning": "Kotak berlabel untuk menyimpan data; isinya boleh berubah."
+   },
+   {
+    "term": "Tipe data",
+    "meaning": "Jenis isi variabel: Integer, Real, String, atau Boolean."
+   },
+   {
+    "term": "Integer",
+    "meaning": "Tipe data bilangan bulat, mis. 25."
+   },
+   {
+    "term": "Real",
+    "meaning": "Tipe data bilangan pecahan, mis. 1.35."
+   },
+   {
+    "term": "String",
+    "meaning": "Tipe data teks, ditulis di antara tanda kutip ganda."
+   },
+   {
+    "term": "Boolean",
+    "meaning": "Tipe data yang hanya bernilai true atau false."
+   },
+   {
+    "term": "Array",
+    "meaning": "Satu variabel dengan banyak laci bernomor (indeks mulai dari 0)."
+   },
+   {
+    "term": "Indeks",
+    "meaning": "Nomor laci array; laci pertama berindeks 0."
+   },
+   {
+    "term": "Operator",
+    "meaning": "Tanda untuk menghitung atau membandingkan, mis. +, %, ==."
+   },
+   {
+    "term": "Input",
+    "meaning": "Simbol untuk membaca isian dari keyboard ke variabel."
+   },
+   {
+    "term": "Output",
+    "meaning": "Simbol untuk menampilkan teks atau hasil di Console."
+   },
+   {
+    "term": "Assign",
+    "meaning": "Simbol untuk mengisi variabel dengan hasil hitungan."
+   },
+   {
+    "term": "Console",
+    "meaning": "Jendela tempat hasil Output tampil dan isian diketik."
+   },
+   {
+    "term": "Variable Watch",
+    "meaning": "Jendela yang menampilkan isi variabel saat program berjalan."
+   },
+   {
+    "term": "If",
+    "meaning": "Percabangan: memilih jalur True atau False sesuai syarat."
+   },
+   {
+    "term": "While",
+    "meaning": "Perulangan yang memeriksa syarat dulu sebelum mengulang."
+   },
+   {
+    "term": "For",
+    "meaning": "Perulangan dengan penghitung dari nilai awal sampai nilai akhir."
+   },
+   {
+    "term": "Do While",
+    "meaning": "Perulangan yang mengerjakan isinya dulu, baru memeriksa syarat."
+   },
+   {
+    "term": "Fungsi",
+    "meaning": "Kumpulan langkah bernama yang bisa dipanggil berulang kali."
+   },
+   {
+    "term": "Parameter",
+    "meaning": "Bahan yang diterima fungsi."
+   },
+   {
+    "term": "Return",
+    "meaning": "Hasil yang dikeluarkan fungsi."
+   },
+   {
+    "term": "Komentar",
+    "meaning": "Catatan untuk manusia di dalam program; tidak dijalankan."
+   },
+   {
+    "term": "Breakpoint",
+    "meaning": "Titik berhenti sementara untuk mengintip isi variabel."
+   },
+   {
+    "term": "Bug",
+    "meaning": "Kesalahan di dalam program."
+   }
+  ],
+  "parts": [
+   {
+    "id": "b1",
+    "title": "Mengenal Algoritma & Flowgorithm",
+    "description": "Algoritma, flowchart, layar & simbol Flowgorithm.",
+    "stations": [
+     {
+      "id": "st01",
+      "title": "1. Resep Ajaib: Apa Itu Algoritma?",
+      "objectives": [
+       "Menjelaskan arti algoritma",
+       "Menyusun langkah algoritma sehari-hari"
+      ],
+      "minutes": 8,
+      "prerequisites": [],
+      "optional": false,
+      "summary": [
+       "Algoritma = langkah jelas & berurutan",
+       "Program = algoritma untuk komputer",
+       "Algoritma punya input, proses, output"
+      ],
+      "reflection": "Algoritma apa yang kamu jalankan setiap pagi sebelum ke kelas?",
+      "badge": {
+       "title": "Juru Resep",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "40ad95b4",
+        "kind": "dialog",
+        "title": "Resep Ajaib: Apa Itu Algoritma?",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Halo, teman! Aku **Bita**, robot penjelajah. Pernah membuat teh dengan resep? Resep itu berisi langkah yang jelas dan berurutan."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Langkah yang jelas dan berurutan untuk menyelesaikan masalah disebut **algoritma**. Komputer tidak bisa menebak, ia hanya mengikuti langkah."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "**Program** adalah algoritma yang ditulis supaya komputer bisa menjalankannya. Sekarang, susun resep teh dengan urutan yang benar!"
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "9b15acd7",
+        "kind": "ordering",
+        "title": "Susun resep teh manis",
+        "hints": [],
+        "text": "Susun dengan urutan yang benar.",
+        "image": "",
+        "explanation": "",
+        "items": [
+         "Siapkan air dan teh",
+         "Rebus air sampai mendidih",
+         "Masukkan teh ke gelas",
+         "Tuang air panas",
+         "Tunggu 3 sampai 5 menit",
+         "Teh siap diminum"
+        ],
+        "why": "Kalau urutannya tertukar, teh tidak akan jadi."
+       }
+      ],
+      "remedial": [
+       {
+        "id": "74d28341",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Halo, teman! Aku **Bita**, robot penjelajah. Pernah membuat teh dengan resep? Resep itu berisi langkah yang jelas dan berurutan. Langkah yang jelas dan berurutan untuk menyelesaikan masalah disebut **algoritma**. Komputer tidak bisa menebak, ia hanya mengikuti langkah. **Program** adalah algoritma yang ditulis supaya komputer bisa menjalankannya. Sekarang, susun resep teh dengan urutan yang benar!",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "95a24098",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Langkah yang jelas dan berurutan untuk menyelesaikan masalah disebut ...",
+        "image": "",
+        "explanation": "Itulah arti algoritma.",
+        "choices": [
+         {
+          "text": "algoritma",
+          "why": ""
+         },
+         {
+          "text": "variabel",
+          "why": ""
+         },
+         {
+          "text": "konsol",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st02",
+      "title": "2. Ciri-Ciri Algoritma yang Baik",
+      "objectives": [
+       "Menyebutkan ciri algoritma yang baik"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st01"
+      ],
+      "optional": false,
+      "summary": [
+       "Langkah harus jelas & pasti",
+       "Urutannya logis",
+       "Algoritma harus berhenti"
+      ],
+      "reflection": "Pernahkah kamu mengikuti petunjuk yang membingungkan? Bagian mana yang tidak jelas?",
+      "badge": {
+       "title": "Pemeriksa Langkah",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "c07904a9",
+        "kind": "dialog",
+        "title": "Ciri-Ciri Algoritma yang Baik",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Algoritma yang baik punya **input** (bahan) dan **output** (hasil). Di tengahnya ada **proses**."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Langkahnya juga harus **logis** (masuk akal), **jelas** (tidak membingungkan), dan **berhenti** (tidak jalan terus)."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "0c84c2be",
+        "kind": "categorize",
+        "title": "Baik atau kurang baik?",
+        "hints": [],
+        "text": "Kelompokkan ke wadah yang benar.",
+        "image": "",
+        "explanation": "",
+        "categories": [
+         "Algoritma baik",
+         "Kurang baik"
+        ],
+        "items": [
+         {
+          "text": "Langkahnya jelas, satu per satu",
+          "category": 0,
+          "why": "Langkah yang jelas mudah diikuti."
+         },
+         {
+          "text": "Ada hasil (output) di akhir",
+          "category": 0,
+          "why": "Algoritma baik menghasilkan sesuatu."
+         },
+         {
+          "text": "Tambahkan garam secukupnya sampai enak",
+          "category": 1,
+          "why": "\"Secukupnya\" membingungkan. Komputer butuh angka yang pasti."
+         },
+         {
+          "text": "Berjalan terus dan tidak pernah berhenti",
+          "category": 1,
+          "why": "Algoritma yang baik harus berhenti."
+         },
+         {
+          "text": "Urutan langkahnya masuk akal",
+          "category": 0,
+          "why": "Logis berarti urutannya masuk akal."
+         },
+         {
+          "text": "Langkah 3 menyuruh kembali ke langkah 3 selamanya",
+          "category": 1,
+          "why": "Itu membuat program terjebak dan tidak berhenti."
+         }
+        ]
+       }
+      ],
+      "remedial": [
+       {
+        "id": "be8a35a8",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Algoritma yang baik punya **input** (bahan) dan **output** (hasil). Di tengahnya ada **proses**. Langkahnya juga harus **logis** (masuk akal), **jelas** (tidak membingungkan), dan **berhenti** (tidak jalan terus).",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": []
+     },
+     {
+      "id": "st03",
+      "title": "3. Mengenal Flowchart dan Flowgorithm",
+      "objectives": [
+       "Menjelaskan flowchart dan Flowgorithm",
+       "Mengenali simbol dasar"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st02"
+      ],
+      "optional": false,
+      "summary": [
+       "Flowchart = diagram alur",
+       "Flowgorithm menjalankan flowchart",
+       "Tiap simbol punya bentuk & warna"
+      ],
+      "reflection": "Apa bedanya menggambar flowchart di kertas dengan di Flowgorithm?",
+      "badge": {
+       "title": "Pengenal Simbol",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "a49837c4",
+        "kind": "dialog",
+        "title": "Mengenal Flowchart dan Flowgorithm",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "**Flowchart** adalah diagram alur: gambar langkah-langkah memakai simbol dan panah. Ini flowchart membuat teh."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "**Flowgorithm** adalah aplikasi gratis. Flowchart yang kita gambar di sana **bisa dijalankan** oleh komputer! Cocok untuk pemula karena kita fokus berpikir, bukan menghafal tulisan."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "b11128f3",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Simbol bertuliskan **Main**.\n\nSimbol berbentuk lonjong ini disebut ...",
+        "image": "",
+        "explanation": "Bentuk lonjong ungu dipakai untuk Main (mulai) dan End (selesai).",
+        "choices": [
+         {
+          "text": "Main / End",
+          "why": ""
+         },
+         {
+          "text": "Input",
+          "why": ""
+         },
+         {
+          "text": "Output",
+          "why": ""
+         },
+         {
+          "text": "If",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "b060201e",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Simbol bertuliskan **Input nama**.\n\nSimbol biru miring ini dipakai untuk ...",
+        "image": "",
+        "explanation": "Input berwarna biru dan membaca isian.",
+        "choices": [
+         {
+          "text": "membaca isian dari keyboard",
+          "why": ""
+         },
+         {
+          "text": "menampilkan hasil",
+          "why": ""
+         },
+         {
+          "text": "memilih jalan",
+          "why": ""
+         },
+         {
+          "text": "mengulang",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "445f7ffe",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Simbol bertuliskan **Output nama**.\n\nSimbol hijau miring ini dipakai untuk ...",
+        "image": "",
+        "explanation": "Output berwarna hijau dan menampilkan hasil.",
+        "choices": [
+         {
+          "text": "menampilkan hasil di layar",
+          "why": ""
+         },
+         {
+          "text": "membaca isian",
+          "why": ""
+         },
+         {
+          "text": "membuat variabel",
+          "why": ""
+         },
+         {
+          "text": "berhenti",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "a73bb84b",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Simbol bertuliskan **umur > 12**.\n\nSimbol belah ketupat merah muda ini adalah ...",
+        "image": "",
+        "explanation": "If memilih jalan True atau False.",
+        "choices": [
+         {
+          "text": "If (percabangan)",
+          "why": ""
+         },
+         {
+          "text": "Declare",
+          "why": ""
+         },
+         {
+          "text": "Output",
+          "why": ""
+         },
+         {
+          "text": "While",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ],
+      "remedial": [
+       {
+        "id": "4368747f",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "**Flowchart** adalah diagram alur: gambar langkah-langkah memakai simbol dan panah. Ini flowchart membuat teh. **Flowgorithm** adalah aplikasi gratis. Flowchart yang kita gambar di sana **bisa dijalankan** oleh komputer! Cocok untuk pemula karena kita fokus berpikir, bukan menghafal tulisan.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "30d189b1",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Aplikasi yang membuat flowchart bisa dijalankan adalah ...",
+        "image": "",
+        "explanation": "Flowgorithm menjalankan flowchart.",
+        "choices": [
+         {
+          "text": "Flowgorithm",
+          "why": ""
+         },
+         {
+          "text": "Paint",
+          "why": ""
+         },
+         {
+          "text": "Kalkulator",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st04",
+      "title": "4. Mengenal Layar Flowgorithm",
+      "objectives": [
+       "Menyebutkan bagian layar Flowgorithm dan fungsinya"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st03"
+      ],
+      "optional": false,
+      "summary": [
+       "Toolbar: Run & Step",
+       "Console: hasil & isian",
+       "Variable Watch: isi variabel"
+      ],
+      "reflection": "Bagian layar mana yang menurutmu paling membantu saat mencari kesalahan?",
+      "badge": {
+       "title": "Penjelajah Layar",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "fad72103",
+        "kind": "dialog",
+        "title": "Mengenal Layar Flowgorithm",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Unduh Flowgorithm dari situs resminya, lalu pasang di komputer. Setelah dibuka, layarnya punya beberapa bagian penting."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Ada **toolbar** (tombol Run dan Step), **jendela Flowchart** tempat menggambar, **Console** tempat hasil dan isian, dan **Variable Watch** untuk melihat isi variabel."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "f63826ca",
+        "kind": "flip_cards",
+        "title": "Bagian layar Flowgorithm",
+        "hints": [],
+        "cards": [
+         {
+          "front": "Toolbar",
+          "back": "Deretan tombol di atas, termasuk Run (jalankan) dan Step (satu langkah)."
+         },
+         {
+          "front": "Jendela Flowchart",
+          "back": "Tempat menggambar flowchart dari simbol-simbol."
+         },
+         {
+          "front": "Console",
+          "back": "Tempat hasil Output tampil dan tempat mengetik isian Input."
+         },
+         {
+          "front": "Variable Watch",
+          "back": "Tabel isi variabel yang berubah saat program berjalan."
+         }
+        ]
+       },
+       {
+        "id": "c64167d9",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Hasil Output tampil di bagian ...",
+        "image": "",
+        "explanation": "Console menampilkan hasil dan menerima isian.",
+        "choices": [
+         {
+          "text": "Console",
+          "why": ""
+         },
+         {
+          "text": "Toolbar",
+          "why": ""
+         },
+         {
+          "text": "Variable Watch",
+          "why": ""
+         },
+         {
+          "text": "Jendela Flowchart",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "8b2012ed",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Tombol untuk menjalankan program satu langkah demi satu langkah ada di ...",
+        "image": "",
+        "explanation": "Step ada di Toolbar.",
+        "choices": [
+         {
+          "text": "Toolbar (tombol Step)",
+          "why": ""
+         },
+         {
+          "text": "Console",
+          "why": ""
+         },
+         {
+          "text": "Variable Watch",
+          "why": ""
+         },
+         {
+          "text": "Jendela Flowchart",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "3a049046",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Kamu ingin tahu isi variabel **total** saat program berjalan. Lihat bagian ...",
+        "image": "",
+        "explanation": "Variable Watch menampilkan isi variabel.",
+        "choices": [
+         {
+          "text": "Variable Watch",
+          "why": ""
+         },
+         {
+          "text": "Console",
+          "why": ""
+         },
+         {
+          "text": "Toolbar",
+          "why": ""
+         },
+         {
+          "text": "Jendela Flowchart",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ],
+      "remedial": [
+       {
+        "id": "9611e898",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Unduh Flowgorithm dari situs resminya, lalu pasang di komputer. Setelah dibuka, layarnya punya beberapa bagian penting. Ada **toolbar** (tombol Run dan Step), **jendela Flowchart** tempat menggambar, **Console** tempat hasil dan isian, dan **Variable Watch** untuk melihat isi variabel.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "78d2c13d",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Jendela untuk melihat isi variabel saat program berjalan adalah ...",
+        "image": "",
+        "explanation": "Variable Watch memantau isi variabel.",
+        "choices": [
+         {
+          "text": "Variable Watch",
+          "why": ""
+         },
+         {
+          "text": "Console",
+          "why": ""
+         },
+         {
+          "text": "Toolbar",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st05",
+      "title": "5. Simbol-Simbol Flowchart",
+      "objectives": [
+       "Memasangkan simbol flowchart dengan namanya"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st04"
+      ],
+      "optional": false,
+      "summary": [
+       "Input biru, Output hijau",
+       "If merah muda (percabangan)",
+       "Perulangan oranye"
+      ],
+      "reflection": "Simbol mana yang paling sulit kamu ingat? Bagaimana cara mengingatnya?",
+      "badge": {
+       "title": "Ahli Simbol",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "a696140e",
+        "kind": "dialog",
+        "title": "Simbol-Simbol Flowchart",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Setiap simbol punya bentuk dan warna sendiri, supaya mudah dikenali."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Ingat: **Input** biru, **Output** hijau, **If** merah muda, dan perulangan berwarna oranye. Yuk, pasangkan simbol dengan namanya!"
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "d6475fa0",
+        "kind": "matching",
+        "title": "Pasangkan simbol dengan namanya",
+        "hints": [],
+        "text": "Pasangkan isi simbol dengan nama simbolnya.",
+        "image": "",
+        "explanation": "",
+        "pairs": [
+         {
+          "left": "Output \"Hai\"",
+          "right": "Output"
+         },
+         {
+          "left": "Input nama",
+          "right": "Input"
+         },
+         {
+          "left": "umur > 12",
+          "right": "If"
+         },
+         {
+          "left": "i <= 5",
+          "right": "While"
+         },
+         {
+          "left": "Integer i",
+          "right": "Declare"
+         }
+        ],
+        "distractors": [],
+        "why": ""
+       }
+      ],
+      "remedial": [
+       {
+        "id": "d0345dd2",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Setiap simbol punya bentuk dan warna sendiri, supaya mudah dikenali. Ingat: **Input** biru, **Output** hijau, **If** merah muda, dan perulangan berwarna oranye. Yuk, pasangkan simbol dengan namanya!",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "c1f0e482",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Simbol hijau ini dipakai untuk ...",
+        "image": "",
+        "explanation": "Output menampilkan di Console.",
+        "choices": [
+         {
+          "text": "menampilkan hasil",
+          "why": ""
+         },
+         {
+          "text": "membaca isian",
+          "why": ""
+         },
+         {
+          "text": "mengulang",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "b2",
+    "title": "Variabel, Tipe Data & Operator",
+    "description": "Kotak penyimpan data dan cara menghitungnya.",
+    "stations": [
+     {
+      "id": "st06",
+      "title": "6. Variabel: Kotak Penyimpan",
+      "objectives": [
+       "Menjelaskan variabel",
+       "Menentukan nama variabel yang benar"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st05"
+      ],
+      "optional": false,
+      "summary": [
+       "Variabel = kotak berlabel",
+       "Nama diawali huruf, tanpa spasi & garis bawah",
+       "Besar kecil huruf tidak dibedakan"
+      ],
+      "reflection": "Beri contoh tiga nama variabel untuk data dirimu sendiri.",
+      "badge": {
+       "title": "Penjaga Kotak",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "9be5ae48",
+        "kind": "dialog",
+        "title": "Variabel: Kotak Penyimpan",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "**Variabel** ibarat kotak yang diberi label. Isinya boleh berubah. Misalnya kotak **umur** berisi 12."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Nama variabel punya aturan, tapi gampang kok. Besar kecil huruf **tidak** dibedakan."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "9ca2db59",
+        "kind": "categorize",
+        "title": "Boleh jadi nama variabel?",
+        "hints": [],
+        "text": "Kelompokkan ke wadah yang benar.",
+        "image": "",
+        "explanation": "",
+        "categories": [
+         "Boleh",
+         "Tidak boleh"
+        ],
+        "items": [
+         {
+          "text": "umur",
+          "category": 0,
+          "why": "Nama yang bagus."
+         },
+         {
+          "text": "nama siswa",
+          "category": 1,
+          "why": "Ada spasi. Tulis namaSiswa."
+         },
+         {
+          "text": "2kali",
+          "category": 1,
+          "why": "Tidak boleh diawali angka."
+         },
+         {
+          "text": "uang_jajan",
+          "category": 1,
+          "why": "Garis bawah tidak boleh. Tulis uangJajan."
+         },
+         {
+          "text": "hargaBarang",
+          "category": 0,
+          "why": "Huruf semua, tanpa spasi."
+         },
+         {
+          "text": "integer",
+          "category": 1,
+          "why": "Itu nama tipe data, kata milik Flowgorithm."
+         },
+         {
+          "text": "nama",
+          "category": 0,
+          "why": "Nama yang bagus."
+         },
+         {
+          "text": "tinggi badan",
+          "category": 1,
+          "why": "Ada spasi. Tulis tinggiBadan."
+         }
+        ]
+       }
+      ],
+      "remedial": [
+       {
+        "id": "d35554e3",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "**Variabel** ibarat kotak yang diberi label. Isinya boleh berubah. Misalnya kotak **umur** berisi 12. Nama variabel punya aturan, tapi gampang kok. Besar kecil huruf **tidak** dibedakan.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": []
+     },
+     {
+      "id": "st07",
+      "title": "7. Tipe Data: Jenis Isi Kotak",
+      "objectives": [
+       "Membedakan tipe Integer, Real, String, Boolean"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st06"
+      ],
+      "optional": false,
+      "summary": [
+       "Integer bulat, Real pecahan",
+       "String teks dalam kutip ganda",
+       "Boolean hanya true/false"
+      ],
+      "reflection": "Data apa di sekolahmu yang cocok disimpan sebagai Boolean?",
+      "badge": {
+       "title": "Pemilah Data",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "074770be",
+        "kind": "dialog",
+        "title": "Tipe Data: Jenis Isi Kotak",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Kotak variabel hanya boleh berisi satu **jenis** data. Jenis itu disebut **tipe data**."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Hati-hati: kotak **Integer** membuang pecahan. Kalau diisi 3.2, hasilnya jadi 3. Teks selalu memakai tanda kutip ganda."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "6e5c0038",
+        "kind": "categorize",
+        "title": "Tipe data apa?",
+        "hints": [],
+        "text": "Kelompokkan ke wadah yang benar.",
+        "image": "",
+        "explanation": "",
+        "categories": [
+         "Integer",
+         "Real",
+         "String",
+         "Boolean"
+        ],
+        "items": [
+         {
+          "text": "25",
+          "category": 0,
+          "why": "Bilangan bulat."
+         },
+         {
+          "text": "1.35",
+          "category": 1,
+          "why": "Ada koma desimalnya, jadi Real."
+         },
+         {
+          "text": "\"Surabaya\"",
+          "category": 2,
+          "why": "Teks, apalagi ada kutipnya."
+         },
+         {
+          "text": "true",
+          "category": 3,
+          "why": "Hanya true atau false."
+         },
+         {
+          "text": "2500",
+          "category": 0,
+          "why": "Bilangan bulat."
+         },
+         {
+          "text": "3.14",
+          "category": 1,
+          "why": "Bilangan pecahan."
+         },
+         {
+          "text": "\"A\"",
+          "category": 2,
+          "why": "Satu huruf pun tetap teks jika memakai kutip."
+         },
+         {
+          "text": "false",
+          "category": 3,
+          "why": "Boolean."
+         }
+        ]
+       }
+      ],
+      "remedial": [
+       {
+        "id": "f91c8603",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Kotak variabel hanya boleh berisi satu **jenis** data. Jenis itu disebut **tipe data**. Hati-hati: kotak **Integer** membuang pecahan. Kalau diisi 3.2, hasilnya jadi 3. Teks selalu memakai tanda kutip ganda.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "ed27ecf6",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Tipe data yang hanya berisi true atau false adalah ...",
+        "image": "",
+        "explanation": "Boolean hanya dua nilai.",
+        "choices": [
+         {
+          "text": "Boolean",
+          "why": ""
+         },
+         {
+          "text": "String",
+          "why": ""
+         },
+         {
+          "text": "Integer",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st08",
+      "title": "8. Array: Lemari Berlaci",
+      "objectives": [
+       "Menjelaskan array dan indeks yang dimulai dari 0"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st07"
+      ],
+      "optional": false,
+      "summary": [
+       "Array = lemari berlaci",
+       "Indeks mulai dari 0",
+       "Laci terakhir = jumlah laci - 1"
+      ],
+      "reflection": "Data apa di kelasmu yang cocok disimpan dalam array?",
+      "badge": {
+       "title": "Pemilik Lemari",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "25382373",
+        "kind": "dialog",
+        "title": "Array: Lemari Berlaci",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "**Array** ibarat lemari berlaci. Satu lemari, banyak laci, dan semua laci berisi jenis data yang sama."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Setiap laci punya nomor yang disebut **indeks**. Awas, hitungannya mulai dari **0**, bukan 1! Laci pertama adalah buah[0]."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "e446dab9",
+        "kind": "flip_cards",
+        "title": "Lemari buah",
+        "hints": [],
+        "cards": [
+         {
+          "front": "buah[0]",
+          "back": "Apel (laci pertama)"
+         },
+         {
+          "front": "buah[1]",
+          "back": "Jeruk"
+         },
+         {
+          "front": "buah[2]",
+          "back": "Jambu"
+         },
+         {
+          "front": "buah[3]",
+          "back": "Strawberi"
+         },
+         {
+          "front": "buah[4]",
+          "back": "Mangga (laci terakhir)"
+         }
+        ]
+       },
+       {
+        "id": "e70d9eb0",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Array **buah** punya 5 laci. Indeks laci terakhir adalah ...",
+        "image": "",
+        "explanation": "Indeks mulai dari 0, jadi 5 laci bernomor 0, 1, 2, 3, 4.",
+        "choices": [
+         {
+          "text": "4",
+          "why": ""
+         },
+         {
+          "text": "5",
+          "why": ""
+         },
+         {
+          "text": "1",
+          "why": ""
+         },
+         {
+          "text": "0",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "7a9c217e",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Isi buah[2] adalah ...",
+        "image": "",
+        "explanation": "buah[0] Apel, buah[1] Jeruk, buah[2] Jambu.",
+        "choices": [
+         {
+          "text": "Jambu",
+          "why": ""
+         },
+         {
+          "text": "Jeruk",
+          "why": ""
+         },
+         {
+          "text": "Strawberi",
+          "why": ""
+         },
+         {
+          "text": "Apel",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "f9dd8f42",
+        "kind": "flowgorithm_demo",
+        "title": "Lemari buah dalam program",
+        "hints": [],
+        "body": "Jalankan program, lalu perhatikan isi array **buah** di Pantau Variabel.",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "String",
+           "names": [
+            "buah"
+           ],
+           "size": 3
+          },
+          {
+           "t": "assign",
+           "target": "buah[0]",
+           "expr": "\"Apel\""
+          },
+          {
+           "t": "assign",
+           "target": "buah[1]",
+           "expr": "\"Jeruk\""
+          },
+          {
+           "t": "assign",
+           "target": "buah[2]",
+           "expr": "\"Jambu\""
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "0",
+           "to": "2",
+           "step": "1",
+           "body": [
+            {
+             "t": "output",
+             "expr": "\"buah \" & i & \": \" & buah[i]"
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [],
+        "editable": false
+       }
+      ],
+      "remedial": [
+       {
+        "id": "cb9fec1e",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "**Array** ibarat lemari berlaci. Satu lemari, banyak laci, dan semua laci berisi jenis data yang sama. Setiap laci punya nomor yang disebut **indeks**. Awas, hitungannya mulai dari **0**, bukan 1! Laci pertama adalah buah[0].",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": []
+     },
+     {
+      "id": "st09",
+      "title": "9. Operator Hitung",
+      "objectives": [
+       "Menghitung dengan operator + - * / % ^",
+       "Menerapkan urutan operasi"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st08"
+      ],
+      "optional": false,
+      "summary": [
+       "% = sisa bagi",
+       "Kali & bagi lebih dulu",
+       "& menggabung teks"
+      ],
+      "reflection": "Kapan operator sisa bagi (%) berguna dalam kehidupan sehari-hari?",
+      "badge": {
+       "title": "Kalkulator Cilik",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "61453f65",
+        "kind": "dialog",
+        "title": "Operator Hitung",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "**Operator** adalah tanda untuk menghitung. Yang unik: **%** artinya **sisa bagi**. Bagikan 7 permen ke 2 anak, tiap anak dapat 3, sisa 1."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Seperti di pelajaran matematika, **kali dan bagi dikerjakan lebih dulu** daripada tambah dan kurang. Tanda kurung dikerjakan paling awal. Untuk menggabung teks pakai tanda **&**."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "96652cc9",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "**7 + 3 * 2**\n\nHasilnya adalah ...",
+        "image": "",
+        "explanation": "Kali dikerjakan dulu: 3 * 2 = 6, lalu 7 + 6.",
+        "choices": [
+         {
+          "text": "13",
+          "why": ""
+         },
+         {
+          "text": "16",
+          "why": ""
+         },
+         {
+          "text": "20",
+          "why": ""
+         },
+         {
+          "text": "12",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "81668e16",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "**17 % 5**\n\nHasilnya adalah ...",
+        "image": "",
+        "explanation": "17 dibagi 5 sisa 2.",
+        "choices": [
+         {
+          "text": "2",
+          "why": ""
+         },
+         {
+          "text": "3",
+          "why": ""
+         },
+         {
+          "text": "12",
+          "why": ""
+         },
+         {
+          "text": "85",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "30ff1b6e",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "**2 ^ 3**\n\nHasilnya adalah ...",
+        "image": "",
+        "explanation": "2 dipangkatkan 3 = 2 * 2 * 2.",
+        "choices": [
+         {
+          "text": "8",
+          "why": ""
+         },
+         {
+          "text": "6",
+          "why": ""
+         },
+         {
+          "text": "5",
+          "why": ""
+         },
+         {
+          "text": "23",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "a3cedf5d",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "**(2 + 3) * 4**\n\nHasilnya adalah ...",
+        "image": "",
+        "explanation": "Kurung dikerjakan dulu: 5 * 4.",
+        "choices": [
+         {
+          "text": "20",
+          "why": ""
+         },
+         {
+          "text": "14",
+          "why": ""
+         },
+         {
+          "text": "11",
+          "why": ""
+         },
+         {
+          "text": "9",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "ecdb935e",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "**7 / 2**\n\nHasilnya adalah ...",
+        "image": "",
+        "explanation": "Di Flowgorithm pembagian memberi pecahan: 3.5.",
+        "choices": [
+         {
+          "text": "3.5",
+          "why": ""
+         },
+         {
+          "text": "3",
+          "why": ""
+         },
+         {
+          "text": "4",
+          "why": ""
+         },
+         {
+          "text": "2",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "21265a72",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "**\"Ha\" & \"lo\"**\n\nHasilnya adalah ...",
+        "image": "",
+        "explanation": "Tanda & menggabung teks tanpa spasi.",
+        "choices": [
+         {
+          "text": "\"Halo\"",
+          "why": ""
+         },
+         {
+          "text": "\"Ha lo\"",
+          "why": ""
+         },
+         {
+          "text": "\"HaLo\"",
+          "why": ""
+         },
+         {
+          "text": "\"Ha\" + \"lo\"",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ],
+      "remedial": [
+       {
+        "id": "30be9a60",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "**Operator** adalah tanda untuk menghitung. Yang unik: **%** artinya **sisa bagi**. Bagikan 7 permen ke 2 anak, tiap anak dapat 3, sisa 1. Seperti di pelajaran matematika, **kali dan bagi dikerjakan lebih dulu** daripada tambah dan kurang. Tanda kurung dikerjakan paling awal. Untuk menggabung teks pakai tanda **&**.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "e67da3d0",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Hasil dari 7 + 3 * 2 adalah ...",
+        "image": "",
+        "explanation": "Kali dulu.",
+        "choices": [
+         {
+          "text": "13",
+          "why": ""
+         },
+         {
+          "text": "20",
+          "why": ""
+         },
+         {
+          "text": "16",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st10",
+      "title": "10. Operator Banding dan Logika",
+      "objectives": [
+       "Menentukan hasil operator banding dan logika"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st09"
+      ],
+      "optional": false,
+      "summary": [
+       "== untuk sama dengan",
+       "and butuh keduanya true",
+       "not membalik true/false"
+      ],
+      "reflection": "Buat satu syarat dengan and untuk aturan di asramamu.",
+      "badge": {
+       "title": "Hakim Logika",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "c409fdc7",
+        "kind": "dialog",
+        "title": "Operator Banding dan Logika",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Operator banding dan logika menghasilkan **true** atau **false**. Awas: untuk \"sama dengan\" pakai **dua** tanda sama dengan (==)."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Misalkan **A = 5** dan **B = 10**. Tentukan apakah pernyataan berikut true atau false!"
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "b0e33413",
+        "kind": "categorize",
+        "title": "Dengan A = 5 dan B = 10, hasilnya?",
+        "hints": [],
+        "text": "Kelompokkan ke wadah yang benar.",
+        "image": "",
+        "explanation": "",
+        "categories": [
+         "true",
+         "false"
+        ],
+        "items": [
+         {
+          "text": "A < B",
+          "category": 0,
+          "why": "5 lebih kecil dari 10."
+         },
+         {
+          "text": "A == B",
+          "category": 1,
+          "why": "5 tidak sama dengan 10."
+         },
+         {
+          "text": "A >= 5 and B < 10",
+          "category": 1,
+          "why": "Kiri true, kanan false. and butuh keduanya true."
+         },
+         {
+          "text": "not (A > B)",
+          "category": 0,
+          "why": "A > B false, dibalik oleh not jadi true."
+         },
+         {
+          "text": "A != B or A > B",
+          "category": 0,
+          "why": "Kiri true. or cukup satu yang true."
+         },
+         {
+          "text": "A + 5 == B",
+          "category": 0,
+          "why": "5 + 5 = 10, sama dengan B."
+         }
+        ]
+       }
+      ],
+      "remedial": [
+       {
+        "id": "3f1bafcd",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Operator banding dan logika menghasilkan **true** atau **false**. Awas: untuk \"sama dengan\" pakai **dua** tanda sama dengan (==). Misalkan **A = 5** dan **B = 10**. Tentukan apakah pernyataan berikut true atau false!",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "93af6521",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Untuk membandingkan \"sama dengan\" ditulis ...",
+        "image": "",
+        "explanation": "Dua tanda sama dengan.",
+        "choices": [
+         {
+          "text": "==",
+          "why": ""
+         },
+         {
+          "text": "=",
+          "why": ""
+         },
+         {
+          "text": "=>",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "71a3f65e",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Hasil dari not (5 > 3) adalah ...",
+        "image": "",
+        "explanation": "5 > 3 true, dibalik jadi false.",
+        "choices": [
+         {
+          "text": "false",
+          "why": ""
+         },
+         {
+          "text": "true",
+          "why": ""
+         },
+         {
+          "text": "3",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "b3",
+    "title": "Output, Input & Proses",
+    "description": "Komputer bicara, bertanya, dan menghitung secara berurutan.",
+    "stations": [
+     {
+      "id": "st11",
+      "title": "11. Output: Komputer Bicara",
+      "objectives": [
+       "Menampilkan teks dan isi variabel dengan Output"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st10"
+      ],
+      "optional": false,
+      "summary": [
+       "Teks ditulis dalam kutip ganda",
+       "Variabel ditulis tanpa kutip",
+       "& menggabung teks & variabel"
+      ],
+      "reflection": "Apa bedanya Output \"nama\" dengan Output nama?",
+      "badge": {
+       "title": "Pembicara Program",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "9c29bada",
+        "kind": "dialog",
+        "title": "Output: Komputer Bicara",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Simbol **Output** membuat komputer berbicara: menampilkan tulisan atau hasil hitungan di Console."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Teks ditulis di dalam **tanda kutip ganda**. Untuk menggabung teks dan variabel pakai **&**, misalnya \"Halo, \" & nama."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "5ce60191",
+        "kind": "flowgorithm",
+        "title": "Sapa Bita!",
+        "hints": [
+         "Tulis nama variabelnya, tanpa kutip, karena isinya sudah disimpan."
+        ],
+        "text": "Apa yang harus ditulis supaya nama Bita ikut tampil?",
+        "image": "",
+        "explanation": "Tanpa kutip, komputer mengambil isi kotak nama.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "String",
+           "names": [
+            "nama"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "nama",
+           "expr": "\"Bita\""
+          },
+          {
+           "t": "output",
+           "expr": "\"Selamat datang, \" & {{}}"
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "nama"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "Selamat datang, Bita"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       },
+       {
+        "id": "6aa427fb",
+        "kind": "flowgorithm",
+        "title": "Komputer berkata halo",
+        "hints": [
+         "Teks harus diapit tanda kutip ganda."
+        ],
+        "text": "Tulis teks yang akan ditampilkan: Halo, Dunia!",
+        "image": "",
+        "explanation": "Teks selalu di dalam tanda kutip ganda.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "output",
+           "expr": "{{}}"
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "\"Halo, Dunia!\""
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "Halo, Dunia!"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [
+       {
+        "id": "04f02610",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Simbol **Output** membuat komputer berbicara: menampilkan tulisan atau hasil hitungan di Console. Teks ditulis di dalam **tanda kutip ganda**. Untuk menggabung teks dan variabel pakai **&**, misalnya \"Halo, \" & nama.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "1bb8144d",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Operator untuk menggabung teks adalah ...",
+        "image": "",
+        "explanation": "\"Ha\" & \"lo\" menjadi \"Halo\".",
+        "choices": [
+         {
+          "text": "&",
+          "why": ""
+         },
+         {
+          "text": "%",
+          "why": ""
+         },
+         {
+          "text": "^",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "cef4c1b4",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Teks di dalam Output ditulis dengan ...",
+        "image": "",
+        "explanation": "Contoh: \"Halo\".",
+        "choices": [
+         {
+          "text": "tanda kutip ganda",
+          "why": ""
+         },
+         {
+          "text": "tanda kurung siku",
+          "why": ""
+         },
+         {
+          "text": "tanda bintang",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st12",
+      "title": "12. Input: Komputer Bertanya",
+      "objectives": [
+       "Membaca isian keyboard dengan Input"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st11"
+      ],
+      "optional": false,
+      "summary": [
+       "Input menyimpan isian ke variabel",
+       "Declare dulu sebelum Input",
+       "Tipe variabel menentukan isian"
+      ],
+      "reflection": "Program apa yang ingin kamu buat yang bertanya kepada pengguna?",
+      "badge": {
+       "title": "Penanya Ramah",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "fad4b2d8",
+        "kind": "dialog",
+        "title": "Input: Komputer Bertanya",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Simbol **Input** membuat komputer bertanya dan membaca jawabanmu lewat keyboard. Jawabannya disimpan ke dalam variabel."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Ingat: variabel harus dibuat dulu dengan **Declare**, baru boleh dipakai di Input. Tipe variabel menentukan jenis jawaban yang diterima."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "06c0764f",
+        "kind": "flowgorithm",
+        "title": "Tanya umur",
+        "hints": [
+         "Variabel yang sudah dibuat Declare di atas."
+        ],
+        "text": "Jawaban disimpan ke variabel apa?",
+        "image": "",
+        "explanation": "Input menyimpan jawaban ke variabel umur.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "umur"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Umur berapa?\""
+          },
+          {
+           "t": "input",
+           "target": "{{}}"
+          },
+          {
+           "t": "output",
+           "expr": "\"Umurmu \" & umur"
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "umur"
+        ],
+        "tests": [
+         {
+          "inputs": [
+           "12"
+          ],
+          "expected": [
+           "Umur berapa?",
+           "Umurmu 12"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       },
+       {
+        "id": "b9e7fb9b",
+        "kind": "flowgorithm",
+        "title": "Tanya nama",
+        "hints": [
+         "Cek variabel pada Declare."
+        ],
+        "text": "Jawaban disimpan ke variabel apa?",
+        "image": "",
+        "explanation": "Sekarang komputer bisa menyapa siapa saja.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "String",
+           "names": [
+            "nama"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Namamu?\""
+          },
+          {
+           "t": "input",
+           "target": "{{}}"
+          },
+          {
+           "t": "output",
+           "expr": "\"Halo, \" & nama"
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "nama"
+        ],
+        "tests": [
+         {
+          "inputs": [
+           "Rani"
+          ],
+          "expected": [
+           "Namamu?",
+           "Halo, Rani"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [
+       {
+        "id": "4043b9de",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Simbol **Input** membuat komputer bertanya dan membaca jawabanmu lewat keyboard. Jawabannya disimpan ke dalam variabel. Ingat: variabel harus dibuat dulu dengan **Declare**, baru boleh dipakai di Input. Tipe variabel menentukan jenis jawaban yang diterima.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "70d3a168",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Variabel yang akan dipakai di Input harus dibuat dulu dengan ...",
+        "image": "",
+        "explanation": "Declare membuat variabel.",
+        "choices": [
+         {
+          "text": "Declare",
+          "why": ""
+         },
+         {
+          "text": "Output",
+          "why": ""
+         },
+         {
+          "text": "Comment",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st13",
+      "title": "13. Assign: Menghitung dan Menyimpan",
+      "objectives": [
+       "Menghitung dan menyimpan hasil dengan Assign"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st12"
+      ],
+      "optional": false,
+      "summary": [
+       "= berarti isi kotak kiri",
+       "Hitungan di kanan",
+       "Pakai kurung bila perlu"
+      ],
+      "reflection": "Kenapa tanda = di Assign berbeda dengan = di matematika?",
+      "badge": {
+       "title": "Penghitung Andal",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "f5e14f54",
+        "kind": "dialog",
+        "title": "Assign: Menghitung dan Menyimpan",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "**Assign** memasukkan hasil ke dalam kotak. Tanda = di sini bukan \"sama dengan\" seperti di matematika, tapi \"isi kotak kiri dengan hasil kanan\"."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Kotak yang menerima hasil ditulis di **kiri**. Hitungannya di **kanan**. Coba lengkapi!"
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "2ba1f2c3",
+        "kind": "flowgorithm",
+        "title": "Luas persegi panjang",
+        "hints": [
+         "Luas = panjang kali lebar."
+        ],
+        "text": "luas = ... (ketik rumusnya)",
+        "image": "",
+        "explanation": "luas = panjang * lebar menghasilkan 24.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "panjang",
+            "lebar",
+            "luas"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "panjang",
+           "expr": "6"
+          },
+          {
+           "t": "assign",
+           "target": "lebar",
+           "expr": "4"
+          },
+          {
+           "t": "assign",
+           "target": "luas",
+           "expr": "{{}}"
+          },
+          {
+           "t": "output",
+           "expr": "luas"
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "panjang * lebar"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "24"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       },
+       {
+        "id": "61f9e4ed",
+        "kind": "flowgorithm",
+        "title": "Keliling persegi panjang",
+        "hints": [
+         "Keliling = 2 kali (panjang + lebar). Pakai kurung."
+        ],
+        "text": "keliling = ... (ketik rumusnya)",
+        "image": "",
+        "explanation": "2 * (panjang + lebar) = 20.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "panjang",
+            "lebar",
+            "keliling"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "panjang",
+           "expr": "6"
+          },
+          {
+           "t": "assign",
+           "target": "lebar",
+           "expr": "4"
+          },
+          {
+           "t": "assign",
+           "target": "keliling",
+           "expr": "{{}}"
+          },
+          {
+           "t": "output",
+           "expr": "keliling"
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "2 * (panjang + lebar)"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "20"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       },
+       {
+        "id": "9e963ee0",
+        "kind": "flowgorithm",
+        "title": "Sisa bagi",
+        "hints": [
+         "Gunakan operator % antara a dan b."
+        ],
+        "text": "sisa = ... (sisa bagi a dan b)",
+        "image": "",
+        "explanation": "a % b = 10 % 3 = 1.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "a",
+            "b",
+            "sisa"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "a",
+           "expr": "10"
+          },
+          {
+           "t": "assign",
+           "target": "b",
+           "expr": "3"
+          },
+          {
+           "t": "assign",
+           "target": "sisa",
+           "expr": "{{}}"
+          },
+          {
+           "t": "output",
+           "expr": "sisa"
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "a % b"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "1"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [
+       {
+        "id": "c8c938e0",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "**Assign** memasukkan hasil ke dalam kotak. Tanda = di sini bukan \"sama dengan\" seperti di matematika, tapi \"isi kotak kiri dengan hasil kanan\". Kotak yang menerima hasil ditulis di **kiri**. Hitungannya di **kanan**. Coba lengkapi!",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": []
+     },
+     {
+      "id": "st14",
+      "title": "14. Urutan dari Atas ke Bawah (Sekuensial)",
+      "objectives": [
+       "Menyusun program sekuensial yang urut"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st13"
+      ],
+      "optional": false,
+      "summary": [
+       "Program berjalan dari atas ke bawah",
+       "Declare, Input, Proses, Output",
+       "Urutan salah = hasil salah"
+      ],
+      "reflection": "Apa yang terjadi kalau Output ditaruh sebelum perhitungan?",
+      "badge": {
+       "title": "Penyusun Urutan",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "1ea98480",
+        "kind": "dialog",
+        "title": "Urutan dari Atas ke Bawah (Sekuensial)",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Program berjalan **berurutan dari atas ke bawah**, seperti membaca resep. Ini disebut **sekuensial**."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Biasanya urutannya: buat variabel, minta isian, hitung, lalu tampilkan hasil. Susun program pengubah suhu ini!"
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "ce1d1534",
+        "kind": "ordering",
+        "title": "Susun program Celsius ke Fahrenheit",
+        "hints": [],
+        "text": "Ketuk baris program sesuai urutan yang benar.",
+        "image": "",
+        "explanation": "",
+        "items": [
+         "Real celsius, fahrenheit",
+         "Output \"Suhu Celsius?\"",
+         "Input celsius",
+         "fahrenheit = celsius * 9 / 5 + 32",
+         "Output fahrenheit"
+        ],
+        "why": "Variabel dibuat dulu, baru dipakai."
+       }
+      ],
+      "remedial": [
+       {
+        "id": "f2c8664e",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Program berjalan **berurutan dari atas ke bawah**, seperti membaca resep. Ini disebut **sekuensial**. Biasanya urutannya: buat variabel, minta isian, hitung, lalu tampilkan hasil. Susun program pengubah suhu ini!",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": []
+     }
+    ]
+   },
+   {
+    "id": "b4",
+    "title": "Percabangan & Perulangan",
+    "description": "Memilih jalan dan mengulang langkah.",
+    "stations": [
+     {
+      "id": "st15",
+      "title": "15. Percabangan: Pilih Jalan (If)",
+      "objectives": [
+       "Menentukan jalur If dari sebuah syarat"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st14"
+      ],
+      "optional": false,
+      "summary": [
+       "If memeriksa syarat",
+       "True ke kanan, False ke kiri",
+       "Batas syarat (>, >=) penting"
+      ],
+      "reflection": "Keputusan apa hari ini yang bisa kamu tulis sebagai If?",
+      "badge": {
+       "title": "Penunjuk Jalan",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "5f7138e9",
+        "kind": "dialog",
+        "title": "Percabangan: Pilih Jalan (If)",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Kadang kita harus memilih jalan, seperti di pertigaan. Di Flowgorithm, simbol **If** memeriksa sebuah kondisi."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Kalau kondisinya **True**, program ke jalur **kanan**. Kalau **False**, ke jalur **kiri**. Sekarang tebak jalannya!"
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "cf93efce",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Kalau umur diisi 15, pesan terakhir yang tampil adalah ...",
+        "image": "",
+        "explanation": "Syaratnya umur > 12. Untuk 15 hasilnya True.",
+        "choices": [
+         {
+          "text": "Kamu sudah besar!",
+          "why": ""
+         },
+         {
+          "text": "Kamu masih kecil!",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "umur"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Berapa umurmu?\""
+          },
+          {
+           "t": "input",
+           "target": "umur"
+          },
+          {
+           "t": "if",
+           "cond": "umur > 12",
+           "yes": [
+            {
+             "t": "output",
+             "expr": "\"Kamu sudah besar!\""
+            }
+           ],
+           "no": [
+            {
+             "t": "output",
+             "expr": "\"Kamu masih kecil!\""
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [
+         "15"
+        ],
+        "show": "last",
+        "wrong": [
+         "Kamu masih kecil!"
+        ]
+       },
+       {
+        "id": "f8104b9b",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Kalau umur diisi 12, pesan terakhir yang tampil adalah ...",
+        "image": "",
+        "explanation": "Syaratnya umur > 12. Untuk 12 hasilnya False.",
+        "choices": [
+         {
+          "text": "Kamu masih kecil!",
+          "why": ""
+         },
+         {
+          "text": "Kamu sudah besar!",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "umur"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Berapa umurmu?\""
+          },
+          {
+           "t": "input",
+           "target": "umur"
+          },
+          {
+           "t": "if",
+           "cond": "umur > 12",
+           "yes": [
+            {
+             "t": "output",
+             "expr": "\"Kamu sudah besar!\""
+            }
+           ],
+           "no": [
+            {
+             "t": "output",
+             "expr": "\"Kamu masih kecil!\""
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [
+         "12"
+        ],
+        "show": "last",
+        "wrong": [
+         "Kamu sudah besar!"
+        ]
+       },
+       {
+        "id": "010a8b79",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Kalau umur diisi 13, pesan terakhir yang tampil adalah ...",
+        "image": "",
+        "explanation": "Syaratnya umur > 12. Untuk 13 hasilnya True.",
+        "choices": [
+         {
+          "text": "Kamu sudah besar!",
+          "why": ""
+         },
+         {
+          "text": "Kamu masih kecil!",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "umur"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Berapa umurmu?\""
+          },
+          {
+           "t": "input",
+           "target": "umur"
+          },
+          {
+           "t": "if",
+           "cond": "umur > 12",
+           "yes": [
+            {
+             "t": "output",
+             "expr": "\"Kamu sudah besar!\""
+            }
+           ],
+           "no": [
+            {
+             "t": "output",
+             "expr": "\"Kamu masih kecil!\""
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [
+         "13"
+        ],
+        "show": "last",
+        "wrong": [
+         "Kamu masih kecil!"
+        ]
+       },
+       {
+        "id": "e0ab56e1",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Kalau umur diisi 5, pesan terakhir yang tampil adalah ...",
+        "image": "",
+        "explanation": "Syaratnya umur > 12. Untuk 5 hasilnya False.",
+        "choices": [
+         {
+          "text": "Kamu masih kecil!",
+          "why": ""
+         },
+         {
+          "text": "Kamu sudah besar!",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "umur"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Berapa umurmu?\""
+          },
+          {
+           "t": "input",
+           "target": "umur"
+          },
+          {
+           "t": "if",
+           "cond": "umur > 12",
+           "yes": [
+            {
+             "t": "output",
+             "expr": "\"Kamu sudah besar!\""
+            }
+           ],
+           "no": [
+            {
+             "t": "output",
+             "expr": "\"Kamu masih kecil!\""
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [
+         "5"
+        ],
+        "show": "last",
+        "wrong": [
+         "Kamu sudah besar!"
+        ]
+       }
+      ],
+      "remedial": [
+       {
+        "id": "88ddab37",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Kadang kita harus memilih jalan, seperti di pertigaan. Di Flowgorithm, simbol **If** memeriksa sebuah kondisi. Kalau kondisinya **True**, program ke jalur **kanan**. Kalau **False**, ke jalur **kiri**. Sekarang tebak jalannya!",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": []
+     },
+     {
+      "id": "st16",
+      "title": "16. Percabangan Banyak Pilihan",
+      "objectives": [
+       "Menyusun If bersarang untuk banyak pilihan"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st15"
+      ],
+      "optional": false,
+      "summary": [
+       "Syarat diperiksa dari atas",
+       "Syarat paling ketat lebih dulu",
+       "Genap: bilangan % 2 == 0"
+      ],
+      "reflection": "Kenapa urutan pemeriksaan syarat bisa mengubah hasil?",
+      "badge": {
+       "title": "Pemilih Bijak",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "3f1a7c04",
+        "kind": "dialog",
+        "title": "Percabangan Banyak Pilihan",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Kalau pilihannya lebih dari dua, kita susun **If di dalam If**. Komputer memeriksa satu per satu dari atas."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Urutan pemeriksaan penting! Syarat yang paling ketat harus diperiksa lebih dulu. Tebak dulu hasilnya, lalu buat syarat genap atau ganjil."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "5c175892",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Nilai 90 mendapat ...",
+        "image": "",
+        "explanation": "Komputer memeriksa syarat dari atas sampai ada yang True.",
+        "choices": [
+         {
+          "text": "Grade: A",
+          "why": ""
+         },
+         {
+          "text": "Grade: B",
+          "why": ""
+         },
+         {
+          "text": "Grade: C",
+          "why": ""
+         },
+         {
+          "text": "Grade: D",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "nilai"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "String",
+           "names": [
+            "grade"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "nilai"
+          },
+          {
+           "t": "if",
+           "cond": "nilai >= 85",
+           "yes": [
+            {
+             "t": "assign",
+             "target": "grade",
+             "expr": "\"A\""
+            }
+           ],
+           "no": [
+            {
+             "t": "if",
+             "cond": "nilai >= 70",
+             "yes": [
+              {
+               "t": "assign",
+               "target": "grade",
+               "expr": "\"B\""
+              }
+             ],
+             "no": [
+              {
+               "t": "if",
+               "cond": "nilai >= 55",
+               "yes": [
+                {
+                 "t": "assign",
+                 "target": "grade",
+                 "expr": "\"C\""
+                }
+               ],
+               "no": [
+                {
+                 "t": "assign",
+                 "target": "grade",
+                 "expr": "\"D\""
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Grade: \" & grade"
+          }
+         ]
+        },
+        "inputs": [
+         "90"
+        ],
+        "show": "all",
+        "wrong": [
+         "Grade: B",
+         "Grade: C",
+         "Grade: D"
+        ]
+       },
+       {
+        "id": "1e833024",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Nilai 72 mendapat ...",
+        "image": "",
+        "explanation": "Komputer memeriksa syarat dari atas sampai ada yang True.",
+        "choices": [
+         {
+          "text": "Grade: B",
+          "why": ""
+         },
+         {
+          "text": "Grade: A",
+          "why": ""
+         },
+         {
+          "text": "Grade: C",
+          "why": ""
+         },
+         {
+          "text": "Grade: D",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "nilai"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "String",
+           "names": [
+            "grade"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "nilai"
+          },
+          {
+           "t": "if",
+           "cond": "nilai >= 85",
+           "yes": [
+            {
+             "t": "assign",
+             "target": "grade",
+             "expr": "\"A\""
+            }
+           ],
+           "no": [
+            {
+             "t": "if",
+             "cond": "nilai >= 70",
+             "yes": [
+              {
+               "t": "assign",
+               "target": "grade",
+               "expr": "\"B\""
+              }
+             ],
+             "no": [
+              {
+               "t": "if",
+               "cond": "nilai >= 55",
+               "yes": [
+                {
+                 "t": "assign",
+                 "target": "grade",
+                 "expr": "\"C\""
+                }
+               ],
+               "no": [
+                {
+                 "t": "assign",
+                 "target": "grade",
+                 "expr": "\"D\""
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Grade: \" & grade"
+          }
+         ]
+        },
+        "inputs": [
+         "72"
+        ],
+        "show": "all",
+        "wrong": [
+         "Grade: A",
+         "Grade: C",
+         "Grade: D"
+        ]
+       },
+       {
+        "id": "b31a315c",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Nilai 40 mendapat ...",
+        "image": "",
+        "explanation": "Komputer memeriksa syarat dari atas sampai ada yang True.",
+        "choices": [
+         {
+          "text": "Grade: D",
+          "why": ""
+         },
+         {
+          "text": "Grade: A",
+          "why": ""
+         },
+         {
+          "text": "Grade: B",
+          "why": ""
+         },
+         {
+          "text": "Grade: C",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "nilai"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "String",
+           "names": [
+            "grade"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "nilai"
+          },
+          {
+           "t": "if",
+           "cond": "nilai >= 85",
+           "yes": [
+            {
+             "t": "assign",
+             "target": "grade",
+             "expr": "\"A\""
+            }
+           ],
+           "no": [
+            {
+             "t": "if",
+             "cond": "nilai >= 70",
+             "yes": [
+              {
+               "t": "assign",
+               "target": "grade",
+               "expr": "\"B\""
+              }
+             ],
+             "no": [
+              {
+               "t": "if",
+               "cond": "nilai >= 55",
+               "yes": [
+                {
+                 "t": "assign",
+                 "target": "grade",
+                 "expr": "\"C\""
+                }
+               ],
+               "no": [
+                {
+                 "t": "assign",
+                 "target": "grade",
+                 "expr": "\"D\""
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Grade: \" & grade"
+          }
+         ]
+        },
+        "inputs": [
+         "40"
+        ],
+        "show": "all",
+        "wrong": [
+         "Grade: A",
+         "Grade: B",
+         "Grade: C"
+        ]
+       },
+       {
+        "id": "037522f1",
+        "kind": "flowgorithm",
+        "title": "Genap atau ganjil?",
+        "hints": [
+         "Bilangan genap kalau sisa dibagi 2 sama dengan 0."
+        ],
+        "text": "Tulis syarat supaya bilangan genap masuk ke jalur True:",
+        "image": "",
+        "explanation": "Sisa bagi 2 yang bernilai 0 berarti genap.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "bilangan"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "bilangan"
+          },
+          {
+           "t": "if",
+           "cond": "{{}}",
+           "yes": [
+            {
+             "t": "output",
+             "expr": "\"genap\""
+            }
+           ],
+           "no": [
+            {
+             "t": "output",
+             "expr": "\"ganjil\""
+            }
+           ]
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "bilangan % 2 == 0"
+        ],
+        "tests": [
+         {
+          "inputs": [
+           "8"
+          ],
+          "expected": [
+           "genap"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "7"
+          ],
+          "expected": [
+           "ganjil"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [
+       {
+        "id": "90b5a118",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Kalau pilihannya lebih dari dua, kita susun **If di dalam If**. Komputer memeriksa satu per satu dari atas. Urutan pemeriksaan penting! Syarat yang paling ketat harus diperiksa lebih dulu. Tebak dulu hasilnya, lalu buat syarat genap atau ganjil.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": []
+     },
+     {
+      "id": "st17",
+      "title": "17. Perulangan While",
+      "objectives": [
+       "Menjelaskan cara kerja While"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st16"
+      ],
+      "optional": false,
+      "summary": [
+       "While cek syarat dulu",
+       "Harus ada perubahan nilai",
+       "Tanpa perubahan = loop tak berhenti"
+      ],
+      "reflection": "Kegiatan apa di pondok yang berulang selama syarat tertentu masih benar?",
+      "badge": {
+       "title": "Pelari Tangguh",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "6259773f",
+        "kind": "dialog",
+        "title": "Perulangan While",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Bayangkan berlari mengelilingi lapangan. Sebelum setiap putaran, kita cek: masih kuat? Kalau ya, lari lagi. Itulah **While**."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "**While** memeriksa syarat dulu. Kalau True, isinya dikerjakan lalu kembali memeriksa. Kalau False, berhenti. Jangan lupa ada **perubahan nilai** supaya suatu saat syaratnya False!"
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "1b82cc9a",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "i = 1, 2, 3 dan tiap kali dikali 2.",
+        "choices": [
+         {
+          "text": "2, 4, 6",
+          "why": ""
+         },
+         {
+          "text": "2, 4, 6, 8",
+          "why": ""
+         },
+         {
+          "text": "1, 2, 3",
+          "why": ""
+         },
+         {
+          "text": "2, 4",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "i",
+           "expr": "1"
+          },
+          {
+           "t": "while",
+           "cond": "i <= 3",
+           "body": [
+            {
+             "t": "output",
+             "expr": "i * 2"
+            },
+            {
+             "t": "assign",
+             "target": "i",
+             "expr": "i + 1"
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "2, 4, 6, 8",
+         "1, 2, 3",
+         "2, 4"
+        ]
+       },
+       {
+        "id": "96d83b50",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "Syaratnya i < 5, jadi 5 tidak ikut.",
+        "choices": [
+         {
+          "text": "1, 2, 3, 4",
+          "why": ""
+         },
+         {
+          "text": "1, 2, 3, 4, 5",
+          "why": ""
+         },
+         {
+          "text": "2, 3, 4",
+          "why": ""
+         },
+         {
+          "text": "1, 2, 3",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "i",
+           "expr": "1"
+          },
+          {
+           "t": "while",
+           "cond": "i < 5",
+           "body": [
+            {
+             "t": "output",
+             "expr": "i"
+            },
+            {
+             "t": "assign",
+             "target": "i",
+             "expr": "i + 1"
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "1, 2, 3, 4, 5",
+         "2, 3, 4",
+         "1, 2, 3"
+        ]
+       },
+       {
+        "id": "a21329ad",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "Turun 3 demi 3 sampai n tidak lebih dari 0.",
+        "choices": [
+         {
+          "text": "10, 7, 4, 1",
+          "why": ""
+         },
+         {
+          "text": "10, 7, 4",
+          "why": ""
+         },
+         {
+          "text": "10, 7, 4, 1, -2",
+          "why": ""
+         },
+         {
+          "text": "7, 4, 1",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "n"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "n",
+           "expr": "10"
+          },
+          {
+           "t": "while",
+           "cond": "n > 0",
+           "body": [
+            {
+             "t": "output",
+             "expr": "n"
+            },
+            {
+             "t": "assign",
+             "target": "n",
+             "expr": "n - 3"
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "10, 7, 4",
+         "10, 7, 4, 1, -2",
+         "7, 4, 1"
+        ]
+       },
+       {
+        "id": "8cad35d1",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "Syarat i > 5 langsung False di awal, isinya tidak pernah dikerjakan.",
+        "choices": [
+         {
+          "text": "Tidak ada yang tampil",
+          "why": ""
+         },
+         {
+          "text": "1",
+          "why": ""
+         },
+         {
+          "text": "1, 2, 3, 4, 5",
+          "why": ""
+         },
+         {
+          "text": "5",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "i",
+           "expr": "1"
+          },
+          {
+           "t": "while",
+           "cond": "i > 5",
+           "body": [
+            {
+             "t": "output",
+             "expr": "i"
+            },
+            {
+             "t": "assign",
+             "target": "i",
+             "expr": "i + 1"
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "1",
+         "1, 2, 3, 4, 5",
+         "5"
+        ]
+       }
+      ],
+      "remedial": [
+       {
+        "id": "15632a14",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Bayangkan berlari mengelilingi lapangan. Sebelum setiap putaran, kita cek: masih kuat? Kalau ya, lari lagi. Itulah **While**. **While** memeriksa syarat dulu. Kalau True, isinya dikerjakan lalu kembali memeriksa. Kalau False, berhenti. Jangan lupa ada **perubahan nilai** supaya suatu saat syaratnya False!",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "8211f666",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Program berjalan terus tidak berhenti. Penyebab yang paling mungkin ...",
+        "image": "",
+        "explanation": "Syarat tidak pernah menjadi False.",
+        "choices": [
+         {
+          "text": "nilai di dalam loop tidak pernah berubah",
+          "why": ""
+         },
+         {
+          "text": "terlalu banyak komentar",
+          "why": ""
+         },
+         {
+          "text": "nama variabel terlalu pendek",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st18",
+      "title": "18. Perulangan For dan Do While",
+      "objectives": [
+       "Memakai For dan Do While"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st17"
+      ],
+      "optional": false,
+      "summary": [
+       "For: start, end, step",
+       "Step negatif = hitung mundur",
+       "Do While jalan minimal sekali"
+      ],
+      "reflection": "Kapan kamu memilih For, dan kapan While?",
+      "badge": {
+       "title": "Penghitung Putaran",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "ae844414",
+        "kind": "dialog",
+        "title": "Perulangan For dan Do While",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "Kalau kita tahu **berapa kali** mengulang, pakai **For**. Isiannya: nilai awal (start), nilai akhir (end), dan langkah (step)."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "**Do While** berbeda: isinya dikerjakan **dulu**, baru syaratnya diperiksa. Jadi isinya pasti jalan minimal satu kali."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "55edfcf7",
+        "kind": "flowgorithm",
+        "title": "Hitung 1 sampai 5",
+        "hints": [
+         "Perulangan berhenti setelah angka terakhir yang ingin ditampilkan."
+        ],
+        "text": "Nilai akhir (End Value) berapa?",
+        "image": "",
+        "explanation": "For berjalan dari 1 sampai 5.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "1",
+           "to": "{{}}",
+           "step": "1",
+           "body": [
+            {
+             "t": "output",
+             "expr": "i"
+            }
+           ]
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "5"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "1",
+           "2",
+           "3",
+           "4",
+           "5"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       },
+       {
+        "id": "308f30cf",
+        "kind": "flowgorithm",
+        "title": "Bilangan genap",
+        "hints": [
+         "Angka terakhir yang tampil adalah 10."
+        ],
+        "text": "Nilai akhir berapa supaya tampil 2, 4, 6, 8, 10?",
+        "image": "",
+        "explanation": "Step 2 membuat loncat dua-dua.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "2",
+           "to": "{{}}",
+           "step": "2",
+           "body": [
+            {
+             "t": "output",
+             "expr": "i"
+            }
+           ]
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "10"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "2",
+           "4",
+           "6",
+           "8",
+           "10"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       },
+       {
+        "id": "a12df058",
+        "kind": "flowgorithm",
+        "title": "Hitung mundur",
+        "hints": [
+         "Untuk turun, langkahnya bilangan negatif."
+        ],
+        "text": "Step berapa supaya tampil 5, 4, 3, 2, 1?",
+        "image": "",
+        "explanation": "Step -1 membuat hitungan mundur.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "5",
+           "to": "1",
+           "step": "{{}}",
+           "body": [
+            {
+             "t": "output",
+             "expr": "i"
+            }
+           ]
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "-1"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "5",
+           "4",
+           "3",
+           "2",
+           "1"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       },
+       {
+        "id": "1697250b",
+        "kind": "flowgorithm",
+        "title": "Do While",
+        "hints": [
+         "Setelah angka 3 ditampilkan, n menjadi 4. Ulangi selama n masih 3 atau kurang: n <= 3."
+        ],
+        "text": "Tulis syarat supaya yang tampil 1, 2, 3. Do While mengulang selama syaratnya True.",
+        "image": "",
+        "explanation": "Setelah n menjadi 4, syarat n <= 3 jadi False dan perulangan berhenti.",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "n"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "n",
+           "expr": "1"
+          },
+          {
+           "t": "do",
+           "cond": "{{}}",
+           "body": [
+            {
+             "t": "output",
+             "expr": "n"
+            },
+            {
+             "t": "assign",
+             "target": "n",
+             "expr": "n + 1"
+            }
+           ]
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "n <= 3"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "1",
+           "2",
+           "3"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [
+       {
+        "id": "07d85082",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "Kalau kita tahu **berapa kali** mengulang, pakai **For**. Isiannya: nilai awal (start), nilai akhir (end), dan langkah (step). **Do While** berbeda: isinya dikerjakan **dulu**, baru syaratnya diperiksa. Jadi isinya pasti jalan minimal satu kali.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "158bd1c8",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Perulangan yang mengerjakan isinya dulu baru memeriksa syarat adalah ...",
+        "image": "",
+        "explanation": "Do While pasti jalan minimal sekali.",
+        "choices": [
+         {
+          "text": "Do While",
+          "why": ""
+         },
+         {
+          "text": "While",
+          "why": ""
+         },
+         {
+          "text": "If",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "46a3691c",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Pada For, isian untuk nilai terakhir disebut ...",
+        "image": "",
+        "explanation": "End Value = nilai akhir.",
+        "choices": [
+         {
+          "text": "End Value",
+          "why": ""
+         },
+         {
+          "text": "Start Value",
+          "why": ""
+         },
+         {
+          "text": "Step By",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "b5",
+    "title": "Fungsi, Debug & Array",
+    "description": "Mesin yang bisa dipakai ulang, berburu bug, dan lemari data.",
+    "stations": [
+     {
+      "id": "st19",
+      "title": "19. Fungsi: Mesin Pembuat Jus",
+      "objectives": [
+       "Menjelaskan fungsi, parameter, argumen, dan return"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st18"
+      ],
+      "optional": false,
+      "summary": [
+       "Fungsi = mesin yang bisa dipakai ulang",
+       "Parameter = bahan masuk",
+       "Return = hasil keluar"
+      ],
+      "reflection": "Fungsi apa yang ingin kamu buat agar tidak menulis ulang langkah yang sama?",
+      "badge": {
+       "title": "Montir Mesin",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "47af92eb",
+        "kind": "dialog",
+        "title": "Fungsi: Mesin Pembuat Jus",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "**Fungsi** ibarat mesin pembuat jus: kita masukkan bahan, mesin bekerja, lalu keluar hasilnya. Mesin bisa dipakai berkali-kali."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Bahan yang masuk disebut **parameter**. Hasil yang keluar disebut **return**. Nilai yang kita kirim saat memanggil fungsi disebut **argumen**."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "58f5b2b9",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "Argumen 6 masuk ke parameter sisiPersegi: 6 * 6.",
+        "choices": [
+         {
+          "text": "36",
+          "why": ""
+         },
+         {
+          "text": "12",
+          "why": ""
+         },
+         {
+          "text": "6",
+          "why": ""
+         },
+         {
+          "text": "25",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "luas"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "luas",
+           "expr": "hitungLuasPersegi(6)"
+          },
+          {
+           "t": "output",
+           "expr": "luas"
+          }
+         ],
+         "funcs": {
+          "hitungLuasPersegi": {
+           "params": [
+            [
+             "sisiPersegi",
+             "Integer"
+            ]
+           ],
+           "type": "",
+           "body": [
+            {
+             "t": "decl",
+             "type": "Integer",
+             "names": [
+              "luasPersegi"
+             ]
+            },
+            {
+             "t": "assign",
+             "target": "luasPersegi",
+             "expr": "sisiPersegi * sisiPersegi"
+            }
+           ],
+           "ret": "luasPersegi"
+          }
+         }
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "12",
+         "6",
+         "25"
+        ]
+       },
+       {
+        "id": "b45a08ee",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "Mesin yang sama dipakai lagi dengan bahan 9.",
+        "choices": [
+         {
+          "text": "81",
+          "why": ""
+         },
+         {
+          "text": "18",
+          "why": ""
+         },
+         {
+          "text": "9",
+          "why": ""
+         },
+         {
+          "text": "99",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "luas"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "luas",
+           "expr": "hitungLuasPersegi(9)"
+          },
+          {
+           "t": "output",
+           "expr": "luas"
+          }
+         ],
+         "funcs": {
+          "hitungLuasPersegi": {
+           "params": [
+            [
+             "sisiPersegi",
+             "Integer"
+            ]
+           ],
+           "type": "",
+           "body": [
+            {
+             "t": "decl",
+             "type": "Integer",
+             "names": [
+              "luasPersegi"
+             ]
+            },
+            {
+             "t": "assign",
+             "target": "luasPersegi",
+             "expr": "sisiPersegi * sisiPersegi"
+            }
+           ],
+           "ret": "luasPersegi"
+          }
+         }
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "18",
+         "9",
+         "99"
+        ]
+       },
+       {
+        "id": "95263233",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "a = 7 dan b = 5, hasilnya 7 + 5.",
+        "choices": [
+         {
+          "text": "12",
+          "why": ""
+         },
+         {
+          "text": "35",
+          "why": ""
+         },
+         {
+          "text": "75",
+          "why": ""
+         },
+         {
+          "text": "2",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "output",
+           "expr": "tambah(7, 5)"
+          }
+         ],
+         "funcs": {
+          "tambah": {
+           "params": [
+            [
+             "a",
+             "Integer"
+            ],
+            [
+             "b",
+             "Integer"
+            ]
+           ],
+           "type": "",
+           "body": [
+            {
+             "t": "decl",
+             "type": "Integer",
+             "names": [
+              "hasil"
+             ]
+            },
+            {
+             "t": "assign",
+             "target": "hasil",
+             "expr": "a + b"
+            }
+           ],
+           "ret": "hasil"
+          }
+         }
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "35",
+         "75",
+         "2"
+        ]
+       },
+       {
+        "id": "c0f674ea",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "Hasil fungsi bisa dipakai langsung di Output.",
+        "choices": [
+         {
+          "text": "Luas: 16",
+          "why": ""
+         },
+         {
+          "text": "Luas: 8",
+          "why": ""
+         },
+         {
+          "text": "Luas: 4",
+          "why": ""
+         },
+         {
+          "text": "Luas: 44",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "output",
+           "expr": "\"Luas: \" & hitungLuasPersegi(4)"
+          }
+         ],
+         "funcs": {
+          "hitungLuasPersegi": {
+           "params": [
+            [
+             "sisiPersegi",
+             "Integer"
+            ]
+           ],
+           "type": "",
+           "body": [
+            {
+             "t": "decl",
+             "type": "Integer",
+             "names": [
+              "luasPersegi"
+             ]
+            },
+            {
+             "t": "assign",
+             "target": "luasPersegi",
+             "expr": "sisiPersegi * sisiPersegi"
+            }
+           ],
+           "ret": "luasPersegi"
+          }
+         }
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "Luas: 8",
+         "Luas: 4",
+         "Luas: 44"
+        ]
+       }
+      ],
+      "remedial": [
+       {
+        "id": "bd50843f",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "**Fungsi** ibarat mesin pembuat jus: kita masukkan bahan, mesin bekerja, lalu keluar hasilnya. Mesin bisa dipakai berkali-kali. Bahan yang masuk disebut **parameter**. Hasil yang keluar disebut **return**. Nilai yang kita kirim saat memanggil fungsi disebut **argumen**.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "b0ed73d4",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Fungsi mengeluarkan hasilnya dengan ...",
+        "image": "",
+        "explanation": "Return mengeluarkan nilai.",
+        "choices": [
+         {
+          "text": "return",
+          "why": ""
+         },
+         {
+          "text": "input",
+          "why": ""
+         },
+         {
+          "text": "while",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st20",
+      "title": "20. Komentar dan Breakpoint",
+      "objectives": [
+       "Memakai komentar dan langkah demi langkah untuk mencari bug"
+      ],
+      "minutes": 8,
+      "prerequisites": [
+       "st19"
+      ],
+      "optional": false,
+      "summary": [
+       "Komentar = catatan untuk manusia",
+       "Jalankan langkah demi langkah",
+       "Amati Variable Watch"
+      ],
+      "reflection": "Bug apa yang paling sering kamu buat? Bagaimana cara menemukannya?",
+      "badge": {
+       "title": "Pemburu Bug",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "3b135142",
+        "kind": "dialog",
+        "title": "Komentar dan Breakpoint",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "**Komentar** (Comment) adalah catatan untuk manusia. Komputer tidak menjalankannya, tetapi sangat membantu supaya kita ingat maksud programnya."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "**Breakpoint** (titik merah) membuat program berhenti sementara. Saat berhenti, kita bisa mengintip isi variabel di **Variable Watch** untuk mencari kesalahan (**bug**)."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "fc280776",
+        "kind": "flowgorithm_demo",
+        "title": "Jalankan langkah demi langkah",
+        "hints": [],
+        "body": "Program ini menjumlahkan 1 sampai 3. Baris berwarna abu-abu adalah **komentar** (tidak dijalankan). Tekan **Langkah** berulang kali dan amati nilai **i** dan **total** di Pantau Variabel, seperti berhenti di breakpoint.",
+        "program": {
+         "body": [
+          {
+           "t": "cm",
+           "text": "Menjumlahkan 1 sampai 3"
+          },
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i",
+            "total"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "i",
+           "expr": "1"
+          },
+          {
+           "t": "assign",
+           "target": "total",
+           "expr": "0"
+          },
+          {
+           "t": "while",
+           "cond": "i <= 3",
+           "body": [
+            {
+             "t": "assign",
+             "target": "total",
+             "expr": "total + i"
+            },
+            {
+             "t": "assign",
+             "target": "i",
+             "expr": "i + 1"
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Jumlah: \" & total"
+          }
+         ]
+        },
+        "inputs": [],
+        "editable": false
+       },
+       {
+        "id": "3ac6b2f3",
+        "kind": "choice",
+        "title": "",
+        "hints": [
+         "Hitung putaran pertama dan kedua dulu: total bertambah i, lalu i bertambah 1."
+        ],
+        "text": "Program berhenti di breakpoint **sebelum** menjalankan total = total + i pada putaran ke-3. Berapa nilai i dan total saat itu?",
+        "image": "",
+        "explanation": "Setelah dua putaran: total = 1 + 2 = 3 dan i sudah menjadi 3.",
+        "choices": [
+         {
+          "text": "i = 3, total = 3",
+          "why": ""
+         },
+         {
+          "text": "i = 3, total = 6",
+          "why": ""
+         },
+         {
+          "text": "i = 2, total = 3",
+          "why": ""
+         },
+         {
+          "text": "i = 4, total = 6",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "911d3b9f",
+        "kind": "flowgorithm",
+        "title": "Berburu bug",
+        "hints": [
+         "Jalankan langkah demi langkah dan lihat apakah i semakin besar atau semakin kecil."
+        ],
+        "text": "Program ini seharusnya menampilkan 1 sampai 5, tetapi tidak pernah berhenti. Temukan **bug**-nya, perbaiki, lalu jalankan.",
+        "image": "",
+        "explanation": "Nilai i harus naik (i + 1) supaya suatu saat syarat i <= 5 menjadi false.",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "cm",
+           "text": "Menampilkan 1 sampai 5"
+          },
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "i",
+           "expr": "1"
+          },
+          {
+           "t": "while",
+           "cond": "i <= 5",
+           "body": [
+            {
+             "t": "output",
+             "expr": "i"
+            },
+            {
+             "t": "assign",
+             "target": "i",
+             "expr": "i - 1"
+            }
+           ]
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "cm",
+           "text": "Menampilkan 1 sampai 5"
+          },
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "i",
+           "expr": "1"
+          },
+          {
+           "t": "while",
+           "cond": "i <= 5",
+           "body": [
+            {
+             "t": "output",
+             "expr": "i"
+            },
+            {
+             "t": "assign",
+             "target": "i",
+             "expr": "i + 1"
+            }
+           ]
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "1",
+           "2",
+           "3",
+           "4",
+           "5"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "exact"
+       }
+      ],
+      "remedial": [
+       {
+        "id": "7ebc35af",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "**Komentar** (Comment) adalah catatan untuk manusia. Komputer tidak menjalankannya, tetapi sangat membantu supaya kita ingat maksud programnya. **Breakpoint** (titik merah) membuat program berhenti sementara. Saat berhenti, kita bisa mengintip isi variabel di **Variable Watch** untuk mencari kesalahan (**bug**).",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "6c3c2397",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Titik merah untuk menghentikan program sementara disebut ...",
+        "image": "",
+        "explanation": "Breakpoint menjeda program.",
+        "choices": [
+         {
+          "text": "breakpoint",
+          "why": ""
+         },
+         {
+          "text": "komentar",
+          "why": ""
+         },
+         {
+          "text": "array",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "20582cd9",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Catatan untuk manusia yang tidak dijalankan komputer disebut ...",
+        "image": "",
+        "explanation": "Comment adalah catatan.",
+        "choices": [
+         {
+          "text": "komentar (Comment)",
+          "why": ""
+         },
+         {
+          "text": "Output",
+          "why": ""
+         },
+         {
+          "text": "Return",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     },
+     {
+      "id": "st21",
+      "title": "21. Array dan Perulangan",
+      "objectives": [
+       "Mengolah array dengan perulangan For"
+      ],
+      "minutes": 12,
+      "prerequisites": [
+       "st20"
+      ],
+      "optional": false,
+      "summary": [
+       "buah[i] memakai indeks dari variabel",
+       "For dari 0 sampai jumlah laci - 1",
+       "Total dihitung dengan menambah tiap laci"
+      ],
+      "reflection": "Data apa yang ingin kamu olah dengan array dan perulangan?",
+      "badge": {
+       "title": "Penjelajah Lemari",
+       "icon": "award"
+      },
+      "steps": [
+       {
+        "id": "3db86817",
+        "kind": "dialog",
+        "title": "Array dan Perulangan",
+        "hints": [],
+        "lines": [
+         {
+          "speaker": "mascot",
+          "mood": "happy",
+          "text": "**Array** itu seperti lemari berlaci. Satu nama lemari, banyak laci. Laci diberi nomor yang disebut **indeks**, dan nomornya mulai dari **0**. Lemari 3 laci punya laci 0, 1, dan 2."
+         },
+         {
+          "speaker": "mascot",
+          "mood": "",
+          "text": "Supaya tidak menulis satu per satu, kita berkeliling laci dengan **For**. Nomor laci diambil dari variabel **i**: **buah[i]**. Mulai dari 0 dan berhenti di jumlah laci dikurangi 1."
+         }
+        ],
+        "image": ""
+       },
+       {
+        "id": "fb8804db",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "Indeks 1 adalah laci kedua, isinya 20.",
+        "choices": [
+         {
+          "text": "20",
+          "why": ""
+         },
+         {
+          "text": "10",
+          "why": ""
+         },
+         {
+          "text": "30",
+          "why": ""
+         },
+         {
+          "text": "1",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "skor"
+           ],
+           "size": 3
+          },
+          {
+           "t": "assign",
+           "target": "skor[0]",
+           "expr": "10"
+          },
+          {
+           "t": "assign",
+           "target": "skor[1]",
+           "expr": "20"
+          },
+          {
+           "t": "assign",
+           "target": "skor[2]",
+           "expr": "30"
+          },
+          {
+           "t": "output",
+           "expr": "skor[1]"
+          }
+         ]
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "10",
+         "30",
+         "1"
+        ]
+       },
+       {
+        "id": "9137ded3",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "Laci 0, 1, 2 diisi i * 2, yaitu 0, 2, 4.",
+        "choices": [
+         {
+          "text": "0, 2, 4",
+          "why": ""
+         },
+         {
+          "text": "2, 4, 6",
+          "why": ""
+         },
+         {
+          "text": "0, 1, 2",
+          "why": ""
+         },
+         {
+          "text": "0, 2",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "a"
+           ],
+           "size": 3
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "0",
+           "to": "2",
+           "step": "1",
+           "body": [
+            {
+             "t": "assign",
+             "target": "a[i]",
+             "expr": "i * 2"
+            }
+           ]
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "0",
+           "to": "2",
+           "step": "1",
+           "body": [
+            {
+             "t": "output",
+             "expr": "a[i]"
+            }
+           ]
+          }
+         ]
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "2, 4, 6",
+         "0, 1, 2",
+         "0, 2"
+        ]
+       },
+       {
+        "id": "617c5eb4",
+        "kind": "flowgorithm_predict",
+        "title": "",
+        "hints": [
+         "Ikuti panah dari atas ke bawah, satu langkah demi satu."
+        ],
+        "text": "Apa yang tampil di Console?",
+        "image": "",
+        "explanation": "total menambahkan isi tiap laci: 4 + 6 + 5.",
+        "choices": [
+         {
+          "text": "15",
+          "why": ""
+         },
+         {
+          "text": "456",
+          "why": ""
+         },
+         {
+          "text": "10",
+          "why": ""
+         },
+         {
+          "text": "5",
+          "why": ""
+         }
+        ],
+        "correct": 0,
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i",
+            "total"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "a"
+           ],
+           "size": 3
+          },
+          {
+           "t": "assign",
+           "target": "a[0]",
+           "expr": "4"
+          },
+          {
+           "t": "assign",
+           "target": "a[1]",
+           "expr": "6"
+          },
+          {
+           "t": "assign",
+           "target": "a[2]",
+           "expr": "5"
+          },
+          {
+           "t": "assign",
+           "target": "total",
+           "expr": "0"
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "0",
+           "to": "2",
+           "step": "1",
+           "body": [
+            {
+             "t": "assign",
+             "target": "total",
+             "expr": "total + a[i]"
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "total"
+          }
+         ]
+        },
+        "inputs": [],
+        "show": "all",
+        "wrong": [
+         "456",
+         "10",
+         "5"
+        ]
+       },
+       {
+        "id": "ee3a2ee9",
+        "kind": "flowgorithm",
+        "title": "Berkeliling semua laci",
+        "hints": [
+         "Laci pertama bernomor 0, jadi laci ketiga bernomor ..."
+        ],
+        "text": "Lemari nama punya 3 laci. Nilai akhir (End Value) berapa supaya semua nama tampil?",
+        "image": "",
+        "explanation": "",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "String",
+           "names": [
+            "nama"
+           ],
+           "size": 3
+          },
+          {
+           "t": "assign",
+           "target": "nama[0]",
+           "expr": "\"Ani\""
+          },
+          {
+           "t": "assign",
+           "target": "nama[1]",
+           "expr": "\"Budi\""
+          },
+          {
+           "t": "assign",
+           "target": "nama[2]",
+           "expr": "\"Cici\""
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "0",
+           "to": "{{}}",
+           "step": "1",
+           "body": [
+            {
+             "t": "output",
+             "expr": "nama[i]"
+            }
+           ]
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "2"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "Ani",
+           "Budi",
+           "Cici"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       },
+       {
+        "id": "a9a3f534",
+        "kind": "flowgorithm",
+        "title": "Menjumlahkan isi laci",
+        "hints": [
+         "Nama lemarinya a, nomor lacinya i. Ditulis a[i]."
+        ],
+        "text": "Tulis isi laci ke-i yang harus ditambahkan ke total:",
+        "image": "",
+        "explanation": "",
+        "mode": "fill",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i",
+            "total"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "a"
+           ],
+           "size": 3
+          },
+          {
+           "t": "assign",
+           "target": "a[0]",
+           "expr": "4"
+          },
+          {
+           "t": "assign",
+           "target": "a[1]",
+           "expr": "6"
+          },
+          {
+           "t": "assign",
+           "target": "a[2]",
+           "expr": "5"
+          },
+          {
+           "t": "assign",
+           "target": "total",
+           "expr": "0"
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "0",
+           "to": "2",
+           "step": "1",
+           "body": [
+            {
+             "t": "assign",
+             "target": "total",
+             "expr": "total + {{}}"
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Total: \" & total"
+          }
+         ]
+        },
+        "solution": null,
+        "answers": [
+         "a[i]"
+        ],
+        "tests": [
+         {
+          "inputs": [],
+          "expected": [
+           "Total: 15"
+          ],
+          "hidden": false
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [
+       {
+        "id": "0e3e26bd",
+        "kind": "did_you_know",
+        "title": "Ingat lagi",
+        "hints": [],
+        "body": "**Array** itu seperti lemari berlaci. Satu nama lemari, banyak laci. Laci diberi nomor yang disebut **indeks**, dan nomornya mulai dari **0**. Lemari 3 laci punya laci 0, 1, dan 2. Supaya tidak menulis satu per satu, kita berkeliling laci dengan **For**. Nomor laci diambil dari variabel **i**: **buah[i]**. Mulai dari 0 dan berhenti di jumlah laci dikurangi 1.",
+        "image": "",
+        "caption": ""
+       }
+      ],
+      "challenge": [
+       {
+        "id": "0ca66da3",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Array bernama nilai punya 4 laci. Laci pertama ditulis ...",
+        "image": "",
+        "explanation": "Indeks laci selalu mulai dari 0.",
+        "choices": [
+         {
+          "text": "nilai[0]",
+          "why": ""
+         },
+         {
+          "text": "nilai[1]",
+          "why": ""
+         },
+         {
+          "text": "nilai[4]",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       },
+       {
+        "id": "255e3e08",
+        "kind": "choice",
+        "title": "",
+        "hints": [],
+        "text": "Cara paling praktis mengunjungi semua laci array satu per satu adalah ...",
+        "image": "",
+        "explanation": "For mengulang dan i dipakai sebagai nomor laci.",
+        "choices": [
+         {
+          "text": "For dengan nomor laci i",
+          "why": ""
+         },
+         {
+          "text": "Comment",
+          "why": ""
+         },
+         {
+          "text": "Declare berkali-kali",
+          "why": ""
+         }
+        ],
+        "correct": 0
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "b6",
+    "title": "Studi Kasus",
+    "description": "Susun program sendiri. Dinilai dengan uji, termasuk uji tersembunyi. Kasus P = kehidupan pondok (opsional).",
+    "stations": [
+     {
+      "id": "k1",
+      "title": "K1. Luas dan Keliling",
+      "objectives": [
+       "Menyusun program sekuensial yang lolos semua uji"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st14"
+      ],
+      "optional": false,
+      "summary": [
+       "Baca format output dengan teliti",
+       "Coba contoh uji sebelum Periksa",
+       "Uji tersembunyi memakai isian lain"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Penakluk Kasus 1",
+       "icon": "trophy"
+      },
+      "steps": [
+       {
+        "id": "01e13d47",
+        "kind": "flowgorithm",
+        "title": "Luas dan Keliling",
+        "hints": [
+         "Luas = p * l. Keliling = 2 * (p + l). Gabungkan teks dan angka dengan &."
+        ],
+        "text": "Buat program yang meminta **panjang** dan **lebar** persegi panjang, lalu menampilkan luas dan kelilingnya.\n\nOutput harus berbentuk: Luas: 15 lalu Keliling: 16",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "p",
+            "l"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Panjang?\""
+          },
+          {
+           "t": "input",
+           "target": "p"
+          },
+          {
+           "t": "output",
+           "expr": "\"Lebar?\""
+          },
+          {
+           "t": "input",
+           "target": "l"
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "p",
+            "l"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "p"
+          },
+          {
+           "t": "input",
+           "target": "l"
+          },
+          {
+           "t": "output",
+           "expr": "\"Luas: \" & p * l"
+          },
+          {
+           "t": "output",
+           "expr": "\"Keliling: \" & 2 * (p + l)"
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "5",
+           "3"
+          ],
+          "expected": [
+           "Luas: 15",
+           "Keliling: 16"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "10",
+           "2"
+          ],
+          "expected": [
+           "Luas: 20",
+           "Keliling: 24"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "7",
+           "7"
+          ],
+          "expected": [
+           "Luas: 49",
+           "Keliling: 28"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "k2",
+      "title": "K2. Celsius ke Fahrenheit",
+      "objectives": [
+       "Menyusun program sekuensial yang lolos semua uji"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st14"
+      ],
+      "optional": false,
+      "summary": [
+       "Baca format output dengan teliti",
+       "Coba contoh uji sebelum Periksa",
+       "Uji tersembunyi memakai isian lain"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Penakluk Kasus 2",
+       "icon": "trophy"
+      },
+      "steps": [
+       {
+        "id": "02b5534c",
+        "kind": "flowgorithm",
+        "title": "Celsius ke Fahrenheit",
+        "hints": [
+         "Pakai tipe Real supaya pecahan tidak hilang. Contoh: 37 menjadi 98.6."
+        ],
+        "text": "Buat program yang meminta suhu dalam **Celsius**, lalu menampilkan suhu dalam **Fahrenheit**. Rumus: F = C * 9 / 5 + 32.\n\nOutput harus berbentuk: Fahrenheit: 212",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Real",
+           "names": [
+            "c",
+            "f"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Suhu Celsius?\""
+          },
+          {
+           "t": "input",
+           "target": "c"
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Real",
+           "names": [
+            "c",
+            "f"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "c"
+          },
+          {
+           "t": "assign",
+           "target": "f",
+           "expr": "c * 9 / 5 + 32"
+          },
+          {
+           "t": "output",
+           "expr": "\"Fahrenheit: \" & f"
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "100"
+          ],
+          "expected": [
+           "Fahrenheit: 212"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "0"
+          ],
+          "expected": [
+           "Fahrenheit: 32"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "37"
+          ],
+          "expected": [
+           "Fahrenheit: 98.6"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "k3",
+      "title": "K3. Lulus atau Remedial",
+      "objectives": [
+       "Menyusun program percabangan yang lolos semua uji"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st15"
+      ],
+      "optional": false,
+      "summary": [
+       "Baca format output dengan teliti",
+       "Coba contoh uji sebelum Periksa",
+       "Uji tersembunyi memakai isian lain"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Penakluk Kasus 3",
+       "icon": "trophy"
+      },
+      "steps": [
+       {
+        "id": "d15947b1",
+        "kind": "flowgorithm",
+        "title": "Lulus atau Remedial",
+        "hints": [
+         "Pakai blok If dengan syarat nilai >= 75. Jalur True ke kanan, False ke kiri."
+        ],
+        "text": "Buat program yang meminta sebuah **nilai**. Jika nilai **75 atau lebih**, tampilkan Lulus. Jika tidak, tampilkan Remedial.\n\nOutput: Lulus atau Remedial",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "nilai"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Nilai?\""
+          },
+          {
+           "t": "input",
+           "target": "nilai"
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "nilai"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "nilai"
+          },
+          {
+           "t": "if",
+           "cond": "nilai >= 75",
+           "yes": [
+            {
+             "t": "output",
+             "expr": "\"Lulus\""
+            }
+           ],
+           "no": [
+            {
+             "t": "output",
+             "expr": "\"Remedial\""
+            }
+           ]
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "80"
+          ],
+          "expected": [
+           "Lulus"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "75"
+          ],
+          "expected": [
+           "Lulus"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "74"
+          ],
+          "expected": [
+           "Remedial"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "40"
+          ],
+          "expected": [
+           "Remedial"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "k4",
+      "title": "K4. Predikat Nilai",
+      "objectives": [
+       "Menyusun program percabangan yang lolos semua uji"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st16"
+      ],
+      "optional": false,
+      "summary": [
+       "Baca format output dengan teliti",
+       "Coba contoh uji sebelum Periksa",
+       "Uji tersembunyi memakai isian lain"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Penakluk Kasus 4",
+       "icon": "trophy"
+      },
+      "steps": [
+       {
+        "id": "fe6b1e3d",
+        "kind": "flowgorithm",
+        "title": "Predikat Nilai",
+        "hints": [
+         "If boleh diletakkan di dalam jalur False milik If lain. Periksa dari yang terbesar: 90, lalu 80, lalu 70."
+        ],
+        "text": "Buat program yang meminta **nilai**, lalu menampilkan predikat: **90 ke atas = A**, **80 sampai 89 = B**, **70 sampai 79 = C**, selain itu **D**.\n\nOutput: satu huruf saja, misalnya B",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "nilai"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "nilai"
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "nilai"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "nilai"
+          },
+          {
+           "t": "if",
+           "cond": "nilai >= 90",
+           "yes": [
+            {
+             "t": "output",
+             "expr": "\"A\""
+            }
+           ],
+           "no": [
+            {
+             "t": "if",
+             "cond": "nilai >= 80",
+             "yes": [
+              {
+               "t": "output",
+               "expr": "\"B\""
+              }
+             ],
+             "no": [
+              {
+               "t": "if",
+               "cond": "nilai >= 70",
+               "yes": [
+                {
+                 "t": "output",
+                 "expr": "\"C\""
+                }
+               ],
+               "no": [
+                {
+                 "t": "output",
+                 "expr": "\"D\""
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "95"
+          ],
+          "expected": [
+           "A"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "90"
+          ],
+          "expected": [
+           "A"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "85"
+          ],
+          "expected": [
+           "B"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "80"
+          ],
+          "expected": [
+           "B"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "72"
+          ],
+          "expected": [
+           "C"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "50"
+          ],
+          "expected": [
+           "D"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "k5",
+      "title": "K5. Jumlah 1 sampai n",
+      "objectives": [
+       "Menyusun program perulangan for yang lolos semua uji"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st18"
+      ],
+      "optional": false,
+      "summary": [
+       "Baca format output dengan teliti",
+       "Coba contoh uji sebelum Periksa",
+       "Uji tersembunyi memakai isian lain"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Penakluk Kasus 5",
+       "icon": "trophy"
+      },
+      "steps": [
+       {
+        "id": "28af2432",
+        "kind": "flowgorithm",
+        "title": "Jumlah 1 sampai n",
+        "hints": [
+         "Siapkan variabel total = 0. Di dalam For (i dari 1 sampai n), tambahkan i ke total."
+        ],
+        "text": "Buat program yang meminta bilangan **n**, lalu menampilkan jumlah **1 + 2 + 3 + ... + n**.\n\nOutput: Jumlah: 15 untuk n = 5",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "n",
+            "i",
+            "total"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "n"
+          },
+          {
+           "t": "assign",
+           "target": "total",
+           "expr": "0"
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "n",
+            "i",
+            "total"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "n"
+          },
+          {
+           "t": "assign",
+           "target": "total",
+           "expr": "0"
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "1",
+           "to": "n",
+           "step": "1",
+           "body": [
+            {
+             "t": "assign",
+             "target": "total",
+             "expr": "total + i"
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Jumlah: \" & total"
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "5"
+          ],
+          "expected": [
+           "Jumlah: 15"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "10"
+          ],
+          "expected": [
+           "Jumlah: 55"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "1"
+          ],
+          "expected": [
+           "Jumlah: 1"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "100"
+          ],
+          "expected": [
+           "Jumlah: 5050"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "k6",
+      "title": "K6. Hitung Mundur",
+      "objectives": [
+       "Menyusun program perulangan while yang lolos semua uji"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st18"
+      ],
+      "optional": false,
+      "summary": [
+       "Baca format output dengan teliti",
+       "Coba contoh uji sebelum Periksa",
+       "Uji tersembunyi memakai isian lain"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Penakluk Kasus 6",
+       "icon": "trophy"
+      },
+      "steps": [
+       {
+        "id": "5fc88be9",
+        "kind": "flowgorithm",
+        "title": "Hitung Mundur",
+        "hints": [
+         "Pakai While dengan syarat n >= 1. Jangan lupa mengurangi n di dalam perulangan, kalau tidak program tidak berhenti."
+        ],
+        "text": "Buat program yang meminta bilangan **n**, lalu menampilkan hitung mundur dari n sampai 1, satu angka per baris. Terakhir tampilkan Selesai.\n\nUntuk n = 3: 3, 2, 1, Selesai",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "n"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "n"
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "n"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "n"
+          },
+          {
+           "t": "while",
+           "cond": "n >= 1",
+           "body": [
+            {
+             "t": "output",
+             "expr": "n"
+            },
+            {
+             "t": "assign",
+             "target": "n",
+             "expr": "n - 1"
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Selesai\""
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "3"
+          ],
+          "expected": [
+           "3",
+           "2",
+           "1",
+           "Selesai"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "5"
+          ],
+          "expected": [
+           "5",
+           "4",
+           "3",
+           "2",
+           "1",
+           "Selesai"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "1"
+          ],
+          "expected": [
+           "1",
+           "Selesai"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "k7",
+      "title": "K7. Nilai Terbesar",
+      "objectives": [
+       "Menyusun program array dan perulangan yang lolos semua uji"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st21"
+      ],
+      "optional": false,
+      "summary": [
+       "Baca format output dengan teliti",
+       "Coba contoh uji sebelum Periksa",
+       "Uji tersembunyi memakai isian lain"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Penakluk Kasus 7",
+       "icon": "trophy"
+      },
+      "steps": [
+       {
+        "id": "8a7de2dd",
+        "kind": "flowgorithm",
+        "title": "Nilai Terbesar",
+        "hints": [
+         "Anggap laci 0 sebagai yang terbesar. Lalu periksa laci 1 sampai 4: kalau lebih besar dari terbesar, gantilah terbesar."
+        ],
+        "text": "Program meminta **5 bilangan** dan menyimpannya di array. Tugasmu: cari dan tampilkan bilangan **terbesar**.\n\nOutput: Terbesar: 9",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i",
+            "terbesar"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "a"
+           ],
+           "size": 5
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "0",
+           "to": "4",
+           "step": "1",
+           "body": [
+            {
+             "t": "input",
+             "target": "a[i]"
+            }
+           ]
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "i",
+            "terbesar"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "a"
+           ],
+           "size": 5
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "0",
+           "to": "4",
+           "step": "1",
+           "body": [
+            {
+             "t": "input",
+             "target": "a[i]"
+            }
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "terbesar",
+           "expr": "a[0]"
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "1",
+           "to": "4",
+           "step": "1",
+           "body": [
+            {
+             "t": "if",
+             "cond": "a[i] > terbesar",
+             "yes": [
+              {
+               "t": "assign",
+               "target": "terbesar",
+               "expr": "a[i]"
+              }
+             ],
+             "no": []
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Terbesar: \" & terbesar"
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "3",
+           "9",
+           "2",
+           "7",
+           "5"
+          ],
+          "expected": [
+           "Terbesar: 9"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "8",
+           "1",
+           "2",
+           "3",
+           "4"
+          ],
+          "expected": [
+           "Terbesar: 8"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "-4",
+           "-8",
+           "-1",
+           "-9",
+           "-3"
+          ],
+          "expected": [
+           "Terbesar: -1"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "6",
+           "6",
+           "6",
+           "6",
+           "6"
+          ],
+          "expected": [
+           "Terbesar: 6"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "k8",
+      "title": "K8. Prima atau Bukan",
+      "objectives": [
+       "Menyusun program tantangan yang lolos semua uji"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st21"
+      ],
+      "optional": false,
+      "summary": [
+       "Baca format output dengan teliti",
+       "Coba contoh uji sebelum Periksa",
+       "Uji tersembunyi memakai isian lain"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Penakluk Kasus 8",
+       "icon": "trophy"
+      },
+      "steps": [
+       {
+        "id": "42cd17ff",
+        "kind": "flowgorithm",
+        "title": "Prima atau Bukan",
+        "hints": [
+         "Anggap prima = true. Kalau n kurang dari 2, ubah jadi false. Coba bagi n dengan i = 2 sampai n - 1. Kalau n % i == 0, berarti bukan prima."
+        ],
+        "text": "Buat program yang meminta bilangan **n**. Tampilkan Prima jika n hanya habis dibagi 1 dan dirinya sendiri, selain itu Bukan prima. Ingat: 1 bukan prima.\n\nOutput: Prima atau Bukan prima",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "n",
+            "i"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "Boolean",
+           "names": [
+            "prima"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "n"
+          },
+          {
+           "t": "assign",
+           "target": "prima",
+           "expr": "true"
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "n",
+            "i"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "Boolean",
+           "names": [
+            "prima"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "n"
+          },
+          {
+           "t": "assign",
+           "target": "prima",
+           "expr": "true"
+          },
+          {
+           "t": "if",
+           "cond": "n < 2",
+           "yes": [
+            {
+             "t": "assign",
+             "target": "prima",
+             "expr": "false"
+            }
+           ],
+           "no": []
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "2",
+           "to": "n - 1",
+           "step": "1",
+           "body": [
+            {
+             "t": "if",
+             "cond": "n % i == 0",
+             "yes": [
+              {
+               "t": "assign",
+               "target": "prima",
+               "expr": "false"
+              }
+             ],
+             "no": []
+            }
+           ]
+          },
+          {
+           "t": "if",
+           "cond": "prima",
+           "yes": [
+            {
+             "t": "output",
+             "expr": "\"Prima\""
+            }
+           ],
+           "no": [
+            {
+             "t": "output",
+             "expr": "\"Bukan prima\""
+            }
+           ]
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "7"
+          ],
+          "expected": [
+           "Prima"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "9"
+          ],
+          "expected": [
+           "Bukan prima"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "2"
+          ],
+          "expected": [
+           "Prima"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "1"
+          ],
+          "expected": [
+           "Bukan prima"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "13"
+          ],
+          "expected": [
+           "Prima"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "15"
+          ],
+          "expected": [
+           "Bukan prima"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "0"
+          ],
+          "expected": [
+           "Bukan prima"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "p1",
+      "title": "P1. Zakat Fitrah Keluarga",
+      "objectives": [
+       "Menyelesaikan masalah di pondok dengan program sekuensial"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st13"
+      ],
+      "optional": true,
+      "summary": [
+       "Ubah masalah nyata menjadi input, proses, output",
+       "Pilih tipe data yang tepat",
+       "Uji dengan beberapa isian"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Santri Programmer 1",
+       "icon": "star"
+      },
+      "steps": [
+       {
+        "id": "096d3053",
+        "kind": "flowgorithm",
+        "title": "Zakat Fitrah Keluarga",
+        "hints": [
+         "Kalikan jumlah anggota dengan 2.5. Simpan hasilnya di variabel Real."
+        ],
+        "text": "Setiap anggota keluarga membayar zakat fitrah **2.5 kg** beras. Buat program yang meminta jumlah anggota keluarga, lalu menampilkan beras yang harus dibayar.\n\nOutput harus berbentuk: Zakat: 7.5 kg",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "anggota"
+           ]
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "anggota"
+           ]
+          },
+          {
+           "t": "decl",
+           "type": "Real",
+           "names": [
+            "beras"
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Jumlah anggota keluarga?\""
+          },
+          {
+           "t": "input",
+           "target": "anggota"
+          },
+          {
+           "t": "assign",
+           "target": "beras",
+           "expr": "anggota * 2.5"
+          },
+          {
+           "t": "output",
+           "expr": "\"Zakat: \" & beras & \" kg\""
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "3"
+          ],
+          "expected": [
+           "Zakat: 7.5 kg"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "1"
+          ],
+          "expected": [
+           "Zakat: 2.5 kg"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "4"
+          ],
+          "expected": [
+           "Zakat: 10 kg"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "p2",
+      "title": "P2. Target Setoran Hafalan",
+      "objectives": [
+       "Menyelesaikan masalah di pondok dengan program sekuensial"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st14"
+      ],
+      "optional": true,
+      "summary": [
+       "Ubah masalah nyata menjadi input, proses, output",
+       "Pilih tipe data yang tepat",
+       "Uji dengan beberapa isian"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Santri Programmer 2",
+       "icon": "star"
+      },
+      "steps": [
+       {
+        "id": "dcc6567d",
+        "kind": "flowgorithm",
+        "title": "Target Setoran Hafalan",
+        "hints": [
+         "Variabel Integer membuang pecahan. Tambahkan perHari - 1 sebelum dibagi supaya sisa ayat dihitung satu hari."
+        ],
+        "text": "Santri ingin menyetor hafalan sebanyak **target** ayat, dengan **perHari** ayat setiap hari. Hari terakhir boleh kurang dari perHari. Tampilkan berapa hari yang dibutuhkan.\n\nOutput harus berbentuk: Hari: 7",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "target",
+            "perHari",
+            "hari"
+           ]
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "target",
+            "perHari",
+            "hari"
+           ]
+          },
+          {
+           "t": "input",
+           "target": "target"
+          },
+          {
+           "t": "input",
+           "target": "perHari"
+          },
+          {
+           "t": "assign",
+           "target": "hari",
+           "expr": "(target + perHari - 1) / perHari"
+          },
+          {
+           "t": "output",
+           "expr": "\"Hari: \" & hari"
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "20",
+           "3"
+          ],
+          "expected": [
+           "Hari: 7"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "30",
+           "5"
+          ],
+          "expected": [
+           "Hari: 6"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "7",
+           "7"
+          ],
+          "expected": [
+           "Hari: 1"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     },
+     {
+      "id": "p3",
+      "title": "P3. Poin Kedisiplinan Santri",
+      "objectives": [
+       "Menyelesaikan masalah di pondok dengan program perulangan dan percabangan"
+      ],
+      "minutes": 15,
+      "prerequisites": [
+       "st18"
+      ],
+      "optional": true,
+      "summary": [
+       "Ubah masalah nyata menjadi input, proses, output",
+       "Pilih tipe data yang tepat",
+       "Uji dengan beberapa isian"
+      ],
+      "reflection": "",
+      "badge": {
+       "title": "Santri Programmer 3",
+       "icon": "star"
+      },
+      "steps": [
+       {
+        "id": "95d6439b",
+        "kind": "flowgorithm",
+        "title": "Poin Kedisiplinan Santri",
+        "hints": [
+         "Mulai total dari 0. Di dalam For, baca poin lalu tambahkan ke total. Setelah For selesai, periksa dengan If."
+        ],
+        "text": "Bagian keamanan pondok mencatat poin pelanggaran santri. Program meminta **jumlah** catatan, lalu poin setiap catatan. Tampilkan total poin, lalu \"Panggilan wali\" jika total 50 atau lebih, selain itu \"Aman\".\n\nOutput harus berbentuk: Total poin: 55 lalu Panggilan wali",
+        "image": "",
+        "explanation": "",
+        "mode": "build",
+        "program": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "jumlah",
+            "poin",
+            "total",
+            "i"
+           ]
+          }
+         ]
+        },
+        "solution": {
+         "body": [
+          {
+           "t": "decl",
+           "type": "Integer",
+           "names": [
+            "jumlah",
+            "poin",
+            "total",
+            "i"
+           ]
+          },
+          {
+           "t": "assign",
+           "target": "total",
+           "expr": "0"
+          },
+          {
+           "t": "input",
+           "target": "jumlah"
+          },
+          {
+           "t": "for",
+           "v": "i",
+           "from": "1",
+           "to": "jumlah",
+           "step": "1",
+           "body": [
+            {
+             "t": "input",
+             "target": "poin"
+            },
+            {
+             "t": "assign",
+             "target": "total",
+             "expr": "total + poin"
+            }
+           ]
+          },
+          {
+           "t": "output",
+           "expr": "\"Total poin: \" & total"
+          },
+          {
+           "t": "if",
+           "cond": "total >= 50",
+           "yes": [
+            {
+             "t": "output",
+             "expr": "\"Panggilan wali\""
+            }
+           ],
+           "no": [
+            {
+             "t": "output",
+             "expr": "\"Aman\""
+            }
+           ]
+          }
+         ]
+        },
+        "answers": [],
+        "tests": [
+         {
+          "inputs": [
+           "3",
+           "10",
+           "20",
+           "25"
+          ],
+          "expected": [
+           "Total poin: 55",
+           "Panggilan wali"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "2",
+           "5",
+           "10"
+          ],
+          "expected": [
+           "Total poin: 15",
+           "Aman"
+          ],
+          "hidden": false
+         },
+         {
+          "inputs": [
+           "1",
+           "50"
+          ],
+          "expected": [
+           "Total poin: 50",
+           "Panggilan wali"
+          ],
+          "hidden": true
+         },
+         {
+          "inputs": [
+           "0"
+          ],
+          "expected": [
+           "Total poin: 0",
+           "Aman"
+          ],
+          "hidden": true
+         }
+        ],
+        "compare": "tail"
+       }
+      ],
+      "remedial": [],
+      "challenge": []
+     }
+    ]
+   }
+  ]
+ }
+}

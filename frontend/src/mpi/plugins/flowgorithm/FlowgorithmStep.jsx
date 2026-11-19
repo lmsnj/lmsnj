@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import FlowchartDiagram from '../../../components/code/FlowchartDiagram'
 import { Rich, StepImage } from '../../steps/ExplainSteps'
+import { ChoiceStep } from '../../steps/PracticeSteps'
 import FlowgorithmEditor from './FlowgorithmEditor'
 import { blankIndexes, fillBlanks, toDiagram, withIds } from './program'
 import ProgramRunner, { TestResults } from './ProgramRunner'
@@ -70,6 +71,7 @@ function Workspace({ program, runnable, editor, examples, compare, inputs }) {
         editor({ activeId: marks.active, errorId: marks.error })
       ) : (
         <FlowchartDiagram
+          fit
           program={{ blocks: toDiagram(runnable.body) }}
           activeId={marks.active}
           highlightId={marks.error}
@@ -197,6 +199,37 @@ export function FlowgorithmDemoStep({ step, user }) {
           Kembalikan program awal
         </button>
       )}
+    </div>
+  )
+}
+
+/** Tebak output: program hanya ditampilkan (tidak bisa dijalankan), siswa memilih output yang benar. */
+export function FlowgorithmPredictStep({ step, user, value, onChange, review }) {
+  const program = useMemo(() => withIds(step.program), [step.program])
+  const [view, setView] = useState('chart')
+  return (
+    <div className="space-y-4">
+      <ViewTabs view={view} setView={setView} />
+      {view === 'chart' ? (
+        <FlowchartDiagram
+          fit
+          program={{ blocks: toDiagram(program.body) }}
+          title="Flowchart program"
+        />
+      ) : (
+        <FlowgorithmEditor program={program} />
+      )}
+      {step.inputs?.length > 0 && (
+        <p className="text-[0.9em]">
+          <strong>Isian yang diketik:</strong>{' '}
+          {step.inputs.map((input, i) => (
+            <code key={i} className="me-1 rounded bg-slate-100 px-1.5 py-0.5">
+              {input}
+            </code>
+          ))}
+        </p>
+      )}
+      <ChoiceStep step={step} user={user} value={value} onChange={onChange} review={review} />
     </div>
   )
 }

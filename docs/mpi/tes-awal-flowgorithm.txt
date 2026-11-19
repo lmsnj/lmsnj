@@ -1,0 +1,60 @@
+1. Langkah yang jelas dan berurutan untuk menyelesaikan masalah disebut ...
+A. algoritma
+B. variabel
+C. konsol
+Kunci: A
+
+2. Simbol jajaran genjang berwarna biru di Flowgorithm bernama ...
+A. Output
+B. If
+C. Input
+Kunci: C
+
+3. Nama variabel yang boleh dipakai adalah ...
+A. harga barang
+B. hargaBarang
+C. harga_barang
+Kunci: B
+
+4. Tipe data untuk bilangan pecahan seperti 1.35 adalah ...
+A. Real
+B. Integer
+C. Boolean
+Kunci: A
+
+5. Array berisi 5 laci. Indeks laci terakhir adalah ...
+A. 5
+B. 6
+C. 4
+Kunci: C
+
+6. Hasil dari 17 % 5 adalah ...
+A. 3
+B. 2
+C. 12
+Kunci: B
+
+7. Hasil dari (5 > 3) and (2 > 4) adalah ...
+A. false
+B. true
+C. 5
+Kunci: A
+
+8. Pada simbol If, jalur True berada di sebelah ...
+A. kiri
+B. atas
+C. kanan
+Kunci: C
+
+9. Program: i = 1; While i <= 3: Output i; i = i + 1. Yang tampil adalah ...
+A. 1, 2
+B. 1, 2, 3
+C. 2, 3, 4
+Kunci: B
+
+10. Bahan yang dimasukkan ke dalam fungsi disebut ...
+A. parameter
+B. komentar
+C. breakpoint
+Kunci: A
+

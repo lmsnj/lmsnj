@@ -8,9 +8,17 @@ import { registerStudioKind } from '../studio'
 import { registerStepForm } from '../studio/forms'
 import { ExposureStep } from './exposure/ExposureStep'
 import { ExposureFields } from './exposure/StudioFields'
-import { FlowgorithmDemoStep, FlowgorithmStep } from './flowgorithm/FlowgorithmStep'
+import {
+  FlowgorithmDemoStep,
+  FlowgorithmPredictStep,
+  FlowgorithmStep,
+} from './flowgorithm/FlowgorithmStep'
 import { isAnswered } from './flowgorithm/program'
-import { FlowgorithmDemoFields, FlowgorithmFields } from './flowgorithm/StudioFields'
+import {
+  FlowgorithmDemoFields,
+  FlowgorithmFields,
+  FlowgorithmPredictFields,
+} from './flowgorithm/StudioFields'
 
 const SAMPLE = {
   body: [
@@ -57,6 +65,26 @@ registerStudioKind('flowgorithm_demo', () => ({
   editable: false,
 }))
 registerStepForm('flowgorithm_demo', FlowgorithmDemoFields)
+
+registerStep('flowgorithm_predict', {
+  Component: FlowgorithmPredictStep,
+  label: 'Flowgorithm (tebak output)',
+  isAnswered: (_, value) => Boolean(value?.choice),
+})
+registerStudioKind(
+  'flowgorithm_predict',
+  () => ({
+    text: 'Apa yang tampil di Console?',
+    image: '',
+    program: structuredClone(SAMPLE),
+    inputs: ['5', '3'],
+    show: 'all',
+    wrong: ['Luas: 8', 'Luas: 53'],
+    explanation: '',
+  }),
+  true,
+)
+registerStepForm('flowgorithm_predict', FlowgorithmPredictFields)
 
 registerStep('exposure', {
   Component: ExposureStep,

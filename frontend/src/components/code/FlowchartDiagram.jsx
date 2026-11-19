@@ -50,12 +50,13 @@ function Shape({ node, highlighted, active }) {
 /**
  * Gambar flowchart (SVG) yang dibuat otomatis dari susunan blok. Ukuran asli dipertahankan agar teks
  * terbaca; bila lebih lebar dari layar, area ini bisa digeser. `highlightId` = blok yang error,
- * `activeId` = blok yang sedang dijalankan (mode langkah).
+ * `activeId` = blok yang sedang dijalankan (mode langkah). `fit` = perkecil agar muat selebar wadah (HP).
  */
 export default function FlowchartDiagram({
   program,
   highlightId = null,
   activeId = null,
+  fit = false,
   title = 'Diagram flowchart',
 }) {
   const layout = useMemo(() => layoutProgram(program), [program])
@@ -68,7 +69,11 @@ export default function FlowchartDiagram({
         width={layout.width}
         height={layout.height}
         viewBox={`0 0 ${layout.width} ${layout.height}`}
-        className="mx-auto block max-w-none"
+        className="mx-auto block h-auto max-w-none"
+        // fit: perkecil sampai 65% agar muat di HP; lebih kecil dari itu teks sulit dibaca, jadi digeser saja.
+        style={
+          fit ? { width: '100%', maxWidth: layout.width, minWidth: layout.width * 0.65 } : undefined
+        }
       >
         <defs>
           <marker

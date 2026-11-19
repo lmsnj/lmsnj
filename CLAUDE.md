@@ -295,6 +295,7 @@ Pola yang wajib dipakai ulang:
   WAJIB identik (pesan, batas, urutan hitung langkah) — ubah keduanya bersamaan dan tambahkan kasus ke
   `conformance.json` (dipakai test kedua sisi). Jangan pernah memakai eval untuk program siswa. Uji tersembunyi
   hanya di kunci versi. Contoh plugin kedua: `exposure` (DKV).
+  Isi siap impor ada di `docs/mpi/` (dibuat skrip, dijaga `ContentTests`); ubah lewat skripnya lalu buat ulang.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
 - **Submission** (pengumpulan): `task` (PROTECT), `student` (PROTECT), `text_answer`, `file` + `original_filename`, `is_late` (disimpan saat mengumpulkan), `submitted_at`. Satu per (tugas, siswa).
   - Aturan (`apps/tasks/services.py`): sebelum tenggat siswa boleh kumpul/ganti/batal; setelah tenggat pengumpulan pertama diterima dan ditandai terlambat jika `allow_late`, pengumpulan yang sudah ada terkunci. Minimal ada teks atau file.
@@ -757,6 +758,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] Tahap 3: Studio Penyusun + gambar unggahan + pilihan media di form Materi
   - [x] Tahap 4: impor (Excel/CSV, JSON, Word, PPTX, PDF, tautan, bank soal) + langkah Tautan
   - [x] Tahap 5: plugin Flowgorithm (interpreter kembar JS/Python, susun/isi program, lab, .fprg) + plugin exposure DKV
-  - [ ] Tahap 6-8: isi X RPL 1, laporan, embed HTML5
+  - [x] Tahap 6: isi "Petualangan Flowgorithm" (`docs/mpi/`, impor JSON) + Tes Awal/Akhir + langkah tebak output
+  - [ ] Tahap 7-8: laporan, embed HTML5
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar

@@ -193,6 +193,35 @@ class StepTests(SimpleTestCase):
         with self.assertRaises(InvalidResponse):
             self.kind.clean(public, {"blanks": ["a", "b"]})
 
+    def test_predict_answer_is_computed(self):
+        kind = KINDS["flowgorithm_predict"]
+        step = {
+            "text": "Kalau umur diisi 15, pesan terakhir yang tampil adalah ...",
+            "program": {
+                "body": [
+                    {"t": "decl", "type": "Integer", "names": ["umur"]},
+                    {"t": "output", "expr": '"Berapa umurmu?"'},
+                    {"t": "input", "target": "umur"},
+                    {"t": "if", "cond": "umur > 12", "yes": [{"t": "output", "expr": '"Besar"'}], "no": [{"t": "output", "expr": '"Kecil"'}]},
+                ]
+            },
+            "inputs": ["15"],
+            "show": "last",
+            "wrong": ["Besar", "Kecil", "Kecil"],
+        }  # fmt: skip
+        clean = kind.validate(step)
+        self.assertEqual([c["text"] for c in clean["choices"]], ["Besar", "Kecil"])
+        public, key = kind.compile({**clean, "hints": []})
+        self.assertIn("program", public)
+        self.assertNotIn("wrong", public)
+        right = next(c["id"] for c in public["choices"] if c["text"] == "Besar")
+        self.assertTrue(kind.grade(public, key, {"choice": right})[0])
+        self.assertEqual(
+            kind.validate({**step, "show": "all"})["choices"][0]["text"], "Berapa umurmu?, Besar"
+        )
+        with self.assertRaisesMessage(StepError, "minimal satu pilihan salah"):
+            kind.validate({**step, "wrong": ["Besar"]})
+
     def test_demo_step_and_exposure_validate(self):
         demo = KINDS["flowgorithm_demo"].validate(
             {"program": LUAS["program"], "inputs": ["5", "3"], "editable": True}
@@ -333,3 +362,34 @@ class FlowgorithmApiTests(MediaTestCase):
         self.assertEqual(response.status_code, 200, response.data)
         self.assertTrue(response.data["correct"])
         self.assertFalse(response.data["saved"])
+
+
+DOCS = Path(__file__).resolve().parents[4] / "docs" / "mpi"
+
+
+class ContentTests(SimpleTestCase):
+    """Isi "Petualangan Flowgorithm" (docs/mpi) harus selalu layak terbit dan soal tesnya bisa diimpor."""
+
+    def test_media_json_is_publishable(self):
+        payload = json.loads((DOCS / "petualangan-flowgorithm.json").read_text("utf-8"))
+        self.assertEqual(payload["format"], "lms-sigma-media")
+        # Pemeriksaan lengkap = pemeriksaan terbit: semua program kunci studi kasus dijalankan dengan ujinya.
+        content = schema.validate_media(payload["media"], full=True)
+        stations = list(schema.iter_stations(content))
+        self.assertGreaterEqual(len(stations), 29)
+        kinds = {s["kind"] for station in stations for _, s in schema.iter_steps(station)}
+        self.assertTrue(
+            {"flowgorithm", "flowgorithm_predict", "flowgorithm_demo", "categorize", "matching"} <= kinds
+        )
+        compiled = json.dumps(schema.compile_media(content)["content"], ensure_ascii=False)
+        self.assertNotIn('"solution"', compiled)
+
+    def test_pre_and_post_tests_parse(self):
+        from apps.assessments.question_import import parse_text
+
+        for name in ("tes-awal-flowgorithm.txt", "tes-akhir-flowgorithm.txt"):
+            items = parse_text((DOCS / name).read_text("utf-8"))
+            self.assertEqual(len(items), 10, name)
+            self.assertEqual([e for item in items for e in item["errors"]], [], name)
+            # Pilihan PG Asesmen tidak diacak: kunci tidak boleh selalu di huruf yang sama.
+            self.assertGreater(len({item["data"]["correct_choice"] for item in items}), 1, name)

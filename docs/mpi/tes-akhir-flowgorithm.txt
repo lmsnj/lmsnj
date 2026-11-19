@@ -1,0 +1,60 @@
+1. Urutan langkah yang logis, jelas, dan berhenti untuk menyelesaikan masalah disebut ...
+A. algoritma
+B. variabel
+C. konsol
+Kunci: A
+
+2. Simbol jajaran genjang berwarna biru di Flowgorithm yang membaca isian keyboard bernama ...
+A. Output
+B. If
+C. Input
+Kunci: C
+
+3. Nama variabel yang boleh dipakai di Flowgorithm adalah ...
+A. jumlah santri
+B. jumlahSantri
+C. jumlah_santri
+Kunci: B
+
+4. Tipe data untuk menyimpan tinggi badan 1.65 meter adalah ...
+A. Real
+B. Integer
+C. Boolean
+Kunci: A
+
+5. Array berisi 8 laci. Indeks laci terakhir adalah ...
+A. 8
+B. 9
+C. 7
+Kunci: C
+
+6. Hasil dari 23 % 4 adalah ...
+A. 5
+B. 3
+C. 92
+Kunci: B
+
+7. Hasil dari (6 > 2) and (3 > 9) adalah ...
+A. false
+B. true
+C. 6
+Kunci: A
+
+8. Pada simbol If, jalur False berada di sebelah ...
+A. kanan
+B. bawah
+C. kiri
+Kunci: C
+
+9. Program: i = 2; While i <= 4: Output i; i = i + 1. Yang tampil adalah ...
+A. 2, 3
+B. 2, 3, 4
+C. 3, 4, 5
+Kunci: B
+
+10. Nilai yang dikirim ke fungsi saat memanggilnya, mis. luas(6), disebut ...
+A. argumen
+B. return
+C. komentar
+Kunci: A
+

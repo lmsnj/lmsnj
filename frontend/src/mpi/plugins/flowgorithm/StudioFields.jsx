@@ -7,7 +7,7 @@ import TextAreaField from '../../../components/TextAreaField'
 import { getErrorMessage } from '../../../utils/errors'
 import { CheckField, ImageField, LinesField, ListEditor } from '../../studio/fields'
 import FlowgorithmEditor from './FlowgorithmEditor'
-import { runProgram } from './interpreter'
+import { formatValue, runProgram } from './interpreter'
 import { countBlanks, fillBlanks, withIds } from './program'
 
 const FORMAT_HINT = 'Boleh **tebal**, *miring*, rumus $...$, dan {nama_panggilan}.'
@@ -238,6 +238,68 @@ export function FlowgorithmDemoFields({ step, set }) {
         label="Siswa boleh mengubah program (lab bebas)"
         checked={step.editable}
         onChange={(editable) => set({ editable })}
+      />
+    </>
+  )
+}
+
+/** Jawaban benar tebak output (sama dengan backend `predicted_output`). */
+function predicted(program, inputs, show) {
+  const result = runProgram(program ?? { body: [] }, inputs ?? [])
+  if (result.error) return `Error: ${result.error}`
+  if (!result.out.length) return 'Tidak ada yang tampil'
+  return show === 'last' ? result.out.at(-1) : result.out.join(', ')
+}
+
+/** Form Studio jenis langkah `flowgorithm_predict` (tebak output). */
+export function FlowgorithmPredictFields({ step, set }) {
+  const answer = predicted(step.program, step.inputs, step.show)
+  return (
+    <>
+      <TextAreaField
+        label="Pertanyaan"
+        value={step.text ?? ''}
+        rows={2}
+        hint={FORMAT_HINT}
+        onChange={(event) => set({ text: event.target.value })}
+      />
+      <ProgramBox
+        title="Program yang ditampilkan"
+        program={step.program}
+        onChange={(program) => set({ program })}
+      />
+      <LinesField
+        key={`inputs-${step.id}`}
+        label="Isian yang diketik (opsional, satu per baris)"
+        value={step.inputs ?? []}
+        onChange={(inputs) => set({ inputs })}
+        rows={2}
+      />
+      <SelectField
+        label="Yang ditebak siswa"
+        value={step.show ?? 'all'}
+        onChange={(event) => set({ show: event.target.value })}
+        options={[
+          { value: 'all', label: 'Semua output (digabung dengan koma)' },
+          { value: 'last', label: 'Baris output terakhir saja' },
+        ]}
+      />
+      <p className="rounded-lg bg-brand-50 p-2 text-sm ring-1 ring-brand-200">
+        Jawaban benar (dihitung otomatis):{' '}
+        <span className="font-mono font-semibold">{formatValue(answer)}</span>
+      </p>
+      <LinesField
+        key={`wrong-${step.id}`}
+        label="Pilihan salah (1-5, satu per baris)"
+        value={step.wrong ?? []}
+        onChange={(wrong) => set({ wrong })}
+        rows={3}
+      />
+      <TextAreaField
+        label="Pembahasan (tampil setelah siswa benar / membuka jawaban)"
+        value={step.explanation ?? ''}
+        rows={2}
+        onChange={(event) => set({ explanation: event.target.value })}
       />
     </>
   )

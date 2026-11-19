@@ -6,6 +6,8 @@
   Program siswa dijalankan dengan beberapa uji (isian -> output yang diharapkan). Uji `hidden` tidak pernah
   dikirim ke siswa (kunci), hanya dinilai di server. Output yang diharapkan boleh dikosongkan guru jika ada
   program kunci: dihitung otomatis saat disimpan.
+`flowgorithm_predict` (latihan "tebak output"): program ditampilkan (tidak bisa dijalankan siswa), siswa memilih
+  output yang benar. Jawaban benar DIHITUNG interpreter saat disimpan, jadi kunci tidak mungkin salah.
 `flowgorithm_demo` (penjelasan): program contoh yang bisa dijalankan/dilangkahi siswa (atau diubah bebas
   jika `editable`), tanpa nilai.
 
@@ -15,7 +17,7 @@ Interpreter: interpreter.py (kembaran frontend/src/mpi/plugins/flowgorithm/inter
 import time
 
 from ... import steps as step_kinds
-from ...steps import GradedStep, InvalidResponse, StepError, StepKind, register
+from ...steps import ChoiceStep, GradedStep, InvalidResponse, StepError, StepKind, register
 from .interpreter import check_tests, output_matches, run_program
 from .programs import ProgramError, clean_program, count_blanks, fill_blanks, node_count
 
@@ -211,3 +213,42 @@ class FlowgorithmDemoStep(StepKind):
             "inputs": _lines(step.get("inputs"), "Contoh isian", MAX_INPUTS, 200),
             "editable": bool(step.get("editable")),
         }
+
+
+def predicted_output(program, inputs, show):
+    """Output yang tampil, dalam bentuk pilihan jawaban (sama dengan aturan media acuan)."""
+    result = run_program(program, inputs)
+    if result["error"]:
+        return f"Error: {result['error']}"
+    if not result["out"]:
+        return "Tidak ada yang tampil"
+    return result["out"][-1] if show == "last" else ", ".join(result["out"])
+
+
+@register
+class FlowgorithmPredictStep(ChoiceStep):
+    kind, label = "flowgorithm_predict", "Flowgorithm (tebak output)"
+
+    def validate(self, step):
+        program = _program(step.get("program") or {"body": []}, "Program")
+        if not program["body"]:
+            raise StepError("Program masih kosong.")
+        inputs = _lines(step.get("inputs"), "Isian", MAX_INPUTS, 200)
+        show = step.get("show") or "all"
+        if show not in ("all", "last"):
+            raise StepError("Yang ditebak harus 'all' (semua output) atau 'last' (baris terakhir).")
+        answer = predicted_output(program, inputs, show)
+        wrong = []
+        for text in _lines(step.get("wrong"), "Pilihan salah", 5, 300):
+            text = text.strip()
+            # Dibandingkan persis (huruf besar/kecil bermakna di output program).
+            if text and text != answer and text not in wrong:
+                wrong.append(text)
+        if not wrong:
+            raise StepError("Isi minimal satu pilihan salah (yang berbeda dari output sebenarnya).")
+        choices = [{"text": answer, "why": ""}] + [{"text": text, "why": ""} for text in wrong]
+        cleaned = super().validate({**step, "choices": choices, "correct": 0})
+        return {**cleaned, "program": program, "inputs": inputs, "show": show, "wrong": wrong}
+
+    def compile(self, step):
+        return super().compile({k: v for k, v in step.items() if k != "wrong"})

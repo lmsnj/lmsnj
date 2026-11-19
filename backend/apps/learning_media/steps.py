@@ -298,7 +298,8 @@ class ChoiceStep(GradedStep):
         correct = step.get("correct")
         if isinstance(correct, bool) or not isinstance(correct, int) or not 0 <= correct < len(choices):
             raise StepError("Tandai satu pilihan sebagai jawaban benar.")
-        if len({c["text"].casefold() for c in choices}) != len(choices):
+        # Dibandingkan persis: di soal pemrograman "Halo" dan "HaLo" memang jawaban yang berbeda.
+        if len({c["text"] for c in choices}) != len(choices):
             raise StepError("Pilihan tidak boleh ada yang sama.")
         return {**self.question(step), "choices": choices, "correct": correct}
 
