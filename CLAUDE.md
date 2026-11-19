@@ -295,6 +295,7 @@ Pola yang wajib dipakai ulang:
   WAJIB identik (pesan, batas, urutan hitung langkah) — ubah keduanya bersamaan dan tambahkan kasus ke
   `conformance.json` (dipakai test kedua sisi). Jangan pernah memakai eval untuk program siswa. Uji tersembunyi
   hanya di kunci versi. Contoh plugin kedua: `exposure` (DKV).
+  Laporan (MPI-J): `reports.py` (N-Gain dari nilai pengerjaan pertama Tes Awal/Akhir), halaman `MediaReportPage`.
   Isi siap impor ada di `docs/mpi/` (dibuat skrip, dijaga `ContentTests`); ubah lewat skripnya lalu buat ulang.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
 - **Submission** (pengumpulan): `task` (PROTECT), `student` (PROTECT), `text_answer`, `file` + `original_filename`, `is_late` (disimpan saat mengumpulkan), `submitted_at`. Satu per (tugas, siswa).
@@ -716,6 +717,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET/POST | `/api/learning-media/{id}/assets/` (multipart `file`), GET/DELETE `/api/media-assets/{id}/` | Unggah/hapus: pembuat media/admin. Lihat: yang boleh membuka media, siswa lewat materinya |
 | GET/POST | `/api/learning-media/{id}/import-template/`, `.../import/` (`source` excel/json/word/pptx/pdf/links/bank, `mode` append/replace, `file` / `text` / `assessment` + `questions`, `dry_run`) | Pembuat media/admin: template Excel berisi draf / periksa & terapkan impor ke draf |
 | POST   | `/api/learning-media/fprg/` (multipart `file`) | Guru & admin: file Flowgorithm .fprg -> program MPI (`program`, `warnings`) |
+| GET/POST | `/api/materials/{id}/media/report/`, `.../report/export/` (Excel), `.../remind/` (`students`, `message`) | Guru tim & admin: laporan media kelas; pengingat lewat Ruang Obrolan |
 | GET    | `/api/materials/{id}/media/leaderboard/` | Siswa/guru kelas itu; 403 jika dimatikan guru |
 | GET/POST | `/api/materials/{id}/media/`, `.../answer/` (`version`, `station`, `step`, `response`, `hint_level`, `client_uid`), `.../reveal/`, `.../station/` (`action` visit/restart/finish, `step`, `seconds`), `.../reflection/` (`station`, `text`) | Siswa kelas itu (disimpan, 120/menit); guru/admin & "masuk sebagai" = tidak disimpan |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
@@ -759,6 +761,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] Tahap 4: impor (Excel/CSV, JSON, Word, PPTX, PDF, tautan, bank soal) + langkah Tautan
   - [x] Tahap 5: plugin Flowgorithm (interpreter kembar JS/Python, susun/isi program, lab, .fprg) + plugin exposure DKV
   - [x] Tahap 6: isi "Petualangan Flowgorithm" (`docs/mpi/`, impor JSON) + Tes Awal/Akhir + langkah tebak output
-  - [ ] Tahap 7-8: laporan, embed HTML5
+  - [x] Tahap 7: laporan media (progres, kesulitan, N-Gain, tidak aktif + pengingat obrolan, refleksi, Excel)
+  - [ ] Tahap 8: embed HTML5/H5P + bridge
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar

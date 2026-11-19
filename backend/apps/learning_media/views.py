@@ -26,7 +26,7 @@ from apps.schools.context import active_school
 from apps.schools.models import School
 
 from . import assets as media_assets
-from . import schema, services
+from . import reports, schema, services
 from .importers import excel as excel_import
 from .importers.service import run_import
 from .models import InteractiveMedia, InteractiveMediaAsset, InteractiveMediaShare, InteractiveMediaVersion
@@ -39,6 +39,7 @@ from .serializers import (
     PreviewSerializer,
     PublishSerializer,
     ReflectionSerializer,
+    ReminderSerializer,
     RestoreSerializer,
     RevealSerializer,
     SharesSerializer,
@@ -526,3 +527,61 @@ class MediaPlayViewSet(viewsets.ViewSet):
                 ctx.material, ctx.student, version, data["station"], data["text"], save=ctx.save
             )
         )
+
+
+class MediaReportViewSet(viewsets.ViewSet):
+    """Laporan media satu materi untuk guru tim kelas-mapel itu & admin: progres, kesulitan, N-Gain, siswa
+    tidak aktif (+ pengingat lewat Ruang Obrolan), refleksi, ekspor Excel."""
+
+    permission_classes = [IsAdminOrTeacher]
+
+    def _material(self, request, material_id):
+        material = (
+            materials_for(request.user, active_school(request))
+            .filter(pk=material_id, material_type="media")
+            .select_related("interactive_media", "teaching_assignment__classroom")
+            .first()
+        )
+        if material is None or material.interactive_media is None:
+            raise NotFound("Media interaktif tidak ditemukan.")
+        return material
+
+    def retrieve(self, request, material_id=None):
+        return Response(reports.build_report(self._material(request, material_id)))
+
+    def export(self, request, material_id=None):
+        material = self._material(request, material_id)
+        content = reports.export_workbook(reports.build_report(material))
+        return template_response(content, f"laporan-media-{material.id}.xlsx")
+
+    def remind(self, request, material_id=None):
+        """Kirim pesan pengingat ke siswa terpilih (hanya siswa kelas ini yang boleh diajak mengobrol)."""
+        from apps.chat.models import Conversation, Message
+        from apps.chat.rules import can_chat
+
+        if impersonator_id(request):
+            raise PermissionDenied("Saat masuk sebagai pengguna lain, pesan tidak bisa dikirim.")
+        material = self._material(request, material_id)
+        serializer = ReminderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        students = material.teaching_assignment.classroom.students.filter(
+            is_active=True, pk__in=data["students"]
+        )
+        sent, skipped = [], []
+        for student in students:
+            if not can_chat(request.user, student):
+                skipped.append(student.full_name)
+                continue
+            first, second = sorted([request.user, student], key=lambda u: u.id)
+            conversation, _ = Conversation.objects.get_or_create(user_a=first, user_b=second)
+            nickname = (student.full_name or student.username).split()[0]
+            message = Message.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                body=data["message"].replace("{nama}", nickname),
+            )
+            conversation.last_message_at = message.created_at
+            conversation.save(update_fields=["last_message_at"])
+            sent.append(student.full_name)
+        return Response({"sent": len(sent), "skipped": skipped})

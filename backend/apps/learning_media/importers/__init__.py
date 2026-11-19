@@ -183,16 +183,21 @@ def merge(draft, result, mode):
 # ---------------------------------------------------------------- ringkasan pratinjau
 
 
+def _plain(text, limit=120):
+    """Teks kaya -> satu baris polos (tanpa **tebal**/*miring*), dipotong agar ringkas."""
+    text = " ".join(re.sub(r"\*{1,2}([^*]+)\*{1,2}", r"\1", str(text)).split())
+    return text[:limit] + ("…" if len(text) > limit else "")
+
+
 def step_caption(step):
     if step.get("title"):
         return step["title"]
     for name in ("text", "body", "template"):
         value = step.get(name)
         if isinstance(value, str) and value.strip():
-            first = value.strip().splitlines()[0]
-            return first[:80] + ("…" if len(first) > 80 else "")
+            return _plain(value)
     if step.get("kind") == "dialog" and step.get("lines"):
-        return str(step["lines"][0].get("text", ""))[:80]
+        return _plain(step["lines"][0].get("text", ""))
     return ""
 
 

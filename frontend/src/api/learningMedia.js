@@ -76,6 +76,19 @@ export const mediaPlayApi = {
     api.get(`/materials/${materialId}/media/leaderboard/`).then((res) => res.data),
 }
 
+// Laporan media satu materi (guru tim & admin).
+export const mediaReportApi = {
+  get: (materialId) => api.get(`/materials/${materialId}/media/report/`).then((res) => res.data),
+  exportXlsx: (materialId) =>
+    api
+      .get(`/materials/${materialId}/media/report/export/`, { responseType: 'blob' })
+      .then((res) => res.data),
+  remind: (materialId, students, message) =>
+    api
+      .post(`/materials/${materialId}/media/remind/`, { students, message })
+      .then((res) => res.data),
+}
+
 // Pratinjau Studio memakai pemutar yang sama, tetapi jawabannya diperiksa dengan draf media.
 export function previewPlayApi(mediaId) {
   return {

@@ -1,6 +1,6 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, BarChart3 } from 'lucide-react'
 import { useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { mediaPlayApi } from '../api/learningMedia'
 import { materialsApi } from '../api/materials'
 import Alert from '../components/Alert'
@@ -8,7 +8,7 @@ import Spinner from '../components/Spinner'
 import useAuth from '../hooks/useAuth'
 import useFetch from '../hooks/useFetch'
 import MediaPlayer from '../mpi/MediaPlayer'
-import { ROLES } from '../utils/constants'
+import { ROLE_HOME, ROLES } from '../utils/constants'
 
 /** Halaman Media Interaktif satu materi: siswa belajar, guru/admin melihat pratinjau. */
 export default function MediaPlayerPage() {
@@ -33,6 +33,14 @@ export default function MediaPlayerPage() {
       >
         <ArrowLeft className="size-4" aria-hidden="true" /> Kembali
       </button>
+      {!isStudent && (
+        <Link
+          to={`${ROLE_HOME[user.role]}/media/${id}/laporan`}
+          className="ms-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-brand-900"
+        >
+          <BarChart3 className="size-4" aria-hidden="true" /> Laporan kelas
+        </Link>
+      )}
       {/* Data lama tetap tampil saat dimuat ulang agar ringkasan stasiun tidak hilang. */}
       {data ? (
         <MediaPlayer

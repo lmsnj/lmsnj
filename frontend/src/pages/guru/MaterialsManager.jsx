@@ -1,6 +1,7 @@
 import {
   ArrowDown,
   ArrowUp,
+  BarChart3,
   BookOpen,
   ClipboardCheck,
   ClipboardList,
@@ -14,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { lazy, Suspense, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { chaptersApi, materialsApi } from '../../api/materials'
 import Alert from '../../components/Alert'
 import Button from '../../components/Button'
@@ -21,8 +23,10 @@ import DeleteDialog from '../../components/DeleteDialog'
 import MaterialList from '../../components/MaterialList'
 import MaterialViewer from '../../components/MaterialViewer'
 import Spinner from '../../components/Spinner'
+import useAuth from '../../hooks/useAuth'
 import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
+import { ROLE_HOME } from '../../utils/constants'
 import { getErrorMessage } from '../../utils/errors'
 import { groupByChapter, moveItem } from '../../utils/learningPath'
 import ChaptersModal from './ChaptersModal'
@@ -62,6 +66,8 @@ export default function MaterialsManager({
   // { type: 'form' | 'items' | 'practice' | 'code' | 'chapters' | 'plan' | 'copy' | 'merge' | 'view' | 'delete' | 'progress' |
   //   'ai' | 'quiz', material }
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const materials = useFetch(materialsApi.list, {
     ...ALL,
     teaching_assignment: assignmentId || undefined,
@@ -148,6 +154,16 @@ export default function MaterialsManager({
       <Button variant="ghost" size="sm" onClick={() => setDialog({ type: 'progress', material })}>
         <ListChecks className="size-4" aria-hidden="true" /> Progres
       </Button>
+      {material.material_type === 'media' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`${ROLE_HOME[user.role]}/media/${material.id}/laporan`)}
+          title="Progres per stasiun, kesulitan, N-Gain, siswa tidak aktif, refleksi"
+        >
+          <BarChart3 className="size-4" aria-hidden="true" /> Laporan Media
+        </Button>
+      )}
       {material.objectives?.length > 0 && (
         <Button
           variant="ghost"

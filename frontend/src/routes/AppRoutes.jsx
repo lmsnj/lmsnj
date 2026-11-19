@@ -36,6 +36,7 @@ const ExamCardsPrintPage = lazy(() => import('../pages/ExamCardsPrintPage'))
 const AccountCardsPrintPage = lazy(() => import('../pages/AccountCardsPrintPage'))
 const ChatPage = lazy(() => import('../pages/ChatPage'))
 const MediaPlayerPage = lazy(() => import('../pages/MediaPlayerPage'))
+const MediaReportPage = lazy(() => import('../pages/MediaReportPage'))
 const MediaLibraryPage = lazy(() => import('../pages/MediaLibraryPage'))
 const MediaStudioPage = lazy(() => import('../pages/MediaStudioPage'))
 const MediaSummaryPrintPage = lazy(() => import('../pages/MediaSummaryPrintPage'))
@@ -119,6 +120,7 @@ export default function AppRoutes() {
                 <Route path="ujian/:id" element={<ExamEventPage />} />
                 <Route path="tahun-ajaran" element={<PromotionPage />} />
                 <Route path="media/:id" element={<MediaPlayerPage />} />
+                <Route path="media/:id/laporan" element={<MediaReportPage />} />
               </Route>
               <Route element={<ProtectedRoute roles={[ROLES.FOUNDATION]} />}>
                 <Route path="sekolah" element={<SchoolsPage />} />
@@ -136,6 +138,7 @@ export default function AppRoutes() {
               <Route path="asesmen" element={<TeacherAssessmentsPage />} />
               <Route path="asesmen/:id" element={<AssessmentEditorPage />} />
               <Route path="media/:id" element={<MediaPlayerPage />} />
+              <Route path="media/:id/laporan" element={<MediaReportPage />} />
               <Route path="media-interaktif" element={<MediaLibraryPage />} />
               <Route path="media-interaktif/:id" element={<MediaStudioPage />} />
               <Route path="jadwal" element={<TimetablePage />} />

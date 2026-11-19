@@ -159,3 +159,12 @@ class ReflectionSerializer(serializers.Serializer):
     version = serializers.IntegerField(required=False, min_value=0)
     station = serializers.CharField(max_length=40)
     text = serializers.CharField(max_length=2000, allow_blank=True)
+
+
+class ReminderSerializer(serializers.Serializer):
+    """Pengingat lewat Ruang Obrolan. `{nama}` di pesan diganti nama depan siswa."""
+
+    students = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), min_length=1, max_length=100
+    )
+    message = serializers.CharField(max_length=1000)
