@@ -13,8 +13,10 @@ import {
   Merge,
   PencilLine,
   Sparkles,
+  SquareCheckBig,
+  Trash2,
 } from 'lucide-react'
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { chaptersApi, materialsApi } from '../../api/materials'
 import Alert from '../../components/Alert'
@@ -97,6 +99,67 @@ export default function MaterialsManager({
     } catch (err) {
       setNotice({ type: 'error', text: getErrorMessage(err) })
     }
+  }
+
+  // Mode pilih: centang beberapa materi lalu hapus sekaligus.
+  const [selecting, setSelecting] = useState(false)
+  const [selected, setSelected] = useState({}) // { [id]: materi }
+  const selectedCount = Object.keys(selected).length
+  const visible = groups ? groups.flatMap((group) => group.materials) : (shown ?? [])
+  const toggleMaterial = (material, checked) =>
+    setSelected((current) => {
+      const next = { ...current }
+      if (checked) next[material.id] = material
+      else delete next[material.id]
+      return next
+    })
+  const selectAll = () =>
+    setSelected(Object.fromEntries(visible.map((material) => [material.id, material])))
+  const stopSelecting = () => {
+    setSelecting(false)
+    setSelected({})
+  }
+  const selection = selecting
+    ? { isChecked: (material) => Boolean(selected[material.id]), onChange: toggleMaterial }
+    : undefined
+  // Saat memilih, klik kartu = centang/batal (bukan membuka materi).
+  const openMaterial = (material) =>
+    selecting
+      ? toggleMaterial(material, !selected[material.id])
+      : setDialog({ type: 'view', material })
+
+  // Hasil hapus sekaligus dibaca oleh onDeleted (DeleteDialog tidak meneruskan hasil onDelete).
+  const bulkResult = useRef({ deleted: [], failed: [] })
+  // Dihapus satu per satu lewat endpoint biasa, jadi hak akses tetap dicek server per materi.
+  // Satu materi gagal tidak membatalkan yang lain; yang gagal dilaporkan dan tetap tercentang.
+  const removeSelected = async ({ materials: list }) => {
+    const result = { deleted: [], failed: [] }
+    for (const material of list) {
+      try {
+        await materialsApi.remove(material.id)
+        result.deleted.push(material)
+      } catch (err) {
+        result.failed.push({ material, message: getErrorMessage(err) })
+      }
+    }
+    bulkResult.current = result
+  }
+  const afterBulkDelete = () => {
+    const { deleted, failed } = bulkResult.current
+    closeDialog()
+    materials.reload()
+    if (!failed.length) {
+      stopSelecting()
+      setNotice({ type: 'success', text: `${deleted.length} materi dihapus.` })
+      return
+    }
+    setSelected(Object.fromEntries(failed.map(({ material }) => [material.id, material])))
+    setNotice({
+      type: 'error',
+      text:
+        `${deleted.length} materi dihapus, ${failed.length} gagal: ` +
+        failed.map(({ material, message }) => `"${material.title}" (${message})`).join('; '),
+    })
   }
 
   // Tombol per materi; `list` = daftar tempat materi itu berada (untuk tombol naik/turun).
@@ -244,6 +307,16 @@ export default function MaterialsManager({
           </p>
         )}
         <div className="flex flex-wrap gap-2">
+          {all?.length > 0 && (
+            <Button
+              variant={selecting ? 'primary' : 'secondary'}
+              onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+              aria-pressed={selecting}
+            >
+              <SquareCheckBig className="size-4" aria-hidden="true" />
+              {selecting ? 'Selesai Memilih' : 'Pilih'}
+            </Button>
+          )}
           {canReorder && all?.length > 0 && (
             <Button variant="secondary" onClick={() => setDialog({ type: 'copy' })}>
               <Copy className="size-4" aria-hidden="true" /> Salin ke Kelas Lain
@@ -295,8 +368,9 @@ export default function MaterialsManager({
                 showStatus
                 numbered
                 emptyTitle="Belum ada materi di bab ini. Pilih bab ini di form materi."
-                onOpen={(material) => setDialog({ type: 'view', material })}
-                actions={renderActions(group.materials)}
+                onOpen={openMaterial}
+                selection={selection}
+                actions={selecting ? undefined : renderActions(group.materials)}
               />
             </section>
           ))}
@@ -314,9 +388,35 @@ export default function MaterialsManager({
               : 'Belum ada materi. Klik “Tambah Materi” untuk mulai.'
           }
           emptyMessage={all?.length ? 'Coba kata kunci lain atau hapus penyaring.' : undefined}
-          onOpen={(material) => setDialog({ type: 'view', material })}
-          actions={renderActions(all)}
+          onOpen={openMaterial}
+          selection={selection}
+          actions={selecting ? undefined : renderActions(all)}
         />
+      )}
+
+      {/* Bilah aksi mode pilih: menempel di bawah layar selama memilih. */}
+      {selecting && (
+        <div className="sticky bottom-4 z-10 mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-white p-3 shadow-lg ring-1 ring-slate-200">
+          <p className="mr-auto text-sm text-slate-700">
+            <strong className="text-slate-900">{selectedCount}</strong> materi dipilih
+          </p>
+          <Button variant="ghost" size="sm" onClick={selectAll} disabled={!visible.length}>
+            Pilih semua ({visible.length})
+          </Button>
+          {selectedCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => setSelected({})}>
+              Kosongkan
+            </Button>
+          )}
+          <Button
+            variant="danger"
+            size="sm"
+            disabled={!selectedCount}
+            onClick={() => setDialog({ type: 'bulk-delete', materials: Object.values(selected) })}
+          >
+            <Trash2 className="size-4" aria-hidden="true" /> Hapus ({selectedCount})
+          </Button>
+        </div>
       )}
 
       {dialog?.type === 'form' && (
@@ -443,6 +543,21 @@ export default function MaterialsManager({
           setNotice({ type: 'success', text: `Materi "${m.title}" dihapus.` })
           materials.reload()
         }}
+        onClose={closeDialog}
+      />
+      <DeleteDialog
+        item={dialog?.type === 'bulk-delete' ? dialog : null}
+        title={`Hapus ${dialog?.materials?.length ?? 0} Materi`}
+        message={({ materials: list }) =>
+          `Hapus ${list.length} materi: ${list
+            .slice(0, 5)
+            .map((m) => `"${m.title}"`)
+            .join(', ')}${list.length > 5 ? `, dan ${list.length - 5} lainnya` : ''}? ` +
+          'File, konten tambahan, soal Latihan & Praktik, serta progres siswa pada materi ini ikut terhapus. ' +
+          'Jika hanya ingin menyembunyikan dari siswa, pakai "Jadikan Draf".'
+        }
+        onDelete={removeSelected}
+        onDeleted={afterBulkDelete}
         onClose={closeDialog}
       />
     </>

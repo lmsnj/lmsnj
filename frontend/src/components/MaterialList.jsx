@@ -31,6 +31,7 @@ function requirementText(material) {
  * Untuk siswa, `material.progress` (dari API) menampilkan nomor, status capaian, dan kunci.
  * `showStatus` menampilkan label Draf/Terbit (hanya berguna untuk guru).
  * `showContext` menampilkan mapel & kelas (untuk daftar gabungan semua kelas).
+ * `selection` = { isChecked(materi), onChange(materi, checked) } -> kotak centang di kiri (mode pilih guru).
  */
 export default function MaterialList({
   materials,
@@ -42,6 +43,7 @@ export default function MaterialList({
   emptyTitle,
   emptyMessage,
   numbered,
+  selection,
 }) {
   if (loading && !materials?.length) {
     return (
@@ -66,15 +68,25 @@ export default function MaterialList({
           : (TYPE_ICONS[material.material_type] ?? TYPE_ICONS.link)
         const number = progress?.order_number ?? (numbered ? index + 1 : null)
         const requirements = !progress && requirementText(material)
+        const checked = Boolean(selection?.isChecked(material))
         return (
           <li
             key={material.id}
             // Tombol guru banyak; jika diletakkan di samping, kolom teks terjepit (satu huruf per baris).
-            // Karena itu tombol aksi selalu di bawah teks.
-            className={`flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md ${
-              actions ? '' : 'sm:flex-row sm:items-center'
-            }`}
+            // Karena itu tombol aksi selalu di bawah teks. Mode pilih: kotak centang selalu di kiri.
+            className={`flex gap-3 rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md ${
+              checked ? 'ring-2 ring-brand-600' : 'ring-1 ring-slate-200'
+            } ${selection ? 'items-center' : actions ? 'flex-col' : 'flex-col sm:flex-row sm:items-center'}`}
           >
+            {selection && (
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(event) => selection.onChange(material, event.target.checked)}
+                aria-label={`Pilih ${material.title}`}
+                className="size-5 shrink-0 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-600"
+              />
+            )}
             <button
               type="button"
               onClick={() => onOpen(material)}
