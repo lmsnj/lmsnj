@@ -12,6 +12,7 @@ import {
   Lock,
   PencilLine,
   PlayCircle,
+  Sparkles,
   Target,
 } from 'lucide-react'
 import { lazy, Suspense, useState } from 'react'
@@ -39,8 +40,8 @@ import Spinner from './Spinner'
 // Editor kode & Python di browser cukup besar: dimuat hanya saat siswa membuka Praktik.
 const CodePracticeModal = lazy(() => import('./code/CodePracticeModal'))
 
-const CONTENT_ICONS = { video: PlayCircle, pdf: FileText, link: Link2 }
-const TYPE_LABELS = { video: 'Video', pdf: 'PDF', link: 'Link' }
+const CONTENT_ICONS = { video: PlayCircle, pdf: FileText, link: Link2, media: Sparkles }
+const TYPE_LABELS = { video: 'Video', pdf: 'PDF', link: 'Link', media: 'Media Interaktif' }
 const KIND_ICONS = {
   practice: PencilLine,
   coding: Code2,
@@ -127,7 +128,9 @@ function ModuleCard({ material, selected, onSelect }) {
 }
 
 // Satu baris aktivitas: tanda selesai + ikon jenis + judul (tombol/tautan bila bisa dikerjakan).
-function ActivityRow({ done, icon: Icon, children }) {
+function ActivityRow({ done, icon, children }) {
+  // Jenis baru yang belum punya ikon jangan sampai membuat seluruh halaman gagal tampil.
+  const Icon = icon ?? Circle
   return (
     <li className="flex items-start gap-3 py-2">
       <DoneIcon done={done} className="mt-0.5" />
