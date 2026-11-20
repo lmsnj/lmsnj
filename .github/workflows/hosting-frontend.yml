@@ -33,7 +33,12 @@ jobs:
           VITE_BASE_DOMAIN: sigmateknologi.my.id
       - name: Simpan hasil build ke branch hosting-frontend
         run: |
+          # Commit baru DITAMBAHKAN di atas riwayat branch (tanpa force push): cPanel hanya bisa menarik
+          # perubahan yang menyambung dengan salinan di server ("could not contact the remote" jika tidak).
           OUT="$RUNNER_TEMP/hosting"
+          REMOTE="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git clone -q --depth 1 --branch hosting-frontend "$REMOTE" "$OUT"
+          rm -rf "$OUT/public_html"
           mkdir -p "$OUT/public_html"
           cp -R dist/. "$OUT/public_html/"
           cat > "$OUT/.cpanel.yml" <<'EOF'
@@ -44,9 +49,9 @@ jobs:
               - /bin/cp -R public_html/. /home/sigmatek/public_html/
           EOF
           cd "$OUT"
-          git init -q -b hosting-frontend
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
+          git diff --cached --quiet && { echo "Hasil build sama, tidak ada commit baru."; exit 0; }
           git commit -q -m "Build frontend dari ${GITHUB_SHA::7}"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" hosting-frontend
+          git push "$REMOTE" HEAD:hosting-frontend
