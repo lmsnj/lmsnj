@@ -1,0 +1,52 @@
+# Build frontend untuk hosting cPanel setiap kali branch multi-sekolah di-push, lalu simpan hasilnya
+# di branch hosting-frontend (folder public_html/ + .cpanel.yml). cPanel menarik branch itu ke public_html.
+# Panduan: docs/DEPLOY-CPANEL.md bagian 9.
+name: Build frontend hosting
+
+on:
+  push:
+    branches: [multi-sekolah]
+    paths: ['frontend/**', '.github/workflows/hosting-frontend.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          VITE_API_URL: https://api.sigmateknologi.my.id/api
+          VITE_BASE_DOMAIN: sigmateknologi.my.id
+      - name: Simpan hasil build ke branch hosting-frontend
+        run: |
+          OUT="$RUNNER_TEMP/hosting"
+          mkdir -p "$OUT/public_html"
+          cp -R dist/. "$OUT/public_html/"
+          cat > "$OUT/.cpanel.yml" <<'EOF'
+          ---
+          # Dibuat otomatis oleh .github/workflows/hosting-frontend.yml (jangan diubah di branch ini).
+          deployment:
+            tasks:
+              - /bin/cp -R public_html/. /home/sigmatek/public_html/
+          EOF
+          cd "$OUT"
+          git init -q -b hosting-frontend
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Build frontend dari ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" hosting-frontend

@@ -130,6 +130,28 @@ Extract. Pastikan `index.html` dan `.htaccess` berada langsung di `public_html` 
 
 ## 9. Memperbarui Aplikasi
 
+### Cara utama: dari GitHub (Git Version Control)
+
+Dua salinan repo di server, masing-masing dengan `.cpanel.yml` sendiri:
+
+| Repo di cPanel                     | Branch            | Saat "Deploy HEAD Commit"                                                  |
+|------------------------------------|-------------------|----------------------------------------------------------------------------|
+| `/home/sigmatek/repo/lmsnj`        | `multi-sekolah`   | `.cpanel.yml` di akar repo: cadangkan db ke `~/backup`, salin `backend/` ke `lms/backend`, pip install, migrate, collectstatic, restart |
+| `/home/sigmatek/repo/lmsnj-frontend` | `hosting-frontend` | salin hasil build ke `public_html`                                       |
+
+Branch `hosting-frontend` dibuat otomatis oleh GitHub Actions (`.github/workflows/hosting-frontend.yml`)
+setiap kali ada push yang mengubah `frontend/` (lihat tab **Actions** di GitHub, tunggu centang hijau).
+Alamat API & domain untuk build ditulis di workflow itu.
+
+Memasang (sekali): menu **Git™ Version Control** -> **Create**, "Clone a Repository" tetap menyala,
+isi Clone URL `https://github.com/lmsnj/lmsnj.git`, Repository Path dan nama sesuai tabel. Setelah clone,
+buka **Manage** -> pilih branch -> **Update**.
+
+Memperbarui: **Manage** -> tab **Pull or Deploy** -> **Update from Remote** -> **Deploy HEAD Commit**
+(backend dulu, lalu frontend). Log deploy ada di `~/.cpanel/logs/`.
+
+### Cara lama: upload zip
+
 - **Backend:** upload `backend.zip` baru lalu Extract (timpa). File `.env`, `db.sqlite3`, dan `media/`
   tidak ikut tertimpa karena tidak ada di zip. Di Terminal: `pip install -r requirements.txt`,
   `python manage.py migrate`, `python manage.py collectstatic --noinput`, lalu **Restart** di Setup Python App.

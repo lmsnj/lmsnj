@@ -1,0 +1,17 @@
+---
+# Deploy BACKEND dari cPanel -> Git Version Control -> "Deploy HEAD Commit" (panduan: docs/DEPLOY-CPANEL.md bagian 9).
+# Hanya isi folder backend/ yang disalin. .env, db.sqlite3, media/ tidak ada di repo, jadi tidak pernah tertimpa.
+# Frontend dipasang terpisah dari branch hosting-frontend (dibuat GitHub Actions).
+deployment:
+  tasks:
+    - export APP=/home/sigmatek/lms/backend
+    - export PY=/home/sigmatek/virtualenv/lms/backend/3.12/bin/python
+    # Cadangkan database dulu, agar bisa dikembalikan jika migrasi bermasalah.
+    - /bin/mkdir -p /home/sigmatek/backup
+    - /bin/cp $APP/db.sqlite3 /home/sigmatek/backup/db-sebelum-deploy-$(date +%Y-%m-%d-%H%M).sqlite3
+    - /bin/cp -R backend/. $APP/
+    - cd $APP && $PY -m pip install -q -r requirements.txt
+    - cd $APP && $PY manage.py migrate --noinput
+    - cd $APP && $PY manage.py collectstatic --noinput
+    # Passenger memuat ulang aplikasi jika file ini disentuh (sama dengan tombol Restart).
+    - /bin/mkdir -p $APP/tmp && /bin/touch $APP/tmp/restart.txt
