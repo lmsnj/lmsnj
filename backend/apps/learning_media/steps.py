@@ -233,11 +233,16 @@ class FlipCardsStep(StepKind):
 
     def validate(self, step):
         cards = []
-        for card in object_list(step.get("cards"), "Kartu", 1, 20):
+        for number_, card in enumerate(object_list(step.get("cards"), "Kartu", 1, 20), start=1):
+            image = text(card.get("image"), "Gambar kartu")
+            if image and not image.startswith(("https://", "http://", "asset:")):
+                raise StepError(f"Kartu {number_}: gambar harus gambar unggahan atau alamat https://.")
             cards.append(
                 {
-                    "front": text(card.get("front"), "Sisi depan", 1000, True),
+                    # Sisi depan boleh hanya gambar (mis. foto simbol), asal salah satunya ada.
+                    "front": text(card.get("front"), "Sisi depan", 1000, required=not image),
                     "back": text(card.get("back"), "Sisi belakang", 2000, True),
+                    "image": image,
                 }
             )
         return {"cards": cards}

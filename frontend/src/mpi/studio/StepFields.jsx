@@ -186,13 +186,13 @@ const FORMS = {
       />
     </>
   ),
-  flip_cards: ({ step, set }) => (
+  flip_cards: ({ step, set, mediaId }) => (
     <ListEditor
       label="Kartu"
       items={step.cards}
       min={1}
       onChange={(cards) => set({ cards })}
-      newItem={() => ({ front: '', back: '' })}
+      newItem={() => ({ front: '', back: '', image: '' })}
       addLabel="Tambah kartu"
       renderItem={(card, update) => (
         <>
@@ -205,6 +205,12 @@ const FORMS = {
             label="Sisi belakang"
             value={card.back}
             onChange={(back) => update({ back })}
+          />
+          <ImageField
+            label="Gambar sisi depan (opsional)"
+            value={card.image}
+            onChange={(image) => update({ image })}
+            mediaId={mediaId}
           />
         </>
       )}

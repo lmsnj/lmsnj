@@ -207,6 +207,9 @@ function FlipCard({ card, user }) {
         flipped ? 'bg-brand-50 ring-brand-300' : 'bg-white ring-slate-300 hover:ring-brand-400'
       }`}
     >
+      {!flipped && card.image && (
+        <StepImage src={card.image} alt={card.front} className="max-h-36" />
+      )}
       <Rich
         text={flipped ? card.back : card.front}
         user={user}

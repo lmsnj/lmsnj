@@ -83,6 +83,28 @@ class ExcelTests(SimpleTestCase):
             json.dumps(again["parts"], sort_keys=True), json.dumps(draft["parts"], sort_keys=True)
         )
 
+    def test_card_images_survive_excel_round_trip(self):
+        draft = schema.validate_media(media(), full=True)
+        station = next(schema.iter_stations(draft))
+        station["steps"].append(
+            {
+                "id": "kartu1",
+                "kind": "flip_cards",
+                "title": "Kartu bergambar",
+                "hints": [],
+                "cards": [
+                    {"front": "Input", "back": "Membaca isian", "image": "asset:5"},
+                    {"front": "Output", "back": "Menampilkan hasil", "image": ""},
+                ],
+            }
+        )
+        draft = schema.validate_media(draft, full=True)
+        result = excel.read_excel(xlsx(draft), draft)
+        self.assertEqual(result.errors, [])
+        again = schema.validate_media(apply(draft, result), full=True)
+        step = next(s for s in next(schema.iter_stations(again))["steps"] if s["id"] == "kartu1")
+        self.assertEqual([c["image"] for c in step["cards"]], ["asset:5", ""])
+
     def test_edited_cell_changes_step_and_errors_name_the_row(self):
         draft = apply({}, excel.read_excel(xlsx({}), {}))
         # Baris ke-7 lembar Langkah = langkah PG contoh.

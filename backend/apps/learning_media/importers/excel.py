@@ -227,8 +227,10 @@ def build_step(kind, data, base):
     elif kind in ("flip_cards", "flashcards"):
         cards = []
         for line in items or lines(body):
+            # "depan = belakang || gambar" (gambar opsional: asset:<id> atau https://...)
+            line, _, image = line.partition(" || ")
             front, back = split_pair(line)
-            cards.append({"front": front, "back": back or ""})
+            cards.append({"front": front, "back": back or "", "image": image.strip()})
         step["cards"] = cards
     elif kind == "worked_example":
         parts = []
@@ -543,7 +545,8 @@ def step_row(step, station_title, list_name, mascot_name):
         row.update(media=step.get("url", ""), text=step.get("body", ""))
     elif kind in ("flip_cards", "flashcards"):
         row["items"] = "\n".join(
-            f"{c.get('front', '')} = {c.get('back', '')}" for c in step.get("cards") or []
+            f"{c.get('front', '')} = {c.get('back', '')}" + (f" || {c['image']}" if c.get("image") else "")
+            for c in step.get("cards") or []
         )
     elif kind == "worked_example":
         out = [

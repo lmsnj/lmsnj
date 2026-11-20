@@ -7,7 +7,7 @@ from django.test import SimpleTestCase
 from rest_framework.exceptions import ValidationError
 
 from .. import schema, services
-from ..steps import KINDS
+from ..steps import KINDS, StepError
 from .samples import correct_response, media, wrong_response
 
 
@@ -158,3 +158,26 @@ class StarsTests(SimpleTestCase):
         self.assertEqual(services.suggestion(station, 3, 3), "remedial")
         self.assertEqual(services.suggestion(station, 3, 0), "challenge")
         self.assertIsNone(services.suggestion({}, 1, 5))
+
+
+class FlipCardImageTests(SimpleTestCase):
+    def validate(self, cards):
+        return KINDS["flip_cards"].validate({"cards": cards})
+
+    def test_card_image_kept_and_front_optional_with_image(self):
+        result = self.validate(
+            [
+                {"front": "", "back": "Simbol Input", "image": "asset:7"},
+                {"front": "Console", "back": "Tempat Output", "image": "https://contoh.id/c.png"},
+                {"front": "Toolbar", "back": "Deretan tombol"},
+            ]
+        )
+        self.assertEqual([c["image"] for c in result["cards"]], ["asset:7", "https://contoh.id/c.png", ""])
+
+    def test_card_without_front_and_image_rejected(self):
+        with self.assertRaises(StepError):
+            self.validate([{"front": "", "back": "x"}])
+
+    def test_card_image_must_be_upload_or_https(self):
+        with self.assertRaises(StepError):
+            self.validate([{"front": "a", "back": "b", "image": "javascript:alert(1)"}])
