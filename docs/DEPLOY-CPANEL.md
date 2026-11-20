@@ -136,8 +136,8 @@ Dua salinan repo di server, masing-masing dengan `.cpanel.yml` sendiri:
 
 | Repo di cPanel                     | Branch            | Saat "Deploy HEAD Commit"                                                  |
 |------------------------------------|-------------------|----------------------------------------------------------------------------|
-| `/home/sigmatek/repo/lmsnj`        | `multi-sekolah`   | `.cpanel.yml` di akar repo: cadangkan db ke `~/backup`, salin `backend/` ke `lms/backend`, pip install, migrate, collectstatic, restart |
-| `/home/sigmatek/repo/lmsnj-frontend` | `hosting-frontend` | salin hasil build ke `public_html`                                       |
+| `/home/sigmatek/repositories/lmsnj`        | `multi-sekolah`   | `.cpanel.yml` di akar repo: cadangkan db ke `~/backup`, salin `backend/` ke `lms/backend`, pip install, migrate, collectstatic, restart |
+| `/home/sigmatek/repositories/lmsnj-frontend` | `hosting-frontend` | salin hasil build ke `public_html`                                       |
 
 Branch `hosting-frontend` dibuat otomatis oleh GitHub Actions (`.github/workflows/hosting-frontend.yml`)
 setiap kali ada push yang mengubah `frontend/` (lihat tab **Actions** di GitHub, tunggu centang hijau).
