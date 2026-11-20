@@ -69,7 +69,11 @@ export default function MaterialList({
         return (
           <li
             key={material.id}
-            className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md sm:flex-row sm:items-center"
+            // Tombol guru banyak; jika diletakkan di samping, kolom teks terjepit (satu huruf per baris).
+            // Karena itu tombol aksi selalu di bawah teks.
+            className={`flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md ${
+              actions ? '' : 'sm:flex-row sm:items-center'
+            }`}
           >
             <button
               type="button"
@@ -127,7 +131,9 @@ export default function MaterialList({
               </span>
             </button>
             {actions && (
-              <div className="flex flex-wrap gap-1 sm:justify-end">{actions(material)}</div>
+              <div className="flex flex-wrap gap-1 border-t border-slate-100 pt-2 sm:justify-end">
+                {actions(material)}
+              </div>
             )}
           </li>
         )
