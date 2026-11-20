@@ -1,0 +1,1 @@
+import{a as e,n as t}from"./jsx-runtime-D3jfb0Ew.js";import{at as n}from"./index-S3arIfiX.js";var r=e(t(),1);function i(e=!0){let{hash:t}=n();(0,r.useEffect)(()=>{t&&e&&document.getElementById(t.slice(1))?.scrollIntoView({behavior:`smooth`,block:`start`})},[t,e])}export{i as t};
