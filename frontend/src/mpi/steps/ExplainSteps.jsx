@@ -11,7 +11,7 @@ import { useState } from 'react'
 import AuthImage from '../../components/AuthImage'
 import RichText from '../../components/RichText'
 import { youtubeEmbedUrl } from '../../utils/media'
-import { assetUrl, personalize } from '../engine'
+import { assetUrl, directImageUrl, personalize } from '../engine'
 import useImageSrc from '../useImageSrc'
 
 /** Gambar langkah: unggahan Studio ("asset:<id>") atau alamat https. */
@@ -26,7 +26,7 @@ export function StepImage({ src, alt, className = '' }) {
       />
     )
   }
-  if (!src || !/^https?:\/\//.test(src)) return null
+  if (!directImageUrl(src)) return null
   return (
     <img
       src={src}

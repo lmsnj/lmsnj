@@ -227,6 +227,10 @@ class LinkStep(StepKind):
         }
 
 
+# Gambar bawaan aplikasi di frontend/public/mpi (mis. /mpi/flowgorithm/console.svg).
+BUILTIN_IMAGE = re.compile(r"^/mpi/(?!.*\.\.)[\w./-]+\.(svg|png|webp|jpe?g|gif)$", re.IGNORECASE)
+
+
 @register
 class FlipCardsStep(StepKind):
     kind, label = "flip_cards", "Kartu bolak-balik"
@@ -235,7 +239,7 @@ class FlipCardsStep(StepKind):
         cards = []
         for number_, card in enumerate(object_list(step.get("cards"), "Kartu", 1, 20), start=1):
             image = text(card.get("image"), "Gambar kartu")
-            if image and not image.startswith(("https://", "http://", "asset:")):
+            if image and not (image.startswith(("https://", "http://", "asset:")) or BUILTIN_IMAGE.match(image)):
                 raise StepError(f"Kartu {number_}: gambar harus gambar unggahan atau alamat https://.")
             cards.append(
                 {

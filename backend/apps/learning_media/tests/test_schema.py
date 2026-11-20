@@ -174,6 +174,13 @@ class FlipCardImageTests(SimpleTestCase):
         )
         self.assertEqual([c["image"] for c in result["cards"]], ["asset:7", "https://contoh.id/c.png", ""])
 
+    def test_builtin_image_path_allowed_but_not_traversal(self):
+        result = self.validate([{"front": "Console", "back": "x", "image": "/mpi/flowgorithm/console.svg"}])
+        self.assertEqual(result["cards"][0]["image"], "/mpi/flowgorithm/console.svg")
+        for bad in ("/mpi/../index.html", "/etc/passwd.png", "//evil.id/a.png"):
+            with self.assertRaises(StepError):
+                self.validate([{"front": "a", "back": "b", "image": bad}])
+
     def test_card_without_front_and_image_rejected(self):
         with self.assertRaises(StepError):
             self.validate([{"front": "", "back": "x"}])

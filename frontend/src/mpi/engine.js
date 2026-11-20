@@ -18,6 +18,14 @@ export function personalize(text, user) {
 }
 
 /** "asset:12" -> alamat API gambar unggahan (diambil dengan token lewat AuthImage). */
+/** Gambar bawaan aplikasi di frontend/public/mpi (mis. /mpi/flowgorithm/console.svg). */
+export const BUILTIN_IMAGE = /^\/mpi\/(?!.*\.\.)[\w./-]+\.(svg|png|webp|jpe?g|gif)$/i
+
+/** Alamat gambar yang langsung bisa dipakai di <img> (https atau gambar bawaan), selain itu null. */
+export function directImageUrl(src) {
+  return /^https?:\/\//.test(src || '') || BUILTIN_IMAGE.test(src || '') ? src : null
+}
+
 export function assetUrl(src) {
   const match = /^asset:(\d+)$/.exec(src || '')
   return match ? `/media-assets/${match[1]}/` : null

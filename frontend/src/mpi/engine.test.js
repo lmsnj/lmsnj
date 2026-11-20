@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  directImageUrl,
   achievements,
   canAdvance,
   clampScale,
@@ -167,4 +168,19 @@ test('localStepState mengikuti aturan server', () => {
     done: true,
     revealed: true,
   })
+})
+
+test('directImageUrl menerima https dan gambar bawaan /mpi saja', () => {
+  assert.equal(directImageUrl('https://contoh.id/a.png'), 'https://contoh.id/a.png')
+  assert.equal(directImageUrl('/mpi/flowgorithm/console.svg'), '/mpi/flowgorithm/console.svg')
+  for (const bad of [
+    '/mpi/../index.html',
+    '/api/x.png',
+    '//evil.id/a.png',
+    'asset:3',
+    'javascript:x',
+    '',
+  ]) {
+    assert.equal(directImageUrl(bad), null, bad)
+  }
 })

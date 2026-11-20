@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { loadAuthImage } from '../api/images'
+import { directImageUrl } from './engine'
 
 const ASSET = /^asset:(\d+)$/
 
 /**
- * Alamat gambar yang bisa dipakai di <img>: https apa adanya, "asset:<id>" diunduh lewat API (dengan
+ * Alamat gambar yang bisa dipakai di <img>: https dan gambar bawaan (/mpi/...) apa adanya, "asset:<id>" diunduh lewat API (dengan
  * token) lalu dijadikan blob URL. Mengembalikan { src, failed }.
  */
 export default function useImageSrc(value) {
   const match = ASSET.exec(value || '')
-  const direct = !match && /^https?:\/\//.test(value || '') ? value : null
+  const direct = match ? null : directImageUrl(value)
   const [state, setState] = useState({ key: null, src: null, failed: false })
 
   useEffect(() => {

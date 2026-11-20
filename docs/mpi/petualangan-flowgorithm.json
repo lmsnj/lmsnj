@@ -6,7 +6,7 @@
   "schema_version": 1,
   "mascot": {
    "name": "Bita",
-   "image": ""
+   "image": "/mpi/flowgorithm/bita.svg"
   },
   "glossary": [
    {
@@ -171,7 +171,7 @@
           "text": "**Program** adalah algoritma yang ditulis supaya komputer bisa menjalankannya. Sekarang, susun resep teh dengan urutan yang benar!"
          }
         ],
-        "image": ""
+        "image": "/mpi/flowgorithm/teh.svg"
        },
        {
         "id": "9b15acd7",
@@ -199,7 +199,7 @@
         "title": "Ingat lagi",
         "hints": [],
         "body": "Halo, teman! Aku **Bita**, robot penjelajah. Pernah membuat teh dengan resep? Resep itu berisi langkah yang jelas dan berurutan. Langkah yang jelas dan berurutan untuk menyelesaikan masalah disebut **algoritma**. Komputer tidak bisa menebak, ia hanya mengikuti langkah. **Program** adalah algoritma yang ditulis supaya komputer bisa menjalankannya. Sekarang, susun resep teh dengan urutan yang benar!",
-        "image": "",
+        "image": "/mpi/flowgorithm/teh.svg",
         "caption": ""
        }
       ],
@@ -378,7 +378,7 @@
         "title": "",
         "hints": [],
         "text": "Simbol bertuliskan **Main**.\n\nSimbol berbentuk lonjong ini disebut ...",
-        "image": "",
+        "image": "/mpi/flowgorithm/simbol-main.svg",
         "explanation": "Bentuk lonjong ungu dipakai untuk Main (mulai) dan End (selesai).",
         "choices": [
          {
@@ -406,7 +406,7 @@
         "title": "",
         "hints": [],
         "text": "Simbol bertuliskan **Input nama**.\n\nSimbol biru miring ini dipakai untuk ...",
-        "image": "",
+        "image": "/mpi/flowgorithm/simbol-input.svg",
         "explanation": "Input berwarna biru dan membaca isian.",
         "choices": [
          {
@@ -434,7 +434,7 @@
         "title": "",
         "hints": [],
         "text": "Simbol bertuliskan **Output nama**.\n\nSimbol hijau miring ini dipakai untuk ...",
-        "image": "",
+        "image": "/mpi/flowgorithm/simbol-output.svg",
         "explanation": "Output berwarna hijau dan menampilkan hasil.",
         "choices": [
          {
@@ -462,7 +462,7 @@
         "title": "",
         "hints": [],
         "text": "Simbol bertuliskan **umur > 12**.\n\nSimbol belah ketupat merah muda ini adalah ...",
-        "image": "",
+        "image": "/mpi/flowgorithm/simbol-if.svg",
         "explanation": "If memilih jalan True atau False.",
         "choices": [
          {
@@ -572,19 +572,23 @@
         "cards": [
          {
           "front": "Toolbar",
-          "back": "Deretan tombol di atas, termasuk Run (jalankan) dan Step (satu langkah)."
+          "back": "Deretan tombol di atas, termasuk Run (jalankan) dan Step (satu langkah).",
+          "image": "/mpi/flowgorithm/toolbar.svg"
          },
          {
           "front": "Jendela Flowchart",
-          "back": "Tempat menggambar flowchart dari simbol-simbol."
+          "back": "Tempat menggambar flowchart dari simbol-simbol.",
+          "image": "/mpi/flowgorithm/jendela-flowchart.svg"
          },
          {
           "front": "Console",
-          "back": "Tempat hasil Output tampil dan tempat mengetik isian Input."
+          "back": "Tempat hasil Output tampil dan tempat mengetik isian Input.",
+          "image": "/mpi/flowgorithm/console.svg"
          },
          {
           "front": "Variable Watch",
-          "back": "Tabel isi variabel yang berubah saat program berjalan."
+          "back": "Tabel isi variabel yang berubah saat program berjalan.",
+          "image": "/mpi/flowgorithm/variable-watch.svg"
          }
         ]
        },
@@ -804,7 +808,7 @@
         "title": "",
         "hints": [],
         "text": "Simbol hijau ini dipakai untuk ...",
-        "image": "",
+        "image": "/mpi/flowgorithm/simbol-output.svg",
         "explanation": "Output menampilkan di Console.",
         "choices": [
          {
@@ -1128,23 +1132,28 @@
         "cards": [
          {
           "front": "buah[0]",
-          "back": "Apel (laci pertama)"
+          "back": "Apel (laci pertama)",
+          "image": "/mpi/flowgorithm/laci-0.svg"
          },
          {
           "front": "buah[1]",
-          "back": "Jeruk"
+          "back": "Jeruk",
+          "image": "/mpi/flowgorithm/laci-1.svg"
          },
          {
           "front": "buah[2]",
-          "back": "Jambu"
+          "back": "Jambu",
+          "image": "/mpi/flowgorithm/laci-2.svg"
          },
          {
           "front": "buah[3]",
-          "back": "Strawberi"
+          "back": "Strawberi",
+          "image": "/mpi/flowgorithm/laci-3.svg"
          },
          {
           "front": "buah[4]",
-          "back": "Mangga (laci terakhir)"
+          "back": "Mangga (laci terakhir)",
+          "image": "/mpi/flowgorithm/laci-4.svg"
          }
         ]
        },

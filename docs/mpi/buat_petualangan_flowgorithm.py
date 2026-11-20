@@ -633,6 +633,9 @@ def build():
         "glossary": [{"term": t, "meaning": m} for t, m in GLOSSARY],
         "parts": parts,
     }
+    from gambar_flowgorithm import pasang_gambar  # noqa: E402 (berkas di folder yang sama)
+
+    pasang_gambar(media)
     clean = schema.validate_media(media, full=True)  # gagal di sini = isi belum layak terbit
     stats = {
         "stasiun": sum(1 for _ in schema.iter_stations(clean)),
