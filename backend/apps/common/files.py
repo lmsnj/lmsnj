@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import uuid
 
@@ -7,6 +8,10 @@ from django.utils import timezone
 from django.utils.deconstruct import deconstructible
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
+
+# Python < 3.13 (server memakai 3.12) belum mengenal .webp, sehingga gambar WEBP terkirim sebagai
+# application/octet-stream dan bisa gagal tampil. Daftarkan sekali di sini (dipakai semua FileResponse).
+mimetypes.add_type("image/webp", ".webp")
 
 
 @deconstructible
