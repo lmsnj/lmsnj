@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-D3jfb0Ew.js";var t=e();function n({title:e,children:n}){return(0,t.jsxs)(`div`,{className:`rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center`,children:[(0,t.jsx)(`p`,{className:`font-medium text-slate-700`,children:e}),n&&(0,t.jsx)(`p`,{className:`mt-1 text-sm text-slate-500`,children:n})]})}export{n as t};

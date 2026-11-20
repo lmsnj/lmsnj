@@ -1,0 +1,1 @@
+function e(e=new Date){let t=e.getHours();return t>=4&&t<11?`Selamat pagi`:t>=11&&t<15?`Selamat siang`:t>=15&&t<18?`Selamat sore`:`Selamat malam`}var t=new Intl.DateTimeFormat(`id-ID`,{weekday:`long`,day:`numeric`,month:`long`,year:`numeric`}),n=(e=new Date)=>t.format(e),r=e=>String(e??``).trim().split(/\s+/)[0]||``;export{n,e as r,r as t};

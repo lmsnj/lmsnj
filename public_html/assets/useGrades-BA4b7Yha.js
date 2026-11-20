@@ -1,0 +1,1 @@
+import{q as e}from"./index-DqjhWqF-.js";import{n as t}from"./academic-DEnBXXXM.js";function n(){let{school:n}=e(),r=n?.grades??t;return{grades:r,first:r[0],last:r[r.length-1]}}export{n as t};

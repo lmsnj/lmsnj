@@ -1,0 +1,5 @@
+---
+# Dibuat otomatis oleh .github/workflows/hosting-frontend.yml (jangan diubah di branch ini).
+deployment:
+  tasks:
+    - /bin/cp -R public_html/. /home/sigmatek/public_html/
