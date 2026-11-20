@@ -1,5 +1,5 @@
-import { Building2, Contact, LogIn, School, Search } from 'lucide-react'
-import { useState } from 'react'
+import { Building2, Contact, LogIn, RotateCcw, School, Search } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authApi } from '../../api/auth'
 import AdminCard, { CardGrid } from '../../components/AdminCard'
@@ -26,6 +26,28 @@ const ROLE_OPTIONS = [
 const fieldClass =
   'rounded-lg border-0 bg-white px-3 py-2.5 text-base text-slate-900 shadow-sm ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600 sm:text-sm'
 
+const EMPTY_FILTERS = { search: '', role: '', schools: '', grade: '', major: '', classroom: '' }
+
+const GRADE_ORDER = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
+const unique = (values) => [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b))
+const byGrade = (a, b) => GRADE_ORDER.indexOf(a) - GRADE_ORDER.indexOf(b)
+
+function FilterSelect({ label, value, onChange, className = '', children }) {
+  return (
+    <label className={className}>
+      <span className="sr-only">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`${fieldClass} w-full`}
+        aria-label={label}
+      >
+        {children}
+      </select>
+    </label>
+  )
+}
+
 /**
  * Admin yayasan masuk ke akun guru/siswa/admin sekolah mana pun tanpa password, untuk membantu
  * atau memeriksa tampilan mereka. Kembali lewat pita kuning di atas (tanpa login ulang).
@@ -33,7 +55,7 @@ const fieldClass =
 export default function ImpersonatePage() {
   const { schools, impersonate } = useAuth()
   const navigate = useNavigate()
-  const [filters, setFilters] = useState({ search: '', role: '', schools: '' })
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [page, setPage] = useState(1)
   const [entering, setEntering] = useState(null)
   const [error, setError] = useState('')
@@ -44,13 +66,52 @@ export default function ImpersonatePage() {
     search,
     role: filters.role,
     schools: filters.schools,
+    classroom: filters.classroom,
+    classroom__grade: filters.grade,
+    classroom__major: filters.major,
   })
   const list = users.data?.results ?? []
+
+  const classrooms = useFetch(authApi.impersonationClassrooms, { school: filters.schools })
+  const allClassrooms = useMemo(() => classrooms.data ?? [], [classrooms.data])
+  const grades = useMemo(
+    () => unique(allClassrooms.map((c) => c.grade)).sort(byGrade),
+    [allClassrooms],
+  )
+  const majors = useMemo(
+    () =>
+      unique(
+        allClassrooms
+          .filter((c) => !filters.grade || c.grade === filters.grade)
+          .map((c) => c.major),
+      ),
+    [allClassrooms, filters.grade],
+  )
+  const classOptions = allClassrooms.filter(
+    (c) =>
+      (!filters.grade || c.grade === filters.grade) &&
+      (!filters.major || c.major === filters.major),
+  )
+  // Nama kelas sama di tahun ajaran/sekolah lain? tampilkan keterangannya agar tidak tertukar.
+  const nameCount = classOptions.reduce(
+    (acc, c) => ({ ...acc, [c.name]: (acc[c.name] ?? 0) + 1 }),
+    {},
+  )
+  const classLabel = (c) =>
+    nameCount[c.name] > 1
+      ? `${c.name} · ${c.academic_year}${filters.schools ? '' : ` · ${c.school_name}`}`
+      : c.name
+  const filtered = Object.entries(filters).some(
+    ([key, value]) => value && value !== EMPTY_FILTERS[key],
+  )
 
   const change = (changes) => {
     setFilters((current) => ({ ...current, ...changes }))
     setPage(1)
   }
+  // Kelas/tingkat/jurusan hanya dimiliki siswa, jadi peran ikut menjadi Siswa.
+  const changeClassFilter = (changes) =>
+    change({ ...changes, ...(filters.role === ROLES.STUDENT ? {} : { role: ROLES.STUDENT }) })
 
   const enter = async (target) => {
     setEntering(target.id)
@@ -77,8 +138,8 @@ export default function ImpersonatePage() {
         </p>
       </div>
 
-      <div className="mb-6 grid gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 md:grid-cols-[1fr_auto_auto]">
-        <label className="relative">
+      <div className="mb-6 grid gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:grid-cols-2 lg:grid-cols-6">
+        <label className="relative sm:col-span-2 lg:col-span-3">
           <span className="sr-only">Cari pengguna</span>
           <Search
             className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
@@ -92,35 +153,85 @@ export default function ImpersonatePage() {
             className={`${fieldClass} w-full pl-9`}
           />
         </label>
-        <label>
-          <span className="sr-only">Peran</span>
-          <select
-            value={filters.role}
-            onChange={(event) => change({ role: event.target.value })}
-            className={`${fieldClass} w-full`}
-          >
-            {ROLE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.value ? option.label : 'Semua peran'}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span className="sr-only">Sekolah</span>
-          <select
-            value={filters.schools}
-            onChange={(event) => change({ schools: event.target.value })}
-            className={`${fieldClass} w-full`}
-          >
-            <option value="">Semua sekolah</option>
-            {schools.map((school) => (
-              <option key={school.id} value={school.id}>
-                {school.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FilterSelect
+          label="Peran"
+          value={filters.role}
+          onChange={(role) =>
+            change({
+              role,
+              ...(role === ROLES.STUDENT ? {} : { classroom: '', grade: '', major: '' }),
+            })
+          }
+        >
+          {ROLE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.value ? option.label : 'Semua peran'}
+            </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          label="Sekolah"
+          value={filters.schools}
+          className="lg:col-span-2"
+          onChange={(value) => change({ schools: value, classroom: '', grade: '', major: '' })}
+        >
+          <option value="">Semua sekolah</option>
+          {schools.map((school) => (
+            <option key={school.id} value={school.id}>
+              {school.name}
+            </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          label="Tingkat"
+          value={filters.grade}
+          onChange={(grade) => changeClassFilter({ grade, major: '', classroom: '' })}
+        >
+          <option value="">Semua tingkat</option>
+          {grades.map((grade) => (
+            <option key={grade} value={grade}>
+              Kelas {grade}
+            </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          label="Jurusan"
+          value={filters.major}
+          onChange={(major) => changeClassFilter({ major, classroom: '' })}
+        >
+          <option value="">Semua jurusan</option>
+          {majors.map((major) => (
+            <option key={major} value={major}>
+              {major}
+            </option>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          label="Kelas"
+          value={filters.classroom}
+          className="sm:col-span-2 lg:col-span-3"
+          onChange={(classroom) => changeClassFilter({ classroom })}
+        >
+          <option value="">
+            {classrooms.loading && !classrooms.data ? 'Memuat kelas...' : 'Semua kelas'}
+          </option>
+          {classOptions.map((c) => (
+            <option key={c.id} value={c.id}>
+              {classLabel(c)}
+            </option>
+          ))}
+        </FilterSelect>
+        <div className="flex items-center justify-between gap-3 sm:col-span-2 lg:col-span-1 lg:justify-end">
+          <span className="text-sm text-slate-500 lg:hidden">
+            {users.data ? `${users.data.count} akun` : ''}
+          </span>
+          {filtered && (
+            <Button variant="secondary" size="sm" onClick={() => change(EMPTY_FILTERS)}>
+              <RotateCcw className="size-4" aria-hidden="true" />
+              Atur ulang
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="mb-3 space-y-3">
@@ -133,7 +244,7 @@ export default function ImpersonatePage() {
         </div>
       ) : list.length === 0 ? (
         <EmptyState title="Tidak ada akun yang cocok.">
-          Coba kata kunci lain atau ubah pilihan peran/sekolah.
+          Coba kata kunci lain atau ubah pilihan peran, sekolah, atau kelas.
         </EmptyState>
       ) : (
         <CardGrid>

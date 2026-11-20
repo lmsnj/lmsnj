@@ -11,6 +11,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.academics.models import Classroom
 from apps.common.excel import import_response, is_dry_run, template_response
 from apps.common.files import validate_upload
 from apps.common.mixins import ProtectedDeleteMixin
@@ -100,7 +101,14 @@ class ImpersonationView(generics.ListAPIView):
 
     permission_classes = [IsFoundation]
     serializer_class = UserSerializer
-    filterset_fields = {"role": ["exact"], "schools": ["exact"]}
+    # classroom/tingkat/jurusan = kelas siswa (guru dan admin tidak punya kelas).
+    filterset_fields = {
+        "role": ["exact"],
+        "schools": ["exact"],
+        "classroom": ["exact"],
+        "classroom__grade": ["exact"],
+        "classroom__major": ["exact"],
+    }
     search_fields = ["username", "full_name", "nis", "nip"]
 
     def get_queryset(self):
@@ -138,6 +146,29 @@ class ImpersonationView(generics.ListAPIView):
                 "access": str(refresh.access_token),
                 "user": me_data(target, request.user),
             }
+        )
+
+
+class ImpersonationClassroomsView(APIView):
+    """Pilihan kelas untuk penyaring halaman Masuk sebagai Pengguna (semua sekolah, atau ?school=<id>)."""
+
+    permission_classes = [IsFoundation]
+
+    def get(self, request):
+        classrooms = Classroom.objects.select_related("school").order_by(
+            "school__name", "-academic_year", "grade", "name"
+        )
+        school = request.query_params.get("school")
+        if school:
+            if not school.isdigit():
+                raise ValidationError({"school": "Sekolah tidak valid."})
+            classrooms = classrooms.filter(school_id=int(school))
+        fields = ("id", "name", "grade", "major", "academic_year")
+        return Response(
+            [
+                {**{f: getattr(c, f) for f in fields}, "school": c.school_id, "school_name": c.school.name}
+                for c in classrooms
+            ]
         )
 
 

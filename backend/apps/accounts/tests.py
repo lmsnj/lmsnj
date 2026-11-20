@@ -3,7 +3,9 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.academics.models import Classroom
 from apps.common.testing import default_school
+from apps.schools.models import Level, School
 
 from .models import ImpersonationLog, Role, User
 
@@ -180,6 +182,38 @@ class ImpersonationTests(APITestCase):
         self.assertIn(self.teacher.pk, ids)
         self.assertNotIn(other.pk, ids)
         self.assertNotIn(inactive.pk, ids)
+
+    def test_filter_by_class_grade_and_major_with_classroom_options(self):
+        school = default_school()
+        year = "2026/2027"
+        rpl = Classroom.objects.create(
+            school=school, name="X RPL 1", grade="X", major="RPL", academic_year=year
+        )
+        tkj = Classroom.objects.create(
+            school=school, name="XI TKJ 1", grade="XI", major="TKJ", academic_year=year
+        )
+        other = School.objects.create(code="mtsnj", name="MTs", level=Level.MTS)
+        Classroom.objects.create(school=other, name="VII A", grade="VII", major="Umum", academic_year=year)
+        siswa_rpl = make_user("rpl", Role.STUDENT, classroom=rpl)
+        siswa_tkj = make_user("tkj", Role.STUDENT, classroom=tkj)
+        self.client.force_authenticate(self.foundation)
+
+        def ids(**params):
+            res = self.client.get(self.url, {"page_size": 100, **params})
+            return {row["id"] for row in res.data["results"]}
+
+        self.assertEqual(ids(classroom=rpl.pk), {siswa_rpl.pk})
+        self.assertEqual(ids(classroom__grade="XI"), {siswa_tkj.pk})
+        self.assertEqual(ids(classroom__major="RPL"), {siswa_rpl.pk})
+        self.assertIn(self.teacher.pk, ids())
+
+        url = reverse("auth-impersonate-classrooms")
+        names = [c["name"] for c in self.client.get(url, {"school": school.pk}).data]
+        self.assertEqual(names, ["X RPL 1", "XI TKJ 1"])
+        self.assertEqual(len(self.client.get(url).data), 3)
+        self.assertEqual(self.client.get(url, {"school": "x"}).status_code, status.HTTP_400_BAD_REQUEST)
+        self.client.force_authenticate(self.admin)
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_403_FORBIDDEN)
 
     def test_impersonate_returns_tokens_of_target_and_logs(self):
         res = self.impersonate(self.teacher)

@@ -8,6 +8,8 @@ export const authApi = {
   // Admin yayasan: daftar akun yang bisa dimasuki & masuk ke akun itu (berisi token akun tsb.).
   impersonationCandidates: (params) =>
     api.get('/auth/impersonate/', { params }).then((res) => res.data),
+  impersonationClassrooms: (params) =>
+    api.get('/auth/impersonate/classrooms/', { params }).then((res) => res.data),
   impersonate: (userId) => api.post('/auth/impersonate/', { user: userId }).then((res) => res.data),
   changePassword: (oldPassword, newPassword) =>
     api
