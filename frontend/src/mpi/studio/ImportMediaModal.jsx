@@ -72,7 +72,8 @@ const SOURCES = [
     id: 'json',
     icon: FileJson,
     label: 'JSON',
-    description: 'Hasil "Ekspor JSON" media lain (mis. dari sekolah lain).',
+    description:
+      'Unduh template JSON (berisi isi media ini), atau pakai hasil "Ekspor JSON" media lain.',
   },
 ]
 
@@ -214,6 +215,14 @@ function SourceInput({ state, set, mediaId }) {
           filename={`media-${mediaId}.xlsx`}
         >
           Unduh Template Excel
+        </FileDownloadButton>
+      )}
+      {source === 'json' && (
+        <FileDownloadButton
+          fetchBlob={() => learningMediaApi.jsonTemplate(mediaId)}
+          filename={`media-${mediaId}-template.json`}
+        >
+          Unduh Template JSON
         </FileDownloadButton>
       )}
       <div>

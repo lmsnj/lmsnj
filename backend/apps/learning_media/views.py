@@ -280,17 +280,7 @@ class LearningMediaViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         media = self.get_object()
         version = media.latest_version()
         draft = media.draft if can_edit(request.user, media) else (version.source if version else media.draft)
-        payload = {
-            "format": "lms-sigma-media",
-            "title": media.title,
-            "description": media.description,
-            "media": draft,
-        }
-        response = HttpResponse(
-            json.dumps(payload, ensure_ascii=False, indent=2), content_type="application/json; charset=utf-8"
-        )
-        response["Content-Disposition"] = f'attachment; filename="media-{media.id}.json"'
-        return response
+        return _json_response(media, draft, f"media-{media.id}.json")
 
     # ------------------------------------------------------------ impor
 
@@ -313,6 +303,15 @@ class LearningMediaViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         """Template Excel berisi isi draf (atau contoh jika masih kosong), untuk diubah lalu diimpor ulang."""
         media = self.get_object()
         return template_response(excel_import.build_workbook(media.draft), f"media-{media.id}.xlsx")
+
+    @action(detail=True, url_path="json-template")
+    def json_template(self, request, pk=None):
+        """Template JSON (format sama dengan Ekspor JSON) berisi isi draf, atau contoh jika masih kosong."""
+        media = self.get_object()
+        draft = media.draft
+        if not any(True for _ in schema.iter_stations(draft or {})):
+            draft = excel_import.EXAMPLE
+        return _json_response(media, draft, f"media-{media.id}-template.json")
 
     @action(
         detail=True,
@@ -585,3 +584,18 @@ class MediaReportViewSet(viewsets.ViewSet):
             conversation.save(update_fields=["last_message_at"])
             sent.append(student.full_name)
         return Response({"sent": len(sent), "skipped": skipped})
+
+
+def _json_response(media, draft, filename):
+    """File JSON berformat Ekspor JSON media (dibaca ulang oleh importers/sources.py::read_json)."""
+    payload = {
+        "format": "lms-sigma-media",
+        "title": media.title,
+        "description": media.description,
+        "media": draft,
+    }
+    response = HttpResponse(
+        json.dumps(payload, ensure_ascii=False, indent=2), content_type="application/json; charset=utf-8"
+    )
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response

@@ -40,6 +40,11 @@ export const learningMediaApi = {
     api
       .get(`/learning-media/${id}/import-template/`, { responseType: 'blob' })
       .then((res) => res.data),
+  // Template JSON (format Ekspor JSON) berisi draf, atau contoh jika draf masih kosong.
+  jsonTemplate: (id) =>
+    api
+      .get(`/learning-media/${id}/json-template/`, { responseType: 'blob' })
+      .then((res) => res.data),
   importContent: (id, data, dryRun, onProgress) => {
     const body = { ...data, dry_run: dryRun }
     if (!data.file) return api.post(`/learning-media/${id}/import/`, body).then((res) => res.data)

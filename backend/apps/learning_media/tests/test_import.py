@@ -328,6 +328,29 @@ class ImportApiTests(MediaTestCase):
         titles = [row[2] for row in sheet_values(response.content, "Stasiun")[1:] if row[2]]
         self.assertEqual(titles, [s["title"] for s in schema.iter_stations(self.media.draft)])
 
+    def test_json_template_contains_draft_and_imports_back(self):
+        response = self.client.get(reverse("learning-media-json-template", args=[self.media.id]))
+        self.assertEqual(response.status_code, 200)
+        payload = json.loads(response.content)
+        self.assertEqual(payload["format"], "lms-sigma-media")
+        self.assertEqual(payload["media"]["parts"], self.media.draft["parts"])
+        file = SimpleUploadedFile("t.json", response.content)
+        response = self.call({"source": "json", "mode": "replace", "file": file})
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["errors"], [])
+
+    def test_json_template_of_empty_media_is_example_that_imports(self):
+        self.media.draft = {}
+        self.media.save()
+        response = self.client.get(reverse("learning-media-json-template", args=[self.media.id]))
+        payload = json.loads(response.content)
+        self.assertEqual(payload["media"]["parts"][0]["title"], excel.EXAMPLE["parts"][0]["title"])
+        file = SimpleUploadedFile("t.json", response.content)
+        response = self.call({"source": "json", "mode": "replace", "file": file})
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["errors"], [])
+        self.assertEqual(response.data["summary"]["stations"], 2)
+
     def test_dry_run_does_not_save_then_apply_saves(self):
         before = json.dumps(self.media.draft, sort_keys=True)
         file = lambda: SimpleUploadedFile("t.xlsx", excel.build_workbook({}))  # noqa: E731
