@@ -1,1 +1,0 @@
-import{a as e,n as t}from"./jsx-runtime-D3jfb0Ew.js";import{ct as n}from"./index-DOYTxRmb.js";var r=e(t(),1);function i(e){let[t,i]=n(),[a]=(0,r.useState)(()=>t.get(e));return(0,r.useEffect)(()=>{a!==null&&i(t=>(t.delete(e),t),{replace:!0})},[e,a,i]),a}export{i as t};
