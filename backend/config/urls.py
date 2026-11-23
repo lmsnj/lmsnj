@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/", include("apps.assessments.urls")),
     path("api/", include("apps.learning_media.urls")),
     path("api/", include("apps.branding.urls")),
+    path("api/", include("apps.school_settings.urls")),
 ]
 
 # Sengaja TIDAK menyajikan MEDIA_ROOT secara publik: file materi & tugas hanya boleh

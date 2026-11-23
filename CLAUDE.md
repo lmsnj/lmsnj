@@ -45,6 +45,7 @@ lms-smknj/
 ├── README.md            # Cara menjalankan, akun demo
 ├── docs/DEPLOY.md       # Panduan memasang di server sekolah
 ├── docs/REQUIREMENTS.md # Requirement tracking (ID, Priority, Acceptance Criteria, ...)
+├── docs/spesifikasi-mapel-umum.md # Spesifikasi fitur Mapel Umum (8 tahap)
 ├── backend/
 │   ├── manage.py
 │   ├── requirements.txt
@@ -67,6 +68,8 @@ lms-smknj/
 │   │   ├── learning_media/  # Media Pembelajaran Interaktif: schema.py = isi JSON, steps.py = jenis langkah
 │   │   │                    #   & kontrak plugin, services.py = progres/bintang/kunci stasiun
 │   │   ├── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
+│   │   ├── school_settings/ # Pengaturan Pembelajaran & saklar fitur per sekolah; registry.py = daftar kunci + bawaan,
+│   │   │                    #   services.py = get_setting (kelas -> mapel -> kategori -> sekolah -> bawaan)
 │   │   └── schools/         # Sekolah (multi-sekolah); context.py = sekolah aktif (header X-School / X-School-Code),
 │   │                        #   domains.py = aturan kode subdomain sekolah
 │   └── media/               # File upload (tidak di-commit, TIDAK disajikan publik)
@@ -171,6 +174,22 @@ Pola yang wajib dipakai ulang:
   (`wa.me/?text=`, pilih kontak di WhatsApp) & Salin per akun + Cetak Kartu. Halaman cetak
   `/cetak/kartu-akun` (`AccountCardsPrintPage`, di luar `DashboardLayout`, 10 kartu per A4) menerima data
   lewat `cardStore` (sessionStorage, dihapus saat halaman ditinggalkan — password tidak dikirim balik ke server).
+- **Pengaturan Pembelajaran & feature flag** (Mapel Umum Tahap 1, `docs/spesifikasi-mapel-umum.md`, `apps/school_settings`):
+  aturan yang bisa berubah (KKM, skala, predikat, bobot, opsi kuis QR, LKPD, monitoring, ...) = DATA, bukan konstanta.
+  `registry.py`: `SETTINGS` (kunci, tab, jenis isian int/choice/bool/multi/bands/weights/fields, bawaan sistem, `scopes`
+  yang boleh menimpa) + `FEATURES` (presentasi, penilaian_langsung, kuis_qr, lkpd_foto) + `clean_value`. Fitur baru =
+  tambah kunci di registry, tanpa kolom baru. `SchoolSetting` (school, scope school/category/subject/classroom,
+  scope_id, key, value JSON) hanya berisi nilai yang DIUBAH; tanpa baris = bawaan (sekolah baru otomatis dapat paket
+  bawaan). `SettingChange` = riwayat (nilai lama/baru, null = bawaan; fitur dicatat dengan kunci `fitur.<kode>`).
+  `SchoolFeature`: tanpa baris = MATI; ubah khusus Super Admin. Baca HANYA lewat `services.get_setting(school, key,
+  classroom=, subject=, category=)` / `SettingReader` (satu query per sekolah, sengaja tanpa cache lintas request
+  karena cPanel multi-proses) dan `feature_enabled(school, code)`. Scope kategori ditolak sampai master kategori
+  (Tahap 2). Frontend: `DashboardLayout` memuat `/api/school-settings/effective/` ke `SettingsContext`;
+  `useSetting(key)`, `useFeature(code)`; item menu boleh diberi `feature: '<kode>'` (disaring
+  `utils/settings.js::filterNavByFeatures`). Halaman `/admin/pengaturan-pembelajaran` (`LearningSettingsPage`, tab per
+  grup + Fitur + Riwayat, isian `components/settings/SettingEditor.jsx`, "Kembalikan ke default", "Pakai nilai lama").
+  Aturan fitur Mapel Umum: hanya MENAMBAH (tabel/endpoint/halaman baru), fitur lama tidak diubah, fitur baru dibungkus
+  feature flag, migrasi bisa rollback, satu tahap per branch.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan. `weekly_hours` = JP resmi per minggu (opsional, dari distribusi JP).
 - **Tim pengampu** (`docs/REQUIREMENTS.md` MAT-TEAM): beberapa guru satu mapel di kelas yang sama = satu tim
   (`TeachingAssignment.team()`, `class_subject`, `has_team_member`). Materi, bab, konten, kuis/latihan, tugas,
@@ -729,6 +748,10 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET/POST | `/api/materials/{id}/media/report/`, `.../report/export/` (Excel), `.../remind/` (`students`, `message`) | Guru tim & admin: laporan media kelas; pengingat lewat Ruang Obrolan |
 | GET    | `/api/materials/{id}/media/leaderboard/` | Siswa/guru kelas itu; 403 jika dimatikan guru |
 | GET/POST | `/api/materials/{id}/media/`, `.../answer/` (`version`, `station`, `step`, `response`, `hint_level`, `client_uid`), `.../reveal/`, `.../station/` (`action` visit/restart/finish, `step`, `seconds`), `.../reflection/` (`station`, `text`) | Siswa kelas itu (disimpan, 120/menit); guru/admin & "masuk sebagai" = tidak disimpan |
+| GET    | `/api/school-settings/?scope=&scope_id=`, `/api/school-settings/history/` (`key`) | Admin (sekolah aktif): pengaturan per cakupan (bawaan, `stored`, `effective`, `source`) / riwayat |
+| PUT/DELETE | `/api/school-settings/{key}/` (PUT `scope`, `scope_id`, `value`; DELETE `?scope=&scope_id=` = kembalikan ke bawaan) | Admin; tercatat di riwayat |
+| GET    | `/api/school-settings/effective/` (`?classroom=`, `?subject=`) | Login: `{values, features}` sekolah aktif (tanpa sekolah = bawaan, fitur mati) |
+| GET/PUT | `/api/school-features/`, `/api/school-features/{code}/` (`is_active`) | Baca: admin. Ubah: Super Admin |
 | GET    | `/api/dashboard/statistics/`      | Admin (sekolah aktif): data grafik Statistik Sekolah — siswa per kelas, pengumpulan & kehadiran 8 minggu, rata-rata nilai per kelas (`apps/dashboard/statistics.py`) |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
 
@@ -773,5 +796,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] Tahap 6: isi "Petualangan Flowgorithm" (`docs/mpi/`, impor JSON) + Tes Awal/Akhir + langkah tebak output
   - [x] Tahap 7: laporan media (progres, kesulitan, N-Gain, tidak aktif + pengingat obrolan, refleksi, Excel)
   - [x] Tahap 8: konten HTML5/H5P (embed, embed_task) + bridge postMessage (`docs/mpi-bridge.md`); unggah ZIP ke subdomain konten = rencana
+- [ ] Fitur Mapel Umum (`docs/spesifikasi-mapel-umum.md`, 8 tahap, satu branch per tahap)
+  - [x] Tahap 1: Pengaturan Pembelajaran & feature flag (`apps/school_settings`)
+  - [ ] Tahap 2: Kategori mapel & mode kelas
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar

@@ -17,6 +17,7 @@ import {
   Building2,
   Palette,
   School,
+  SlidersHorizontal,
   Sparkles,
   Trophy,
   UserCheck,
@@ -34,6 +35,8 @@ import { ROLES } from '../utils/constants'
  * - `end`   : aktif hanya jika alamatnya persis sama (untuk Beranda).
  * - `badge` : 'chat' = tampilkan jumlah pesan belum dibaca.
  * - `more`  : item di bagian "Lainnya" pada sidebar.
+ * - `feature`: kode fitur baru (registry.py backend); item hanya tampil jika fitur itu menyala di
+ *              sekolah aktif (disaring DashboardLayout lewat utils/settings.js::filterNavByFeatures).
  */
 const PROFILE = { label: 'Profil Saya', icon: UserRound, to: '/profil' }
 const CHAT = { label: 'Ruang Obrolan', icon: MessagesSquare, to: '/obrolan', badge: 'chat' }
@@ -65,6 +68,12 @@ const ADMIN_MORE = [
 ]
 // Identitas sekolah yang sedang dibuka; di mode yayasan halaman yang sama = identitas yayasan.
 const IDENTITY = { label: 'Identitas Sekolah', icon: Palette, to: '/admin/identitas' }
+// Aturan penilaian, kuis, LKPD & saklar fitur sekolah yang dibuka (apps/school_settings).
+const LEARNING_SETTINGS = {
+  label: 'Pengaturan Pembelajaran',
+  icon: SlidersHorizontal,
+  to: '/admin/pengaturan-pembelajaran',
+}
 const SCHOOL_LIST = { label: 'Daftar Sekolah', icon: Building2, to: '/admin/sekolah' }
 // Admin yayasan masuk ke akun pengguna lain (lihat pages/admin/ImpersonatePage.jsx).
 const IMPERSONATE = { label: 'Masuk sebagai Pengguna', icon: LogIn, to: '/admin/masuk-sebagai' }
@@ -87,13 +96,16 @@ const FOUNDATION_HOME = {
 export function navigationFor(role, school) {
   if (role !== ROLES.FOUNDATION) return NAVIGATION[role]
   if (!school) return FOUNDATION_HOME
-  return { main: ADMIN_MAIN, more: [...ADMIN_MORE, IDENTITY, SCHOOL_LIST, IMPERSONATE, PROFILE] }
+  return {
+    main: ADMIN_MAIN,
+    more: [...ADMIN_MORE, IDENTITY, LEARNING_SETTINGS, SCHOOL_LIST, IMPERSONATE, PROFILE],
+  }
 }
 
 export const NAVIGATION = {
   [ROLES.ADMIN]: {
     main: ADMIN_MAIN,
-    more: [...ADMIN_MORE, IDENTITY, PROFILE],
+    more: [...ADMIN_MORE, IDENTITY, LEARNING_SETTINGS, PROFILE],
   },
   [ROLES.TEACHER]: {
     main: [

@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.assessments",
     "apps.learning_media",
     "apps.branding",
+    "apps.school_settings",
 ]
 
 MIDDLEWARE = [
