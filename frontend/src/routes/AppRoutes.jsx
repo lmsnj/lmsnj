@@ -42,6 +42,7 @@ const MediaStudioPage = lazy(() => import('../pages/MediaStudioPage'))
 const MediaSummaryPrintPage = lazy(() => import('../pages/MediaSummaryPrintPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const ReportPage = lazy(() => import('../pages/ReportPage'))
+const StatisticsPage = lazy(() => import('../pages/admin/StatisticsPage'))
 const SessionsPage = lazy(() => import('../pages/SessionsPage'))
 const TimetablePage = lazy(() => import('../pages/TimetablePage'))
 const AssessmentEditorPage = lazy(() => import('../pages/guru/AssessmentEditorPage'))
@@ -114,6 +115,7 @@ export default function AppRoutes() {
                 <Route path="pengampu" element={<AssignmentsPage />} />
                 <Route path="jadwal" element={<TimetablePage />} />
                 <Route path="laporan" element={<ReportPage />} />
+                <Route path="statistik" element={<StatisticsPage />} />
                 <Route path="presensi" element={<AttendanceReportPage />} />
                 <Route path="pembayaran" element={<PaymentsPage />} />
                 <Route path="ujian" element={<ExamsPage />} />

@@ -21,7 +21,9 @@ def make_user(username, role, **extra):
     return user
 
 
-class DashboardTests(APITestCase):
+class DashboardData(APITestCase):
+    """Data uji bersama: dua kelas tahun ini, tugas, pengumpulan, materi."""
+
     url = reverse("dashboard")
 
     def setUp(self):
@@ -100,6 +102,8 @@ class DashboardTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         return response.data
 
+
+class DashboardTests(DashboardData):
     def test_requires_login(self):
         self.assertEqual(self.client.get(self.url).status_code, 401)
 
@@ -157,3 +161,52 @@ class DashboardTests(APITestCase):
         data = self.get(User.objects.get(username="siswa3"))
         self.assertIsNone(data["classroom_name"])
         self.assertEqual(data["pending_tasks"], [])
+
+
+class StatisticsTests(DashboardData):
+    """Data grafik Statistik Sekolah memakai data uji yang sama dengan dashboard."""
+
+    url = reverse("dashboard-statistics")
+
+    def test_only_admin(self):
+        self.client.force_authenticate(self.teacher)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        self.client.force_authenticate(self.student)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
+    def test_statistics(self):
+        from apps.attendance.models import Attendance
+        from apps.schedule.models import TeachingSession
+
+        session = TeachingSession.objects.create(
+            teaching_assignment=self.assignment, title="Pertemuan 1", starts_at=timezone.now()
+        )
+        Attendance.objects.create(session=session, student=self.student, status="H")
+        Attendance.objects.create(session=session, student=self.student2, status="S")
+
+        data = self.get(self.admin)
+        self.assertEqual(data["academic_year"], "2026/2027")
+        # Hanya kelas tahun ajaran terbaru, urut tingkat lalu nama.
+        self.assertEqual(
+            [(c["name"], c["count"]) for c in data["students_by_classroom"]],
+            [("XI RPL 1", 2), ("XI TKJ 1", 0)],
+        )
+        self.assertEqual(len(data["submissions_by_week"]), 8)
+        self.assertEqual(data["submissions_by_week"][-1]["count"], 2)  # minggu ini
+        self.assertEqual(sum(w["count"] for w in data["submissions_by_week"]), 2)
+        this_week = data["attendance_by_week"][-1]
+        self.assertEqual((this_week["recorded"], this_week["rate"]), (2, 50.0))
+        self.assertIsNone(data["attendance_by_week"][0]["rate"])
+        grades = {c["name"]: c for c in data["grades_by_classroom"]}
+        self.assertEqual((grades["XI RPL 1"]["average"], grades["XI RPL 1"]["graded"]), (90.0, 1))
+        self.assertIsNone(grades["XI TKJ 1"]["average"])
+
+    def test_week_starts(self):
+        from datetime import date
+
+        from .statistics import week_starts
+
+        weeks = week_starts(date(2026, 11, 25))  # Rabu
+        self.assertEqual(weeks[-1], date(2026, 11, 23))
+        self.assertEqual(weeks[0], date(2026, 10, 5))
+        self.assertEqual(len(weeks), 8)

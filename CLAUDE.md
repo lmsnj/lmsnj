@@ -379,6 +379,9 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
   "Tambah Sekolah" (`/admin/sekolah?baru=1`), kartu angka putih (`NumberCard`), daftar sekolah.
 - Setiap halaman di `routes/AppRoutes.jsx` dimuat dengan `lazy()` (code splitting) kecuali halaman login.
 - Lonceng pemberitahuan memakai data asli dari `/api/dashboard/` (bukan angka buatan).
+- Grafik: komponen sendiri tanpa pustaka (`components/charts/`: `ChartCard` + tombol Tabel, `ColumnChart`
+  batang tegak per minggu dengan bacaan saat hover/fokus, `BarList` batang mendatar per kelas), satu seri warna
+  `brand-600`; fungsi murni di `utils/statistics.js`. Dipakai halaman `/admin/statistik` (`StatisticsPage`).
 
 ### Fitur yang belum ada
 - Saat ini semua menu & tombol Beranda sudah aktif. Untuk fitur baru yang belum selesai, jangan
@@ -723,6 +726,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | GET/POST | `/api/materials/{id}/media/report/`, `.../report/export/` (Excel), `.../remind/` (`students`, `message`) | Guru tim & admin: laporan media kelas; pengingat lewat Ruang Obrolan |
 | GET    | `/api/materials/{id}/media/leaderboard/` | Siswa/guru kelas itu; 403 jika dimatikan guru |
 | GET/POST | `/api/materials/{id}/media/`, `.../answer/` (`version`, `station`, `step`, `response`, `hint_level`, `client_uid`), `.../reveal/`, `.../station/` (`action` visit/restart/finish, `step`, `seconds`), `.../reflection/` (`station`, `text`) | Siswa kelas itu (disimpan, 120/menit); guru/admin & "masuk sebagai" = tidak disimpan |
+| GET    | `/api/dashboard/statistics/`      | Admin (sekolah aktif): data grafik Statistik Sekolah — siswa per kelas, pengumpulan & kehadiran 8 minggu, rata-rata nilai per kelas (`apps/dashboard/statistics.py`) |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
 
 ## Progres

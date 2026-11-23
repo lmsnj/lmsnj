@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CalendarSync,
   ChartColumn,
+  ChartNoAxesCombined,
   ClipboardCheck,
   ClipboardPen,
   GraduationCap,
@@ -53,6 +54,7 @@ const ADMIN_MAIN = [
 ]
 const ADMIN_MORE = [
   { ...TIMETABLE, to: '/admin/jadwal' },
+  { label: 'Statistik Sekolah', icon: ChartNoAxesCombined, to: '/admin/statistik' },
   { label: 'Laporan Nilai', icon: ChartColumn, to: '/admin/laporan' },
   { label: 'Rekap Presensi', icon: UserCheck, to: '/admin/presensi' },
   { label: 'Status Pembayaran', icon: Wallet, to: '/admin/pembayaran' },

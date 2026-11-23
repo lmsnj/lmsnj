@@ -234,8 +234,8 @@ export const HOME_CARDS = {
         {
           label: 'Statistik Sekolah',
           icon: ChartColumn,
-          to: '/admin#ringkasan',
-          info: 'Jumlah pengguna, kelas, materi, tugas, dan hal yang perlu ditindaklanjuti.',
+          to: '/admin/statistik',
+          info: 'Grafik siswa per kelas, pengumpulan tugas, kehadiran, dan rata-rata nilai.',
         },
         {
           label: 'Laporan Nilai Kelas',
