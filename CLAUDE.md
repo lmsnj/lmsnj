@@ -399,6 +399,9 @@ Semua halaman baru wajib mengikuti aturan ini agar tampilan konsisten.
   Tugas Mendatang — data dari API), lalu bagian "Ringkasan" (`StatCard` berikon, `Panel`).
 - Halaman login: dua kolom di layar lebar (panel hijau identitas sekolah + keunggulan aplikasi,
   lalu kartu formulir dengan ikon & tombol tampilkan password); di HP hanya pita logo + formulir.
+- Kartu Beranda admin berisi data asli di kotak judulnya (`key` kartu -> `pages/admin/AdminCardContent.jsx`, lewat
+  prop `cardContent` di `HomeTop`): jumlah siswa/guru, kelas/mapel/pengampu (+ peringatan), grafik mini pengumpulan
+  8 minggu + kehadiran (`trends` di `/api/dashboard/`), pengumuman sekolah terbaru (`school_announcements`).
 - Isi kartu per peran di `pages/home/cards.js`: setiap kartu tepat 2 tombol; setiap tombol punya
   ikon, teks, dan `info` (tooltip penjelasan). Warna tombol: `orange`, `green`, `slate`, `blue`.
 - Tombol Beranda boleh membuka aksi di halaman tujuan lewat parameter sekali-pakai

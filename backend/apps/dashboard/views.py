@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import IsAdmin
 from apps.schools.context import active_school
 
-from .services import DASHBOARDS
+from .services import DASHBOARDS, current_academic_year
 from .statistics import school_statistics
 
 
@@ -25,4 +25,4 @@ class StatisticsView(APIView):
         school = active_school(request)
         if school is None:
             raise ValidationError({"detail": "Pilih sekolah terlebih dahulu."})
-        return Response(school_statistics(school))
+        return Response(school_statistics(school, current_academic_year(school)))

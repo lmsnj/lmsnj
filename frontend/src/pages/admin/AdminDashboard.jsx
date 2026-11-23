@@ -25,6 +25,7 @@ import HomeTop from '../../components/home/HomeTop'
 import useScrollToHash from '../../hooks/useScrollToHash'
 import { HOME_CARDS } from '../home/cards'
 import useFetch from '../../hooks/useFetch'
+import AdminCardContent from './AdminCardContent'
 import { ROLES } from '../../utils/constants'
 import { formatDate } from '../../utils/media'
 
@@ -44,6 +45,16 @@ const ATTENTION = [
   { key: 'classrooms_without_students', label: 'kelas belum punya siswa', to: '/admin/kelas' },
 ]
 
+// Isi data asli di kotak judul tiap kartu Beranda (bukan sekadar judul + ikon).
+function cardContentFor(data) {
+  return Object.fromEntries(
+    HOME_CARDS[ROLES.ADMIN].map((card) => [
+      card.key,
+      <AdminCardContent key={card.key} data={data} card={card.key} />,
+    ]),
+  )
+}
+
 export default function AdminDashboard() {
   const { data, error } = useFetch(dashboardApi.get)
   useScrollToHash(Boolean(data))
@@ -52,6 +63,7 @@ export default function AdminDashboard() {
     <>
       <HomeTop
         cards={HOME_CARDS[ROLES.ADMIN]}
+        cardContent={data ? cardContentFor(data) : {}}
         stats={
           data?.academic_year
             ? [{ icon: CalendarDays, content: `Tahun ajaran ${data.academic_year}` }]

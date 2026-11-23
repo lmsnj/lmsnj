@@ -201,6 +201,31 @@ class StatisticsTests(DashboardData):
         self.assertEqual((grades["XI RPL 1"]["average"], grades["XI RPL 1"]["graded"]), (90.0, 1))
         self.assertIsNone(grades["XI TKJ 1"]["average"])
 
+    def test_admin_dashboard_card_data(self):
+        from apps.announcements.models import Announcement
+
+        Announcement.objects.create(school=default_school(), title="Libur", body="-", author=self.admin)
+        Announcement.objects.create(
+            school=default_school(), title="Kelas saja", body="-", teaching_assignment=self.assignment
+        )
+        self.client.force_authenticate(self.admin)
+        data = self.client.get(reverse("dashboard")).data
+        self.assertEqual(len(data["trends"]["submissions_by_week"]), 8)
+        self.assertIsNone(data["trends"]["attendance_rate"])  # belum ada presensi
+        self.assertEqual(data["school_announcements"]["count"], 1)  # pengumuman kelas tidak dihitung
+        self.assertEqual(data["school_announcements"]["latest"]["title"], "Libur")
+
+    def test_attendance_rate(self):
+        from .statistics import attendance_rate
+
+        self.assertIsNone(attendance_rate([{"recorded": 0, "present": 0}]))
+        weekly = [
+            {"recorded": 4, "present": 4},
+            {"recorded": 0, "present": 0},
+            {"recorded": 6, "present": 3},
+        ]
+        self.assertEqual(attendance_rate(weekly), 70.0)
+
     def test_week_starts(self):
         from datetime import date
 

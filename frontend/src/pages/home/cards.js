@@ -189,6 +189,7 @@ export const HOME_CARDS = {
 
   [ROLES.ADMIN]: [
     {
+      key: 'users',
       title: 'Kelola Pengguna',
       icon: Users,
       color: 'orange',
@@ -208,6 +209,7 @@ export const HOME_CARDS = {
       ],
     },
     {
+      key: 'classes',
       title: 'Kelola Kelas & Mapel',
       icon: School,
       color: 'green',
@@ -227,6 +229,7 @@ export const HOME_CARDS = {
       ],
     },
     {
+      key: 'reports',
       title: 'Laporan',
       icon: ChartColumn,
       color: 'slate',
@@ -246,6 +249,7 @@ export const HOME_CARDS = {
       ],
     },
     {
+      key: 'announcements',
       title: 'Pengumuman Sekolah',
       icon: Megaphone,
       color: 'blue',

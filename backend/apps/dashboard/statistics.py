@@ -14,8 +14,6 @@ from apps.academics.models import Classroom
 from apps.attendance.models import Attendance, AttendanceStatus
 from apps.tasks.models import Submission
 
-from .services import current_academic_year
-
 WEEKS = 8
 
 
@@ -65,6 +63,7 @@ def attendance_by_week(school, weeks):
         {
             "week_start": week,
             "recorded": totals[week],
+            "present": present[week],
             "rate": round(present[week] / totals[week] * 100, 1) if totals[week] else None,
         }
         for week in weeks
@@ -93,8 +92,17 @@ def grades_by_classroom(classrooms):
     return result
 
 
-def school_statistics(school):
-    year = current_academic_year(school)
+def attendance_rate(weekly):
+    """Persentase Hadir gabungan dari hasil `attendance_by_week` (None jika belum ada presensi)."""
+    recorded = sum(row["recorded"] for row in weekly)
+    if not recorded:
+        return None
+    present = sum(row["present"] for row in weekly)
+    return round(present / recorded * 100, 1)
+
+
+def school_statistics(school, year):
+    """`year` = tahun ajaran aktif (services.current_academic_year), dikirim dari view."""
     classrooms = Classroom.objects.filter(school=school, academic_year=year)
     weeks = week_starts(timezone.localdate())
     return {

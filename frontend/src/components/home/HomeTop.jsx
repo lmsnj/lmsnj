@@ -37,8 +37,9 @@ const HERO_ICONS = {
 /**
  * Bagian atas Beranda yang sama untuk semua peran: banner sapaan, grid 2x2 kartu aksi, panel tab.
  * `stats` (opsional): tambahan baris info di banner, mis. [{ icon, content }] dari data dashboard.
+ * `cardContent` (opsional): isi data per kartu, { [card.key]: elemen }.
  */
-export default function HomeTop({ cards, stats = [] }) {
+export default function HomeTop({ cards, stats = [], cardContent = {} }) {
   const { user } = useAuth()
   const { branding } = useBranding()
   return (
@@ -59,7 +60,9 @@ export default function HomeTop({ cards, stats = [] }) {
       />
       <div className="grid gap-4 md:grid-cols-2 lg:gap-6">
         {cards.map((card) => (
-          <ActionCard key={card.title} card={card} />
+          <ActionCard key={card.title} card={card}>
+            {cardContent[card.key]}
+          </ActionCard>
         ))}
       </div>
       <HomePanel />

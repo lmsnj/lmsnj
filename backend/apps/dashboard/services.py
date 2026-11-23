@@ -12,10 +12,13 @@ from django.utils import timezone
 from apps.academics.models import Classroom, TeachingAssignment
 from apps.academics.selectors import teaching_assignments_for
 from apps.accounts.models import Role, User
+from apps.announcements.models import Announcement
 from apps.materials.models import Material
 from apps.materials.selectors import materials_for
 from apps.tasks.models import Submission, Task
 from apps.tasks.selectors import tasks_for
+
+from .statistics import attendance_by_week, attendance_rate, submissions_by_week, week_starts
 
 LIST_LIMIT = 8
 UPCOMING_DAYS = 7
@@ -124,6 +127,30 @@ def admin_dashboard(user, school):
             "classrooms_without_students": classrooms.filter(students__isnull=True).count(),
         },
         "recent_activity": activity[:LIST_LIMIT],
+        # Isi kartu Beranda: tren 8 minggu (grafik mini) dan pengumuman seluruh sekolah.
+        "trends": _admin_trends(school),
+        "school_announcements": _school_announcements(school),
+    }
+
+
+def _admin_trends(school):
+    if school is None:
+        return {"submissions_by_week": [], "attendance_rate": None}
+    weeks = week_starts(timezone.localdate())
+    return {
+        "submissions_by_week": submissions_by_week(school, weeks),
+        "attendance_rate": attendance_rate(attendance_by_week(school, weeks)),
+    }
+
+
+def _school_announcements(school):
+    items = Announcement.objects.filter(school=school, teaching_assignment__isnull=True)
+    latest = items.order_by("-created_at").first()
+    return {
+        "count": items.count(),
+        "latest": (
+            {"id": latest.id, "title": latest.title, "created_at": latest.created_at} if latest else None
+        ),
     }
 
 

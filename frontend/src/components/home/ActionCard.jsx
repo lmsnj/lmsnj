@@ -60,8 +60,9 @@ export function ActionButton({ action, color }) {
 }
 
 // Kartu besar di Beranda: kotak judul berwarna lembut dengan ikon besar yang "mengintip" dari
-// pojok kanan, lalu 2 tombol aksi.
-export default function ActionCard({ card }) {
+// pojok kanan, lalu 2 tombol aksi. `children` (opsional) = isi data asli di bawah judul, mis. angka
+// atau grafik mini (Beranda admin).
+export default function ActionCard({ card, children }) {
   const Icon = card.icon
   const color = COLORS[card.color]
   return (
@@ -74,6 +75,7 @@ export default function ActionCard({ card }) {
         {card.description && (
           <p className="relative mt-1 text-sm text-slate-600">{card.description}</p>
         )}
+        {children && <div className="relative mt-3">{children}</div>}
         <span
           aria-hidden="true"
           className={`absolute -right-2 -bottom-3 flex size-24 rotate-[-8deg] items-center justify-center rounded-3xl text-white shadow-lg transition group-hover:rotate-0 ${color.tile}`}
