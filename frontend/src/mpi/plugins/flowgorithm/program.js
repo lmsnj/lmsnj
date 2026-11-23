@@ -172,12 +172,18 @@ export function nodeText(node) {
  * Program Flowgorithm -> bentuk program diagram MAT-CODE-D ({ blocks }), dengan `label` = teks blok.
  * Do While digambar sebagai isi lalu belah ketupat perulangan (cukup untuk membaca alur di HP).
  */
-export function toDiagram(nodes) {
+export function toDiagram(nodes, typed = {}) {
   const blocks = []
   for (const node of nodes ?? []) {
     const label = nodeText(node)
     switch (node.t) {
-      case 'input':
+      case 'input': {
+        // Tebak output: tulis nilai yang diketik di simbolnya, mis. "Input nilai ← 90".
+        const values = typed[node.id]
+        const text = values?.length ? `${label} ← ${values.join(', ')}` : label
+        blocks.push({ id: node.id, type: 'input', label: text })
+        break
+      }
       case 'output':
         blocks.push({ id: node.id, type: node.t, label })
         break
@@ -186,18 +192,18 @@ export function toDiagram(nodes) {
           id: node.id,
           type: 'if',
           label,
-          yes: toDiagram(node.yes),
-          no: toDiagram(node.no),
+          yes: toDiagram(node.yes, typed),
+          no: toDiagram(node.no, typed),
         })
         break
       case 'while':
-        blocks.push({ id: node.id, type: 'while', label, body: toDiagram(node.body) })
+        blocks.push({ id: node.id, type: 'while', label, body: toDiagram(node.body, typed) })
         break
       case 'do':
-        blocks.push({ id: node.id, type: 'while', label, body: toDiagram(node.body) })
+        blocks.push({ id: node.id, type: 'while', label, body: toDiagram(node.body, typed) })
         break
       case 'for':
-        blocks.push({ id: node.id, type: 'for', label, body: toDiagram(node.body) })
+        blocks.push({ id: node.id, type: 'for', label, body: toDiagram(node.body, typed) })
         break
       default:
         blocks.push({ id: node.id, type: 'assign', label })

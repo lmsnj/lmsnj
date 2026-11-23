@@ -3,6 +3,7 @@ import FlowchartDiagram from '../../../components/code/FlowchartDiagram'
 import { Rich, StepImage } from '../../steps/ExplainSteps'
 import { ChoiceStep } from '../../steps/PracticeSteps'
 import FlowgorithmEditor from './FlowgorithmEditor'
+import { inputsByNode } from './interpreter'
 import { blankIndexes, fillBlanks, toDiagram, withIds } from './program'
 import ProgramRunner, { TestResults } from './ProgramRunner'
 
@@ -206,6 +207,7 @@ export function FlowgorithmDemoStep({ step, user }) {
 /** Tebak output: program hanya ditampilkan (tidak bisa dijalankan), siswa memilih output yang benar. */
 export function FlowgorithmPredictStep({ step, user, value, onChange, review }) {
   const program = useMemo(() => withIds(step.program), [step.program])
+  const typed = useMemo(() => inputsByNode(program, step.inputs), [program, step.inputs])
   const [view, setView] = useState('chart')
   return (
     <div className="space-y-4">
@@ -213,7 +215,7 @@ export function FlowgorithmPredictStep({ step, user, value, onChange, review }) 
       {view === 'chart' ? (
         <FlowchartDiagram
           fit
-          program={{ blocks: toDiagram(program.body) }}
+          program={{ blocks: toDiagram(program.body, typed) }}
           title="Flowchart program"
         />
       ) : (

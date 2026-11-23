@@ -691,6 +691,27 @@ export function runProgram(program, inputs = []) {
   }
 }
 
+/**
+ * Isian yang dibaca tiap blok Input saat program dijalankan: { idBlok: ['90'] }. Hanya untuk tampilan (nilai
+ * isian ditulis di simbol Input pada diagram tebak output); tidak dipakai menilai, jadi tidak ada kembarannya di
+ * interpreter Python.
+ */
+export function inputsByNode(program, inputs = []) {
+  const queue = [...inputs]
+  const result = {}
+  const runner = new Runner(program)
+  let state = runner.step()
+  while (state === 'paused' || (state === 'input' && queue.length)) {
+    if (state === 'input') {
+      const raw = queue.shift()
+      const id = runner.current?.id
+      if (id) (result[id] ??= []).push(raw)
+      state = runner.provide(raw)
+    } else state = runner.step()
+  }
+  return result
+}
+
 // ---------------------------------------------------------------- pemeriksaan uji
 
 export function normalizeLine(text) {

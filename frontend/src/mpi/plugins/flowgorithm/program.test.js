@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { layoutProgram } from '../../../utils/flowchart/layout.js'
-import { runProgram } from './interpreter.js'
+import { inputsByNode, runProgram } from './interpreter.js'
 import {
   blankIndexes,
   countBlanks,
@@ -68,4 +68,25 @@ test('parameter fungsi teks <-> daftar', () => {
     ['c', 'Integer'],
   ])
   assert.equal(paramsText([['a', 'Integer']]), 'a: Integer')
+})
+
+test('tebak output: nilai isian ditulis di simbol Input diagram', () => {
+  const program = withIds({
+    body: [
+      { t: 'decl', type: 'Integer', names: ['nilai'] },
+      { t: 'input', target: 'nilai' },
+      {
+        t: 'if',
+        cond: 'nilai >= 85',
+        yes: [{ t: 'output', expr: '"A"' }],
+        no: [{ t: 'input', target: 'nilai' }],
+      },
+    ],
+  })
+  const typed = inputsByNode(program, ['90'])
+  assert.deepEqual(Object.values(typed), [['90']])
+  const blocks = toDiagram(program.body, typed)
+  assert.equal(blocks[1].label, 'Input nilai ← 90')
+  assert.equal(blocks[2].no[0].label, 'Input nilai') // cabang yang tidak dijalankan tetap polos
+  assert.deepEqual(inputsByNode(program, []), {}) // tanpa isian tidak macet
 })
