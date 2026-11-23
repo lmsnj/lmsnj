@@ -19,7 +19,9 @@ const LANE = 22
 
 /** Potong teks yang terlalu panjang agar muat di bentuknya. */
 export function fitText(text, maxWidth = MAX_W) {
-  const maxChars = Math.floor((maxWidth - 2 * PAD) / CHAR)
+  // + 1e-6: lebar bentuk dihitung pas dari panjang teks, dan pembagian desimal bisa menghasilkan 10,999… sehingga
+  // huruf terakhir (sering angka, mis. "nilai >= 85") terpotong padahal muat.
+  const maxChars = Math.floor((maxWidth - 2 * PAD) / CHAR + 1e-6)
   return text.length > maxChars ? `${text.slice(0, maxChars - 1)}…` : text
 }
 

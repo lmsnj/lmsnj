@@ -384,6 +384,41 @@ class ContentTests(SimpleTestCase):
         compiled = json.dumps(schema.compile_media(content)["content"], ensure_ascii=False)
         self.assertNotIn('"solution"', compiled)
 
+    def test_migration_restores_builtin_images(self):
+        """Migrasi 0003 memasang gambar bawaan ke media yang diimpor sebelum gambar ada (draf & versi terbit)."""
+        from importlib import import_module
+
+        fill_images = import_module(
+            "apps.learning_media.migrations.0003_flowgorithm_builtin_images"
+        ).fill_images
+        original = schema.validate_media(
+            json.loads((DOCS / "petualangan-flowgorithm.json").read_text("utf-8"))["media"]
+        )
+
+        def strip(value):
+            if isinstance(value, dict):
+                return {
+                    k: "" if k == "image" and str(v).startswith("/mpi/") else strip(v)
+                    for k, v in value.items()
+                }
+            if isinstance(value, list):
+                return [strip(v) for v in value]
+            return value
+
+        for media in (original, schema.compile_media(original)["content"]):
+            old = strip(media)
+            self.assertNotEqual(old, media)
+            self.assertTrue(fill_images(old))
+            self.assertEqual(old, media)
+            self.assertFalse(fill_images(old))  # aman diulang
+        # Gambar yang sudah diganti guru tidak ditimpa; media lain tidak disentuh.
+        custom = copy.deepcopy(original)
+        custom["mascot"]["image"] = "asset:5"
+        self.assertFalse(fill_images(custom))
+        other = strip(original)
+        other["mascot"]["name"] = "Robo"
+        self.assertFalse(fill_images(other))
+
     def test_pre_and_post_tests_parse(self):
         from apps.assessments.question_import import parse_text
 

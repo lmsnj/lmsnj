@@ -90,3 +90,23 @@ test('tebak output: nilai isian ditulis di simbol Input diagram', () => {
   assert.equal(blocks[2].no[0].label, 'Input nilai') // cabang yang tidak dijalankan tetap polos
   assert.deepEqual(inputsByNode(program, []), {}) // tanpa isian tidak macet
 })
+
+test('teks diagram yang muat tidak dipotong (angka di ujung syarat tetap tampil)', () => {
+  const program = withIds({
+    body: [
+      { t: 'decl', type: 'Integer', names: ['nilai'] },
+      { t: 'input', target: 'nilai' },
+      {
+        t: 'if',
+        cond: 'nilai >= 85',
+        yes: [],
+        no: [{ t: 'if', cond: 'nilai >= 70', yes: [], no: [] }],
+      },
+    ],
+  })
+  const typed = inputsByNode(program, ['90'])
+  const texts = layoutProgram({ blocks: toDiagram(program.body, typed) }).nodes.map((n) => n.text)
+  for (const text of ['Input nilai ← 90', 'nilai >= 85', 'nilai >= 70'])
+    assert.ok(texts.includes(text), text)
+  assert.ok(!texts.some((t) => t?.includes('…')))
+})
