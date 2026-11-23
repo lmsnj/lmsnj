@@ -11,13 +11,14 @@ Jenis isian (`kind`) dan bentuk nilainya:
 - bands    : [{"label", "min"}] urut dari batas tertinggi, batas terakhir 0 (predikat, status)
 - weights  : [{"label", "weight"}] jumlah bobot 100; `fixed` = label tidak boleh diubah
 - fields   : {nama: angka} dengan batas per nama (`fields`)
+- mode     : kode mode kelas yang aktif di tabel ClassMode (pilihan dibaca dari database)
 """
 
 from dataclasses import dataclass, field
 
 from rest_framework.exceptions import ValidationError
 
-from .models import Scope
+from .models import ClassMode, Scope
 
 S, C, M, K = Scope.SCHOOL, Scope.CATEGORY, Scope.SUBJECT, Scope.CLASSROOM
 
@@ -60,6 +61,8 @@ class Setting:
         }
         if self.options:
             data["options"] = [{"value": v, "label": label} for v, label in self.options]
+        if self.kind == "mode":
+            data["options"] = mode_options()
         if self.kind in ("int", "bands"):
             data.update(min=self.min, max=self.max)
         if self.unit:
@@ -120,14 +123,9 @@ SETTINGS = [
         "kelas.mode_default",
         "kategori",
         "Mode kelas bawaan",
-        "choice",
+        "mode",
         "lab",
         scopes=(S, C, M, K),
-        options=(
-            ("tanpa_perangkat", "Tanpa perangkat (hanya guru)"),
-            ("lab", "Lab (setiap siswa punya PC)"),
-            ("perangkat_kelompok", "Perangkat kelompok"),
-        ),
         help="Cara siswa mengakses pembelajaran. Bawaan Lab = tampilan seperti sekarang.",
     ),
     # --- Penilaian (Tahap 3 & 7) ---
@@ -281,6 +279,11 @@ SETTINGS = [
 ]
 
 FEATURES = [
+    Feature(
+        "mode_kelas",
+        "Kategori & Mode Kelas",
+        "Halaman kelas guru menyesuaikan mode kelas (mis. tanpa perangkat siswa).",
+    ),
     Feature("presentasi", "Mode Presentasi Kelas", "Materi dan Media Interaktif tampil penuh di TV kelas."),
     Feature(
         "penilaian_langsung", "Penilaian Langsung", "Guru memasukkan nilai tanpa pengumpulan dari siswa."
@@ -394,6 +397,17 @@ def _check_fields(setting, value):
     return {name: value[name] for name, *_ in setting.fields}
 
 
+def mode_options():
+    """Pilihan mode kelas yang aktif (master ClassMode)."""
+    return [{"value": m.code, "label": m.name} for m in ClassMode.objects.filter(is_active=True)]
+
+
+def _check_mode(setting, value):
+    if not isinstance(value, str) or not ClassMode.objects.filter(code=value, is_active=True).exists():
+        raise ValidationError("Mode kelas tidak tersedia.")
+    return value
+
+
 CHECKERS = {
     "int": _check_int,
     "choice": _check_choice,
@@ -402,6 +416,7 @@ CHECKERS = {
     "bands": _check_bands,
     "weights": _check_weights,
     "fields": _check_fields,
+    "mode": _check_mode,
 }
 
 

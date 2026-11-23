@@ -183,11 +183,19 @@ Pola yang wajib dipakai ulang:
   bawaan). `SettingChange` = riwayat (nilai lama/baru, null = bawaan; fitur dicatat dengan kunci `fitur.<kode>`).
   `SchoolFeature`: tanpa baris = MATI; ubah khusus Super Admin. Baca HANYA lewat `services.get_setting(school, key,
   classroom=, subject=, category=)` / `SettingReader` (satu query per sekolah, sengaja tanpa cache lintas request
-  karena cPanel multi-proses) dan `feature_enabled(school, code)`. Scope kategori ditolak sampai master kategori
-  (Tahap 2). Frontend: `DashboardLayout` memuat `/api/school-settings/effective/` ke `SettingsContext`;
+  karena cPanel multi-proses) dan `feature_enabled(school, code)`. Frontend: `DashboardLayout` memuat `/api/school-settings/effective/` ke `SettingsContext`;
   `useSetting(key)`, `useFeature(code)`; item menu boleh diberi `feature: '<kode>'` (disaring
   `utils/settings.js::filterNavByFeatures`). Halaman `/admin/pengaturan-pembelajaran` (`LearningSettingsPage`, tab per
   grup + Fitur + Riwayat, isian `components/settings/SettingEditor.jsx`, "Kembalikan ke default", "Pakai nilai lama").
+  **Kategori mapel & mode kelas** (Tahap 2, `master_views.py`): `ClassMode` (global, kode tetap, tidak bisa dihapus,
+  diubah Super Admin; 3 mode awal dari migrasi data), `SubjectCategory` (per sekolah; dipakai mapel = tidak bisa
+  dihapus, nonaktifkan), `SubjectProfile` (mapel -> kategori, CASCADE ke mapel; tanpa baris = tanpa kategori). Mode
+  TIDAK punya kolom: bawaan kategori / mapel / kelas = pengaturan `kelas.mode_default` (jenis isian `mode`, pilihan
+  dari ClassMode aktif) di cakupan itu. `SettingReader.resolve(subject=...)` otomatis memakai kategori mapel, jadi
+  aturan per kategori berlaku untuk semua kunci. `/effective/` mengirim `class_mode` {code, name,
+  needs_student_device}. Admin: tab Kategori Mapel (`SubjectCategoriesPanel`: kategori, kategori & mode tiap mapel +
+  isi massal, master mode). Guru: `components/ClassModePanel.jsx` di Ringkasan kelas, hanya jika fitur `mode_kelas`
+  menyala DAN mode tanpa perangkat siswa (alat Presentasi/Penilaian Langsung/Kuis QR masih "Segera").
   Aturan fitur Mapel Umum: hanya MENAMBAH (tabel/endpoint/halaman baru), fitur lama tidak diubah, fitur baru dibungkus
   feature flag, migrasi bisa rollback, satu tahap per branch.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan. `weekly_hours` = JP resmi per minggu (opsional, dari distribusi JP).
@@ -752,6 +760,9 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | PUT/DELETE | `/api/school-settings/{key}/` (PUT `scope`, `scope_id`, `value`; DELETE `?scope=&scope_id=` = kembalikan ke bawaan) | Admin; tercatat di riwayat |
 | GET    | `/api/school-settings/effective/` (`?classroom=`, `?subject=`) | Login: `{values, features}` sekolah aktif (tanpa sekolah = bawaan, fitur mati) |
 | GET/PUT | `/api/school-features/`, `/api/school-features/{code}/` (`is_active`) | Baca: admin. Ubah: Super Admin |
+| CRU    | `/api/class-modes/` (tanpa hapus; `code` tetap) | Baca: login. Tambah/ubah: Super Admin |
+| CRUD   | `/api/subject-categories/` (`name`, `is_active`, `mode` = mode bawaan kategori), `.../reorder/` (`categories`) | Admin (sekolah aktif) |
+| GET/PUT/POST | `/api/subject-profiles/`, `/api/subject-profiles/{subject_id}/` (`category`, `mode`; null = kosongkan), `/api/subject-profiles/bulk/` (`subjects`, `category`?, `mode`?) | Admin |
 | GET    | `/api/dashboard/statistics/`      | Admin (sekolah aktif): data grafik Statistik Sekolah — siswa per kelas, pengumpulan & kehadiran 8 minggu, rata-rata nilai per kelas (`apps/dashboard/statistics.py`) |
 | GET    | `/api/dashboard/`                 | Login; isi sesuai peran (admin: statistik & hal yang perlu ditindaklanjuti; guru: perlu dinilai & tenggat 7 hari; siswa: tugas tertunda, nilai & materi terbaru) |
 
@@ -798,6 +809,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] Tahap 8: konten HTML5/H5P (embed, embed_task) + bridge postMessage (`docs/mpi-bridge.md`); unggah ZIP ke subdomain konten = rencana
 - [ ] Fitur Mapel Umum (`docs/spesifikasi-mapel-umum.md`, 8 tahap, satu branch per tahap)
   - [x] Tahap 1: Pengaturan Pembelajaran & feature flag (`apps/school_settings`)
-  - [ ] Tahap 2: Kategori mapel & mode kelas
+  - [x] Tahap 2: Kategori mapel & mode kelas (fitur `mode_kelas`)
+  - [ ] Tahap 3: Penilaian langsung
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar

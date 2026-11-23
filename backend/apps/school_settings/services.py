@@ -14,7 +14,15 @@ from rest_framework.exceptions import ValidationError
 
 from apps.academics.models import Classroom, Subject
 
-from .models import SchoolFeature, SchoolSetting, Scope, SettingChange
+from .models import (
+    ClassMode,
+    SchoolFeature,
+    SchoolSetting,
+    Scope,
+    SettingChange,
+    SubjectCategory,
+    SubjectProfile,
+)
 from .registry import FEATURES, FEATURES_BY_CODE, SETTINGS, clean_value, get_definition
 
 # Urutan pengecekan, dari yang paling khusus.
@@ -28,12 +36,20 @@ class SettingReader:
     def __init__(self, school):
         self.school = school
         self._values = None
+        self._categories = None
 
     def _load(self):
         if self._values is None:
             rows = SchoolSetting.objects.filter(school=self.school) if self.school else []
             self._values = {(r.scope, r.scope_id, r.key): r.value for r in rows}
         return self._values
+
+    def category_of(self, subject):
+        """Id kategori mapel (atau None). Semua kategori mapel sekolah dimuat sekali."""
+        if self._categories is None:
+            profiles = SubjectProfile.objects.filter(subject__school=self.school) if self.school else []
+            self._categories = {p.subject_id: p.category_id for p in profiles}
+        return self._categories.get(_id(subject))
 
     def stored(self, key, scope=Scope.SCHOOL, scope_id=None):
         """Nilai yang disimpan tepat di scope ini (None jika tidak ada)."""
@@ -44,6 +60,9 @@ class SettingReader:
         Argumen boleh objek atau id; yang kosong dilewati. Hanya scope yang diizinkan
         pengaturan itu (registry `scopes`) yang dicek."""
         definition = get_definition(key)
+        if category is None and subject is not None and Scope.CATEGORY in definition.scopes:
+            # Kategori diambil otomatis dari mapel, jadi aturan per kategori ikut berlaku.
+            category = self.category_of(subject)
         ids = {Scope.CLASSROOM: classroom, Scope.SUBJECT: subject, Scope.CATEGORY: category}
         for scope in LOOKUP_ORDER:
             if scope not in definition.scopes:
@@ -98,10 +117,7 @@ def validate_scope(school, scope, scope_id):
         scope_id = int(scope_id)
     except (TypeError, ValueError):
         raise ValidationError({"scope_id": "Data tidak ditemukan."}) from None
-    if scope == Scope.CATEGORY:
-        # Master kategori mapel dibuat di Tahap 2.
-        raise ValidationError({"scope": "Pengaturan per kategori mapel belum tersedia."})
-    model = Subject if scope == Scope.SUBJECT else Classroom
+    model = {Scope.CATEGORY: SubjectCategory, Scope.SUBJECT: Subject, Scope.CLASSROOM: Classroom}[scope]
     item = model.objects.filter(school=school, pk=scope_id).first()
     if item is None:
         raise ValidationError({"scope_id": "Data tidak ditemukan di sekolah ini."})
@@ -192,3 +208,46 @@ def set_feature(school, code, is_active, user):
     feature.updated_by = user
     feature.save(update_fields=["is_active", "updated_by", "updated_at"])
     return feature
+
+
+# --- Kategori mapel & mode kelas (Tahap 2) ---
+
+MODE_KEY = "kelas.mode_default"
+
+
+def mode_info(code):
+    """{code, name, needs_student_device} untuk kode mode (mode tak dikenal dianggap butuh perangkat)."""
+    mode = ClassMode.objects.filter(code=code).first()
+    if mode is None:
+        return {"code": code, "name": code, "needs_student_device": True}
+    return {"code": mode.code, "name": mode.name, "needs_student_device": mode.needs_student_device}
+
+
+def set_scope_value(school, key, scope, scope_id, value, user):
+    """Simpan nilai di satu cakupan; None = kembalikan ke bawaan (hapus)."""
+    if value is None:
+        reset_setting(school, key, scope, scope_id, user)
+    else:
+        save_setting(school, key, scope, scope_id, value, user)
+
+
+@transaction.atomic
+def set_subject_category(subject, category):
+    """Tetapkan kategori mapel; None = tanpa kategori. Kategori wajib dari sekolah mapel itu."""
+    if category is None:
+        SubjectProfile.objects.filter(subject=subject).delete()
+        return
+    if category.school_id != subject.school_id:
+        raise ValidationError({"category": "Kategori tidak ditemukan di sekolah ini."})
+    SubjectProfile.objects.update_or_create(subject=subject, defaults={"category": category})
+
+
+@transaction.atomic
+def delete_category(category):
+    """Hapus kategori yang tidak dipakai mapel, beserta pengaturan di cakupan kategori itu."""
+    if category.profiles.exists():
+        raise ValidationError(
+            {"detail": "Kategori masih dipakai mapel. Pindahkan mapelnya dulu atau nonaktifkan kategori ini."}
+        )
+    SchoolSetting.objects.filter(school=category.school, scope=Scope.CATEGORY, scope_id=category.pk).delete()
+    category.delete()

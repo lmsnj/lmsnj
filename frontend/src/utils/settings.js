@@ -9,6 +9,7 @@ export function formatSettingValue(setting, value) {
     case 'bool':
       return value ? 'Ya' : 'Tidak'
     case 'choice':
+    case 'mode':
       return optionLabel(setting, value)
     case 'multi':
       return value.map((item) => optionLabel(setting, item)).join(', ')
@@ -82,4 +83,37 @@ export function formatHistoryValue(value) {
       .join(', ')
   }
   return String(value)
+}
+
+// --- Tahap 2: kategori mapel ---
+
+/** Penyaring daftar mapel: `category` = id, 'none' (belum berkategori), atau '' (semua). */
+export function filterSubjectRows(rows, { search = '', category = '' } = {}) {
+  const query = search.trim().toLowerCase()
+  return rows.filter((row) => {
+    if (category === 'none' && row.category) return false
+    if (category && category !== 'none' && row.category !== Number(category)) return false
+    if (!query) return true
+    return `${row.name} ${row.code}`.toLowerCase().includes(query)
+  })
+}
+
+/** Jumlah mapel per kategori: { [id]: n, none: n }. */
+export function countSubjectsByCategory(rows) {
+  const counts = { none: 0 }
+  for (const row of rows) {
+    const key = row.category ?? 'none'
+    counts[key] = (counts[key] ?? 0) + 1
+  }
+  return counts
+}
+
+/** Pindahkan item ke atas (-1) / bawah (+1); mengembalikan daftar id baru. */
+export function moveId(ids, id, step) {
+  const from = ids.indexOf(id)
+  const to = from + step
+  if (from < 0 || to < 0 || to >= ids.length) return ids
+  const next = [...ids]
+  ;[next[from], next[to]] = [next[to], next[from]]
+  return next
 }

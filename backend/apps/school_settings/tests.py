@@ -8,7 +8,7 @@ from apps.common.testing import default_school
 from apps.schools.models import Level, School
 
 from . import services
-from .models import SchoolFeature, SchoolSetting, SettingChange
+from .models import ClassMode, SchoolFeature, SchoolSetting, SettingChange, SubjectProfile
 from .registry import FEATURES, SETTINGS, SETTINGS_BY_KEY, clean_value
 
 
@@ -177,7 +177,7 @@ class SettingApiTests(APITestCase):
                 "scope_id",
             ),
             (detail("nilai.kkm"), {"scope": "subject", "value": 70}, "scope_id"),
-            (detail("nilai.bobot"), {"scope": "category", "scope_id": 1, "value": []}, "scope"),
+            (detail("nilai.bobot"), {"scope": "category", "scope_id": 999, "value": []}, "scope_id"),
             (detail("tidak.ada"), {"value": 1}, "key"),
         ]
         for url, body, field in cases:
@@ -269,3 +269,163 @@ class FeatureApiTests(APITestCase):
         res = self.client.put(self.url, {"is_active": True}, format="json")
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)  # mode Super Admin, belum buka sekolah
         self.assertFalse(SchoolFeature.objects.exists())
+
+
+class CategoryModeTests(APITestCase):
+    """Tahap 2: kategori mapel, mode kelas, dan urutan kelas -> mapel -> kategori -> sekolah."""
+
+    def setUp(self):
+        self.school = default_school()
+        self.admin = make_user("admin1", Role.ADMIN)
+        self.teacher = make_user("guru1", Role.TEACHER)
+        self.foundation = make_user("yayasan", Role.FOUNDATION)
+        self.other = School.objects.create(code="mtsnj", name="MTs", level=Level.MTS)
+        self.other_admin = make_user("admin2", Role.ADMIN, school=self.other)
+        self.mtk = Subject.objects.create(school=self.school, code="MTK", name="Matematika")
+        self.rpl = Subject.objects.create(school=self.school, code="RPL", name="Pemrograman")
+        self.other_subject = Subject.objects.create(school=self.other, code="MTK", name="Matematika MTs")
+        self.classroom = Classroom.objects.create(
+            school=self.school, name="X RPL 1", grade="X", major="RPL", academic_year="2026/2027"
+        )
+
+    def create_category(self, name, mode=None):
+        self.client.force_authenticate(self.admin)
+        body = {"name": name, **({"mode": mode} if mode else {})}
+        res = self.client.post(reverse("subject-category-list"), body, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        return res.data
+
+    def profile(self, subject, body):
+        return self.client.put(reverse("subject-profile-detail", args=[subject.id]), body, format="json")
+
+    def bulk(self, body):
+        return self.client.post(reverse("subject-profiles-bulk"), body, format="json")
+
+    def effective(self, **params):
+        return self.client.get(reverse("school-settings-effective"), params).data
+
+    def test_seeded_modes_and_only_foundation_can_change_them(self):
+        self.client.force_authenticate(self.teacher)
+        res = self.client.get(reverse("class-mode-list"))
+        self.assertEqual([m["code"] for m in res.data], ["tanpa_perangkat", "lab", "perangkat_kelompok"])
+        url = reverse("class-mode-detail", args=[res.data[0]["id"]])
+        self.assertEqual(self.client.patch(url, {"name": "X"}).status_code, status.HTTP_403_FORBIDDEN)
+        self.client.force_authenticate(self.admin)
+        self.assertEqual(self.client.patch(url, {"name": "X"}).status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(self.foundation)
+        res = self.client.patch(url, {"name": "Kelas biasa"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertEqual(self.client.patch(url, {"code": "baru"}).status_code, status.HTTP_400_BAD_REQUEST)
+        lab = ClassMode.objects.get(code="lab")
+        res = self.client.patch(
+            reverse("class-mode-detail", args=[lab.id]), {"is_active": False}, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)  # mode bawaan sistem
+        self.assertEqual(self.client.delete(url).status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_inactive_mode_cannot_be_chosen(self):
+        ClassMode.objects.filter(code="perangkat_kelompok").update(is_active=False)
+        self.client.force_authenticate(self.admin)
+        res = self.client.put(detail("kelas.mode_default"), {"value": "perangkat_kelompok"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        settings = self.client.get(reverse("school-settings")).data["settings"]
+        options = next(s for s in settings if s["key"] == "kelas.mode_default")["options"]
+        self.assertEqual([o["value"] for o in options], ["tanpa_perangkat", "lab"])
+
+    def test_category_crud_with_mode_and_isolation(self):
+        umum = self.create_category("Umum", mode="tanpa_perangkat")
+        self.assertEqual((umum["mode"], umum["order"]), ("tanpa_perangkat", 1))
+        produktif = self.create_category("Produktif")
+        self.assertEqual((produktif["mode"], produktif["order"]), (None, 2))
+        res = self.client.post(reverse("subject-category-list"), {"name": "umum"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)  # nama kembar
+
+        url = reverse("subject-category-detail", args=[umum["id"]])
+        res = self.client.patch(url, {"mode": None}, format="json")
+        self.assertIsNone(res.data["mode"])
+        res = self.client.post(
+            reverse("subject-category-reorder"), {"categories": [produktif["id"], umum["id"]]}, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        names = [c["name"] for c in self.client.get(reverse("subject-category-list")).data]
+        self.assertEqual(names, ["Produktif", "Umum"])
+
+        self.client.force_authenticate(self.other_admin)
+        self.assertEqual(self.client.get(reverse("subject-category-list")).data, [])
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_404_NOT_FOUND)
+        self.client.force_authenticate(self.teacher)
+        self.assertEqual(
+            self.client.get(reverse("subject-category-list")).status_code, status.HTTP_403_FORBIDDEN
+        )
+
+    def test_mode_lookup_classroom_subject_category_school(self):
+        umum = self.create_category("Umum", mode="tanpa_perangkat")
+        self.assertEqual(self.effective(subject=self.mtk.id)["class_mode"]["code"], "lab")  # bawaan sistem
+
+        res = self.profile(self.mtk, {"category": umum["id"]})
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertEqual(
+            (res.data["effective_mode"], res.data["mode_source"]), ("tanpa_perangkat", "category")
+        )
+        mode = self.effective(subject=self.mtk.id)["class_mode"]
+        self.assertEqual((mode["code"], mode["needs_student_device"]), ("tanpa_perangkat", False))
+
+        self.profile(self.mtk, {"mode": "perangkat_kelompok"})
+        self.assertEqual(self.effective(subject=self.mtk.id)["class_mode"]["code"], "perangkat_kelompok")
+        body = {"scope": "classroom", "scope_id": self.classroom.id, "value": "lab"}
+        self.client.put(detail("kelas.mode_default"), body, format="json")
+        both = self.effective(subject=self.mtk.id, classroom=self.classroom.id)
+        self.assertEqual(both["class_mode"]["code"], "lab")
+        # Mode per mapel dikosongkan -> kembali ke kategori.
+        self.profile(self.mtk, {"mode": None})
+        self.assertEqual(self.effective(subject=self.mtk.id)["class_mode"]["code"], "tanpa_perangkat")
+        # Pengaturan lain per kategori (bobot) ikut berlaku untuk mapel di kategori itu.
+        weights = [{"label": "Tugas", "weight": 100}]
+        body = {"scope": "category", "scope_id": umum["id"], "value": weights}
+        res = self.client.put(detail("nilai.bobot"), body, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertEqual(services.get_setting(self.school, "nilai.bobot", subject=self.mtk), weights)
+        self.assertNotEqual(services.get_setting(self.school, "nilai.bobot", subject=self.rpl), weights)
+        history = self.client.get(reverse("school-settings-history")).data["results"]
+        self.assertEqual(history[0]["target"], "Kategori mapel: Umum")
+
+    def test_bulk_assign_and_list(self):
+        produktif = self.create_category("Produktif", mode="lab")
+        res = self.bulk({"subjects": [self.mtk.id, self.rpl.id], "category": produktif["id"]})
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        rows = self.client.get(reverse("subject-profiles")).data
+        self.assertEqual([r["category_name"] for r in rows], ["Produktif", "Produktif"])
+        self.bulk({"subjects": [self.mtk.id], "category": None})
+        self.assertEqual(SubjectProfile.objects.count(), 1)
+        # Mapel sekolah lain ditolak, tanpa perubahan apa pun.
+        res = self.bulk({"subjects": [self.rpl.id, self.other_subject.id], "category": None})
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(SubjectProfile.objects.count(), 1)
+        self.assertEqual(self.bulk({"subjects": [self.rpl.id]}).status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.client.force_authenticate(self.other_admin)
+        self.assertEqual(self.profile(self.mtk, {"category": None}).status_code, status.HTTP_404_NOT_FOUND)
+        res = self.bulk({"subjects": [self.other_subject.id], "category": produktif["id"]})
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)  # kategori sekolah lain
+
+    def test_used_category_cannot_be_deleted_inactive_cannot_be_assigned(self):
+        umum = self.create_category("Umum", mode="tanpa_perangkat")
+        url = reverse("subject-category-detail", args=[umum["id"]])
+        self.profile(self.mtk, {"category": umum["id"]})
+        self.assertEqual(self.client.delete(url).status_code, status.HTTP_400_BAD_REQUEST)
+        self.client.patch(url, {"is_active": False}, format="json")
+        self.assertEqual(
+            self.profile(self.rpl, {"category": umum["id"]}).status_code, status.HTTP_400_BAD_REQUEST
+        )
+        # Kosongkan, lalu hapus: pengaturan di cakupan kategori ikut terhapus.
+        self.profile(self.mtk, {"category": None})
+        self.assertEqual(self.client.delete(url).status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(SchoolSetting.objects.filter(scope="category").exists())
+
+    def test_deleting_subject_still_works_and_removes_profile(self):
+        umum = self.create_category("Umum")
+        self.profile(self.rpl, {"category": umum["id"]})
+        res = self.client.delete(reverse("subject-detail", args=[self.rpl.id]))
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(SubjectProfile.objects.exists())

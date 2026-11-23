@@ -4,6 +4,9 @@
 > `SchoolSetting`, `pengaturan_riwayat` = `SettingChange`, `fitur_sekolah` = `SchoolFeature` (app `apps/school_settings`);
 > endpoint `/api/pengaturan` = `/api/school-settings/`, saklar fitur = `/api/school-features/` (ubah: Super Admin);
 > `getSetting` = `services.get_setting`, hook `useSetting` / `useFeature`.
+> Tahap 2: `mode_kelas` = `ClassMode`, `kategori_mapel` = `SubjectCategory`, `mapel_pengaturan` = `SubjectProfile`
+> (hanya kategori; mode disimpan sebagai pengaturan `kelas.mode_default` per cakupan); endpoint `/api/class-modes/`,
+> `/api/subject-categories/`, `/api/subject-profiles/`. Saklar fitur tambahan `mode_kelas`.
 
 ## Spesifikasi Fitur LMS Sigma untuk Mapel Umum
 

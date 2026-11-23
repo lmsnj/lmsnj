@@ -41,6 +41,7 @@ export default function SettingEditor({ setting, value, onChange, disabled }) {
         </div>
       )
     case 'choice':
+    case 'mode':
       return (
         <select
           aria-label={label}

@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  countSubjectsByCategory,
   filterNavByFeatures,
+  filterSubjectRows,
+  moveId,
   formatHistoryValue,
   formatSettingValue,
   sameValue,
@@ -91,4 +94,36 @@ test('teks nilai di riwayat', () => {
   assert.equal(formatHistoryValue([{ label: 'A', min: 90 }]), 'A ≥ 90')
   assert.equal(formatHistoryValue([{ label: 'Tugas', weight: 30 }]), 'Tugas 30%')
   assert.equal(formatHistoryValue({ max_px: 1600, quality: 70 }), 'max_px: 1600, quality: 70')
+})
+
+test('penyaring mapel per kategori', () => {
+  const rows = [
+    { subject: 1, name: 'Matematika', code: 'MTK', category: 1 },
+    { subject: 2, name: 'Pemrograman Dasar', code: 'PD', category: 2 },
+    { subject: 3, name: 'Bahasa Arab', code: 'BAR', category: null },
+  ]
+  assert.equal(filterSubjectRows(rows).length, 3)
+  assert.deepEqual(
+    filterSubjectRows(rows, { category: 'none' }).map((r) => r.subject),
+    [3],
+  )
+  assert.deepEqual(
+    filterSubjectRows(rows, { category: '2' }).map((r) => r.subject),
+    [2],
+  )
+  assert.deepEqual(
+    filterSubjectRows(rows, { search: 'mtk' }).map((r) => r.subject),
+    [1],
+  )
+  assert.deepEqual(countSubjectsByCategory(rows), { none: 1, 1: 1, 2: 1 })
+  assert.equal(
+    formatSettingValue({ kind: 'mode', options: [{ value: 'lab', label: 'Lab' }] }, 'lab'),
+    'Lab',
+  )
+})
+
+test('pindah urutan', () => {
+  assert.deepEqual(moveId([1, 2, 3], 3, -1), [1, 3, 2])
+  assert.deepEqual(moveId([1, 2, 3], 1, -1), [1, 2, 3])
+  assert.deepEqual(moveId([1, 2, 3], 3, 1), [1, 2, 3])
 })

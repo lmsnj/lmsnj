@@ -111,3 +111,69 @@ class SchoolFeature(models.Model):
 
     def __str__(self):
         return f"{self.school.code} {self.code}: {'aktif' if self.is_active else 'mati'}"
+
+
+class ClassMode(models.Model):
+    """Master mode kelas: cara siswa mengakses pembelajaran (tanpa perangkat, lab, perangkat kelompok).
+    Berlaku untuk semua sekolah; diatur Super Admin. `code` tetap (dipakai pengaturan kelas.mode_default)."""
+
+    code = models.SlugField("kode", max_length=40, unique=True)
+    name = models.CharField("nama", max_length=60)
+    needs_student_device = models.BooleanField("siswa memakai perangkat", default=True)
+    order = models.PositiveSmallIntegerField("urutan", default=0)
+    is_active = models.BooleanField("aktif", default=True)
+
+    class Meta:
+        verbose_name = "mode kelas"
+        verbose_name_plural = "mode kelas"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.name
+
+
+class SubjectCategory(models.Model):
+    """Master kategori mapel per sekolah (mis. Umum, Produktif). Mode bawaan kategori disimpan
+    sebagai pengaturan kelas.mode_default di cakupan kategori (satu sumber, lihat services)."""
+
+    school = models.ForeignKey(
+        "schools.School", verbose_name="sekolah", on_delete=models.CASCADE, related_name="subject_categories"
+    )
+    name = models.CharField("nama", max_length=60)
+    order = models.PositiveSmallIntegerField("urutan", default=0)
+    is_active = models.BooleanField("aktif", default=True)
+
+    class Meta:
+        verbose_name = "kategori mapel"
+        verbose_name_plural = "kategori mapel"
+        ordering = ["order", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["school", "name"],
+                name="unique_subject_category_name",
+                violation_error_message="Nama kategori ini sudah dipakai.",
+            )
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class SubjectProfile(models.Model):
+    """Kategori satu mapel (tabel tambahan; tabel Subject lama tidak diubah). Mapel tanpa baris di
+    sini = tanpa kategori. CASCADE ke mapel agar hapus mapel tetap bekerja seperti sebelumnya."""
+
+    subject = models.OneToOneField(
+        "academics.Subject", verbose_name="mapel", on_delete=models.CASCADE, related_name="learning_profile"
+    )
+    category = models.ForeignKey(
+        SubjectCategory, verbose_name="kategori", on_delete=models.PROTECT, related_name="profiles"
+    )
+    updated_at = models.DateTimeField("diubah", auto_now=True)
+
+    class Meta:
+        verbose_name = "kategori mapel per mapel"
+        verbose_name_plural = "kategori mapel per mapel"
+
+    def __str__(self):
+        return f"{self.subject} -> {self.category}"

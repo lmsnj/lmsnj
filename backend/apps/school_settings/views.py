@@ -10,7 +10,7 @@ from apps.accounts.permissions import IsAdmin, IsFoundation
 from apps.schools.context import active_school, require_school
 
 from . import services
-from .models import SchoolFeature, Scope, SettingChange
+from .models import SchoolFeature, Scope, SettingChange, SubjectCategory
 from .registry import FEATURES, FEATURES_BY_CODE, GROUPS, SETTINGS, SETTINGS_BY_KEY
 
 
@@ -29,9 +29,11 @@ class SettingListView(APIView):
         scope, scope_id = _scope_params(request, request.query_params)
         scope, scope_id, target = services.validate_scope(school, scope, scope_id)
         reader = services.SettingReader(school)
-        lookup = {Scope.CLASSROOM: {"classroom": scope_id}, Scope.SUBJECT: {"subject": scope_id}}.get(
-            scope, {}
-        )
+        lookup = {
+            Scope.CLASSROOM: {"classroom": scope_id},
+            Scope.SUBJECT: {"subject": scope_id},
+            Scope.CATEGORY: {"category": scope_id},
+        }.get(scope, {})
         items = []
         for definition in SETTINGS:
             if scope not in definition.scopes:
@@ -152,6 +154,12 @@ class SettingHistoryView(ListAPIView):
                 for pk, name in Classroom.objects.filter(school=school).values_list("pk", "name")
             }
         )
+        names.update(
+            {
+                (Scope.CATEGORY, pk): name
+                for pk, name in SubjectCategory.objects.filter(school=school).values_list("pk", "name")
+            }
+        )
         context["names"] = names
         return context
 
@@ -175,10 +183,13 @@ class EffectiveSettingsView(APIView):
                 ):
                     raise ValidationError({name: "Data tidak ditemukan di sekolah ini."})
                 lookup[name] = int(raw)
+        reader = services.SettingReader(school)
         return Response(
             {
-                "values": services.SettingReader(school).all_values(**lookup),
+                "values": reader.all_values(**lookup),
                 "features": services.features_for(school),
+                # Mode kelas yang berlaku (Tahap 2), lengkap dengan nama & butuh perangkat atau tidak.
+                "class_mode": services.mode_info(reader.get(services.MODE_KEY, **lookup)),
             }
         )
 

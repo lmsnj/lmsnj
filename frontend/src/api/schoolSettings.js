@@ -22,3 +22,31 @@ export const schoolSettingsApi = {
   setFeature: (code, isActive) =>
     api.put(`/school-features/${code}/`, { is_active: isActive }).then((res) => res.data),
 }
+
+// --- Tahap 2: kategori mapel & mode kelas ---
+export const classModesApi = {
+  list: () => api.get('/class-modes/').then((res) => res.data),
+  // Khusus Super Admin. Kode tidak bisa diubah; mode tidak bisa dihapus (nonaktifkan saja).
+  create: (data) => api.post('/class-modes/', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/class-modes/${id}/`, data).then((res) => res.data),
+}
+
+export const subjectCategoriesApi = {
+  list: () => api.get('/subject-categories/').then((res) => res.data),
+  // data: { name, is_active, mode } — mode null = ikut pengaturan sekolah.
+  create: (data) => api.post('/subject-categories/', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/subject-categories/${id}/`, data).then((res) => res.data),
+  remove: (id) => api.delete(`/subject-categories/${id}/`),
+  reorder: (ids) =>
+    api.post('/subject-categories/reorder/', { categories: ids }).then((res) => res.data),
+}
+
+// Kategori & mode per mapel (halaman Kelola Mapel lama tidak diubah).
+export const subjectProfilesApi = {
+  list: () => api.get('/subject-profiles/').then((res) => res.data),
+  // data: { category?, mode? } — field yang tidak dikirim tidak diubah, null = dikosongkan.
+  update: (subjectId, data) =>
+    api.put(`/subject-profiles/${subjectId}/`, data).then((res) => res.data),
+  bulk: (subjectIds, data) =>
+    api.post('/subject-profiles/bulk/', { subjects: subjectIds, ...data }).then((res) => res.data),
+}

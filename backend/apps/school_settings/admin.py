@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import SchoolFeature, SchoolSetting, SettingChange
+from .models import ClassMode, SchoolFeature, SchoolSetting, SettingChange, SubjectCategory, SubjectProfile
 
 
 @admin.register(SchoolSetting)
@@ -29,3 +29,20 @@ class SettingChangeAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(ClassMode)
+class ClassModeAdmin(admin.ModelAdmin):
+    list_display = ["code", "name", "needs_student_device", "order", "is_active"]
+
+
+@admin.register(SubjectCategory)
+class SubjectCategoryAdmin(admin.ModelAdmin):
+    list_display = ["name", "school", "order", "is_active"]
+    list_filter = ["school", "is_active"]
+
+
+@admin.register(SubjectProfile)
+class SubjectProfileAdmin(admin.ModelAdmin):
+    list_display = ["subject", "category"]
+    list_select_related = ["subject", "category"]

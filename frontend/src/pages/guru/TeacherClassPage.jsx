@@ -6,6 +6,7 @@ import { materialsApi } from '../../api/materials'
 import { tasksApi } from '../../api/tasks'
 import Alert from '../../components/Alert'
 import ClassHero, { Avatar } from '../../components/ClassHero'
+import ClassModePanel from '../../components/ClassModePanel'
 import ClassOverview, { QuickAction } from '../../components/ClassOverview'
 import DataTable from '../../components/DataTable'
 import Spinner from '../../components/Spinner'
@@ -119,6 +120,7 @@ function ClassContent({ assignment: a }) {
         ]}
       />
       {tabsBar}
+      {tab === 'ringkasan' && <ClassModePanel classroomId={a.classroom} subjectId={a.subject} />}
       {tab === 'ringkasan' && (
         <Overview
           assignment={a}

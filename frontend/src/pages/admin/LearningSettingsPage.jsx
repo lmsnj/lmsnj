@@ -1,7 +1,7 @@
 import { History, RotateCcw, Save, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useState } from 'react'
 import { classroomsApi, subjectsApi } from '../../api/academics'
-import { schoolSettingsApi } from '../../api/schoolSettings'
+import { schoolSettingsApi, subjectCategoriesApi } from '../../api/schoolSettings'
 import Alert from '../../components/Alert'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
@@ -21,6 +21,7 @@ import { ALL, toOptions } from '../../utils/academic'
 import { ROLES } from '../../utils/constants'
 import { getErrorMessage } from '../../utils/errors'
 import { formatDate } from '../../utils/media'
+import SubjectCategoriesPanel from './SubjectCategoriesPanel'
 import {
   formatHistoryValue,
   formatSettingValue,
@@ -30,9 +31,16 @@ import {
 
 const SCOPE_OPTIONS = [
   { value: 'school', label: 'Seluruh sekolah' },
+  { value: 'category', label: 'Kategori mapel tertentu' },
   { value: 'subject', label: 'Mata pelajaran tertentu' },
   { value: 'classroom', label: 'Kelas tertentu' },
 ]
+// Label pilihan data per cakupan.
+const TARGET_LABELS = {
+  category: { label: 'Kategori mapel', noun: 'kategori mapel', placeholder: 'Pilih kategori' },
+  subject: { label: 'Mata pelajaran', noun: 'mata pelajaran', placeholder: 'Pilih mapel' },
+  classroom: { label: 'Kelas', noun: 'kelas', placeholder: 'Pilih kelas' },
+}
 
 // Cakupan mapel/kelas yang belum dipilih tidak perlu dimuat.
 const loadSettings = (target) =>
@@ -266,6 +274,7 @@ export default function LearningSettingsPage() {
   const list = useFetch(loadSettings, target)
   const subjects = useFetch(subjectsApi.list, ALL)
   const classrooms = useFetch(classroomsApi.list, ALL)
+  const categories = useFetch(subjectCategoriesApi.list)
 
   // Daftar tab diingat dari muatan terakhir: saat cakupan diganti (mapel/kelas belum dipilih)
   // tab tidak boleh hilang, agar tab yang sedang dibuka tetap sama.
@@ -281,12 +290,21 @@ export default function LearningSettingsPage() {
   const changed = (text) => {
     setMessage(text)
     list.reload()
+    categories.reload()
     settingsContext.reload()
   }
-  const targetOptions =
-    target.scope === 'subject'
-      ? toOptions(subjects.data?.results, (s) => `${s.name} (${s.code})`, 'Pilih mapel')
-      : toOptions(classrooms.data?.results, (c) => `${c.name} · ${c.academic_year}`, 'Pilih kelas')
+  const targetLabels = TARGET_LABELS[target.scope]
+  const targetOptions = {
+    category: () => toOptions(categories.data, (c) => c.name, targetLabels.placeholder),
+    subject: () =>
+      toOptions(subjects.data?.results, (s) => `${s.name} (${s.code})`, targetLabels.placeholder),
+    classroom: () =>
+      toOptions(
+        classrooms.data?.results,
+        (c) => `${c.name} · ${c.academic_year}`,
+        targetLabels.placeholder,
+      ),
+  }[target.scope]?.()
 
   const groupSettings = (list.data?.settings ?? []).filter((setting) => setting.group === tab)
   let content
@@ -299,12 +317,12 @@ export default function LearningSettingsPage() {
   } else if (target.scope !== 'school' && !target.scopeId) {
     content = (
       <EmptyState title="Pilih data terlebih dahulu">
-        Pilih {target.scope === 'subject' ? 'mata pelajaran' : 'kelas'} yang akan diatur.
+        Pilih {targetLabels.noun} yang akan diatur.
       </EmptyState>
     )
   } else if (!list.data) {
     content = <Loading />
-  } else if (groupSettings.length === 0) {
+  } else if (groupSettings.length === 0 && tab !== 'kategori') {
     content = (
       <EmptyState title="Tidak ada pengaturan di bagian ini">
         Pengaturan bagian ini hanya bisa diatur untuk seluruh sekolah.
@@ -322,6 +340,13 @@ export default function LearningSettingsPage() {
             onChanged={changed}
           />
         ))}
+        {/* Kategori & mode tiap mapel hanya diatur dari cakupan sekolah (Tahap 2). */}
+        {tab === 'kategori' && target.scope === 'school' && (
+          <SubjectCategoriesPanel
+            canEditModes={user.role === ROLES.FOUNDATION}
+            onChanged={changed}
+          />
+        )}
       </div>
     )
   }
@@ -341,11 +366,11 @@ export default function LearningSettingsPage() {
             options={SCOPE_OPTIONS}
             value={target.scope}
             onChange={(event) => setTarget({ scope: event.target.value, scopeId: null })}
-            hint="Pengaturan mapel/kelas menimpa pengaturan sekolah. Urutan: kelas → mapel → sekolah → default."
+            hint="Pengaturan yang lebih khusus menimpa yang umum. Urutan: kelas → mapel → kategori → sekolah → default."
           />
           {target.scope !== 'school' && (
             <SelectField
-              label={target.scope === 'subject' ? 'Mata pelajaran' : 'Kelas'}
+              label={targetLabels.label}
               options={targetOptions}
               value={target.scopeId ?? ''}
               onChange={(event) =>
