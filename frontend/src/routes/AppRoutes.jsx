@@ -24,6 +24,7 @@ const SubjectsPage = lazy(() => import('../pages/admin/SubjectsPage'))
 const UsersPage = lazy(() => import('../pages/admin/UsersPage'))
 const MyClassesPage = lazy(() => import('../pages/guru/MyClassesPage'))
 const TeacherClassPage = lazy(() => import('../pages/guru/TeacherClassPage'))
+const DirectGradingPage = lazy(() => import('../pages/guru/DirectGradingPage'))
 const TeacherDashboard = lazy(() => import('../pages/guru/TeacherDashboard'))
 const TeacherMaterialsPage = lazy(() => import('../pages/guru/TeacherMaterialsPage'))
 const TeacherTasksPage = lazy(() => import('../pages/guru/TeacherTasksPage'))
@@ -136,6 +137,7 @@ export default function AppRoutes() {
               <Route index element={<TeacherDashboard />} />
               <Route path="kelas" element={<MyClassesPage />} />
               <Route path="kelas/:id" element={<TeacherClassPage />} />
+              <Route path="kelas/:id/penilaian" element={<DirectGradingPage />} />
               <Route path="materi" element={<TeacherMaterialsPage />} />
               <Route path="tugas" element={<TeacherTasksPage />} />
               <Route path="tugas/:id" element={<TeacherTaskPage />} />

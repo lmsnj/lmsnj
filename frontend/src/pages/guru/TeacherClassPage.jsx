@@ -120,7 +120,9 @@ function ClassContent({ assignment: a }) {
         ]}
       />
       {tabsBar}
-      {tab === 'ringkasan' && <ClassModePanel classroomId={a.classroom} subjectId={a.subject} />}
+      {tab === 'ringkasan' && (
+        <ClassModePanel assignmentId={a.id} classroomId={a.classroom} subjectId={a.subject} />
+      )}
       {tab === 'ringkasan' && (
         <Overview
           assignment={a}

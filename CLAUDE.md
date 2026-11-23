@@ -68,6 +68,7 @@ lms-smknj/
 │   │   ├── learning_media/  # Media Pembelajaran Interaktif: schema.py = isi JSON, steps.py = jenis langkah
 │   │   │                    #   & kontrak plugin, services.py = progres/bintang/kunci stasiun
 │   │   ├── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
+│   │   ├── grading/         # Penilaian langsung (nilai tanpa pengumpulan); scales.py = aturan skala, services.py
 │   │   ├── school_settings/ # Pengaturan Pembelajaran & saklar fitur per sekolah; registry.py = daftar kunci + bawaan,
 │   │   │                    #   services.py = get_setting (kelas -> mapel -> kategori -> sekolah -> bawaan)
 │   │   └── schools/         # Sekolah (multi-sekolah); context.py = sekolah aktif (header X-School / X-School-Code),
@@ -196,6 +197,17 @@ Pola yang wajib dipakai ulang:
   needs_student_device}. Admin: tab Kategori Mapel (`SubjectCategoriesPanel`: kategori, kategori & mode tiap mapel +
   isi massal, master mode). Guru: `components/ClassModePanel.jsx` di Ringkasan kelas, hanya jika fitur `mode_kelas`
   menyala DAN mode tanpa perangkat siswa (alat Presentasi/Penilaian Langsung/Kuis QR masih "Segera").
+  **Penilaian langsung** (Tahap 3, `apps/grading`, fitur `penilaian_langsung`): `GradeType` (jenis per sekolah, kelompok
+  formatif/sumatif, `default_weight` untuk Tahap 7; dipakai = tidak bisa dihapus; "Buat jenis awal"), `GradeActivity`
+  (per pengampu, dipakai bersama tim seperti konten; `scale` + `bands` DISALIN dari nilai.skala/nilai.predikat saat
+  dibuat; `source` manual/kuis_qr/lkpd), `GradeEntry` (satu per kegiatan-siswa: `value` sesuai skala, `score` skala 100,
+  `status` hadir/tidak_hadir; kosong + hadir + tanpa catatan = dihapus). Konversi di `scales.py` dan
+  `frontend/src/utils/grading.js` WAJIB sama: 0-4 x 25, predikat = (min + min di atasnya) // 2 (A95 B85 C77 D37).
+  KKM = get_setting nilai.kkm (kelas/mapel/kategori/sekolah). Menulis hanya saat fitur menyala (baca tetap boleh);
+  admin hanya melihat; siswa tidak punya akses (nilai baru tampil di laporan Tahap 7). Halaman guru
+  `/guru/kelas/:id/penilaian` (`DirectGradingPage`, grid `components/grading/ScoreGrid.jsx`: Enter ke baris berikut,
+  simpan otomatis 600 ms, "Isi yang kosong dengan", Tidak hadir, catatan). Pintu masuk: `ClassModePanel` (tombol kecil
+  jika mode memakai perangkat). Admin: `GradeTypesPanel` di tab Penilaian.
   Aturan fitur Mapel Umum: hanya MENAMBAH (tabel/endpoint/halaman baru), fitur lama tidak diubah, fitur baru dibungkus
   feature flag, migrasi bisa rollback, satu tahap per branch.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan. `weekly_hours` = JP resmi per minggu (opsional, dari distribusi JP).
@@ -760,6 +772,9 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | PUT/DELETE | `/api/school-settings/{key}/` (PUT `scope`, `scope_id`, `value`; DELETE `?scope=&scope_id=` = kembalikan ke bawaan) | Admin; tercatat di riwayat |
 | GET    | `/api/school-settings/effective/` (`?classroom=`, `?subject=`) | Login: `{values, features}` sekolah aktif (tanpa sekolah = bawaan, fitur mati) |
 | GET/PUT | `/api/school-features/`, `/api/school-features/{code}/` (`is_active`) | Baca: admin. Ubah: Super Admin |
+| CRUD   | `/api/grade-types/` (+ `starter/`, `reorder/` `grade_types`) | Baca: admin & guru. Tulis: admin |
+| CRUD   | `/api/grade-activities/?teaching_assignment=` (`grade_type`, `title`, `date`) | Baca: admin & guru tim. Tulis: guru tim, fitur `penilaian_langsung` menyala |
+| GET/PUT | `/api/grade-activities/{id}/scores/` (PUT `records: [{student, value, status, note}]`, semua atau tidak sama sekali) | GET admin & guru tim; PUT guru tim |
 | CRU    | `/api/class-modes/` (tanpa hapus; `code` tetap) | Baca: login. Tambah/ubah: Super Admin |
 | CRUD   | `/api/subject-categories/` (`name`, `is_active`, `mode` = mode bawaan kategori), `.../reorder/` (`categories`) | Admin (sekolah aktif) |
 | GET/PUT/POST | `/api/subject-profiles/`, `/api/subject-profiles/{subject_id}/` (`category`, `mode`; null = kosongkan), `/api/subject-profiles/bulk/` (`subjects`, `category`?, `mode`?) | Admin |
@@ -810,6 +825,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 - [ ] Fitur Mapel Umum (`docs/spesifikasi-mapel-umum.md`, 8 tahap, satu branch per tahap)
   - [x] Tahap 1: Pengaturan Pembelajaran & feature flag (`apps/school_settings`)
   - [x] Tahap 2: Kategori mapel & mode kelas (fitur `mode_kelas`)
-  - [ ] Tahap 3: Penilaian langsung
+  - [x] Tahap 3: Penilaian langsung (`apps/grading`, fitur `penilaian_langsung`)
+  - [ ] Tahap 4: Mode presentasi kelas
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar

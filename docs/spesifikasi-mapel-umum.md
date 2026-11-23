@@ -7,6 +7,8 @@
 > Tahap 2: `mode_kelas` = `ClassMode`, `kategori_mapel` = `SubjectCategory`, `mapel_pengaturan` = `SubjectProfile`
 > (hanya kategori; mode disimpan sebagai pengaturan `kelas.mode_default` per cakupan); endpoint `/api/class-modes/`,
 > `/api/subject-categories/`, `/api/subject-profiles/`. Saklar fitur tambahan `mode_kelas`.
+> Tahap 3: `jenis_penilaian` = `GradeType`, `penilaian` = `GradeActivity` (melekat ke pengampu), `penilaian_nilai` =
+> `GradeEntry`; endpoint `/api/grade-types/`, `/api/grade-activities/` (+ `/{id}/scores/`).
 
 ## Spesifikasi Fitur LMS Sigma untuk Mapel Umum
 

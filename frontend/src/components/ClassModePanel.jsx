@@ -1,27 +1,68 @@
 import { ClipboardPen, MonitorPlay, QrCode, Smartphone } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { schoolSettingsApi } from '../api/schoolSettings'
 import useFeature from '../hooks/useFeature'
 import useFetch from '../hooks/useFetch'
 import { SoonBadge } from './Dropdown'
 
-// Alat untuk kelas tanpa perangkat siswa. Akan diaktifkan di Tahap 3–5 (Mapel Umum).
+// Alat kelas Mapel Umum. `path` = halaman di bawah /guru/kelas/:id (null = belum dibuat, "Segera").
 const TOOLS = [
-  { label: 'Presentasi', info: 'Tampilkan materi penuh di TV kelas.', icon: MonitorPlay },
+  {
+    label: 'Presentasi',
+    info: 'Tampilkan materi penuh di TV kelas.',
+    icon: MonitorPlay,
+    path: null,
+  },
   {
     label: 'Penilaian Langsung',
     info: 'Masukkan nilai tanpa pengumpulan siswa.',
     icon: ClipboardPen,
+    path: 'penilaian',
+    feature: 'penilaian_langsung',
   },
-  { label: 'Kuis QR', info: 'Kuis satu kelas dengan kartu QR.', icon: QrCode },
+  { label: 'Kuis QR', info: 'Kuis satu kelas dengan kartu QR.', icon: QrCode, path: null },
 ]
 
 const loadMode = ({ classroom, subject }) => schoolSettingsApi.effective({ classroom, subject })
 
-function Panel({ classroomId, subjectId }) {
+function Tool({ tool, assignmentId, active }) {
+  const body = (
+    <>
+      <tool.icon className="size-6 shrink-0 text-amber-700" aria-hidden="true" />
+      <div className="min-w-0">
+        <p className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+          {tool.label} {!active && <SoonBadge />}
+        </p>
+        <p className="text-xs text-slate-500">{tool.info}</p>
+      </div>
+    </>
+  )
+  const base = 'flex items-center gap-3 rounded-lg p-3 ring-1 ring-amber-200'
+  if (!active) {
+    return (
+      <div title="Segera hadir" aria-disabled="true" className={`${base} bg-white/70 opacity-80`}>
+        {body}
+      </div>
+    )
+  }
+  return (
+    <Link
+      to={`/guru/kelas/${assignmentId}/${tool.path}`}
+      className={`${base} bg-white transition hover:-translate-y-0.5 hover:shadow-md`}
+    >
+      {body}
+    </Link>
+  )
+}
+
+function ModePanel({ assignmentId, classroomId, subjectId, features }) {
   const settings = useFetch(loadMode, { classroom: classroomId, subject: subjectId })
   const mode = settings.data?.class_mode
-  // Mode yang memakai perangkat siswa (mis. Lab) = tampilan kelas tetap seperti biasa.
-  if (!mode || mode.needs_student_device) return null
+  if (!settings.data) return null
+  // Mode yang memakai perangkat siswa (mis. Lab): cukup tombol kecil untuk alat yang aktif.
+  if (mode.needs_student_device) {
+    return <QuickTools assignmentId={assignmentId} features={features} />
+  }
   return (
     <section className="mb-6 rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200">
       <div className="flex flex-wrap items-center gap-2">
@@ -33,33 +74,56 @@ function Panel({ classroomId, subjectId }) {
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {TOOLS.map((tool) => (
-          <div
+          <Tool
             key={tool.label}
-            title="Segera hadir"
-            aria-disabled="true"
-            className="flex items-center gap-3 rounded-lg bg-white/70 p-3 opacity-80 ring-1 ring-amber-200"
-          >
-            <tool.icon className="size-6 shrink-0 text-amber-700" aria-hidden="true" />
-            <div className="min-w-0">
-              <p className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-                {tool.label} <SoonBadge />
-              </p>
-              <p className="text-xs text-slate-500">{tool.info}</p>
-            </div>
-          </div>
+            tool={tool}
+            assignmentId={assignmentId}
+            active={Boolean(tool.path && features[tool.feature])}
+          />
         ))}
       </div>
     </section>
   )
 }
 
+// Baris tombol kecil untuk alat yang sudah aktif (dipakai di kelas yang siswanya memakai perangkat).
+function QuickTools({ assignmentId, features }) {
+  const tools = TOOLS.filter((tool) => tool.path && features[tool.feature])
+  if (tools.length === 0) return null
+  return (
+    <div className="mb-6 flex flex-wrap gap-2">
+      {tools.map((tool) => (
+        <Link
+          key={tool.label}
+          to={`/guru/kelas/${assignmentId}/${tool.path}`}
+          className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"
+        >
+          <tool.icon className="size-4 text-brand-700" aria-hidden="true" />
+          {tool.label}
+        </Link>
+      ))}
+    </div>
+  )
+}
+
 /**
- * Lencana & alat mode kelas (Mapel Umum Tahap 2). Hanya tampil jika fitur `mode_kelas` menyala
- * di sekolah ini DAN mode kelas-mapel ini tidak memakai perangkat siswa; selain itu tidak ada
- * yang berubah di halaman kelas.
+ * Alat kelas Mapel Umum di Ringkasan kelas guru. Tidak tampil apa pun jika fitur-fiturnya mati:
+ * - `mode_kelas` + mode tanpa perangkat siswa: panel kuning berisi alat (yang belum ada = "Segera");
+ * - selain itu, alat yang fiturnya menyala (mis. `penilaian_langsung`) tampil sebagai tombol kecil.
  */
-export default function ClassModePanel({ classroomId, subjectId }) {
-  const enabled = useFeature('mode_kelas')
-  if (!enabled) return null
-  return <Panel classroomId={classroomId} subjectId={subjectId} />
+export default function ClassModePanel({ assignmentId, classroomId, subjectId }) {
+  const modeEnabled = useFeature('mode_kelas')
+  const gradingEnabled = useFeature('penilaian_langsung')
+  const features = { penilaian_langsung: gradingEnabled }
+  if (modeEnabled) {
+    return (
+      <ModePanel
+        assignmentId={assignmentId}
+        classroomId={classroomId}
+        subjectId={subjectId}
+        features={features}
+      />
+    )
+  }
+  return <QuickTools assignmentId={assignmentId} features={features} />
 }

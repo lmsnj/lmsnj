@@ -21,6 +21,7 @@ import { ALL, toOptions } from '../../utils/academic'
 import { ROLES } from '../../utils/constants'
 import { getErrorMessage } from '../../utils/errors'
 import { formatDate } from '../../utils/media'
+import GradeTypesPanel from './GradeTypesPanel'
 import SubjectCategoriesPanel from './SubjectCategoriesPanel'
 import {
   formatHistoryValue,
@@ -340,6 +341,10 @@ export default function LearningSettingsPage() {
             onChanged={changed}
           />
         ))}
+        {/* Jenis penilaian (Tahap 3) diatur dari cakupan sekolah. */}
+        {tab === 'penilaian' && target.scope === 'school' && (
+          <GradeTypesPanel onChanged={changed} />
+        )}
         {/* Kategori & mode tiap mapel hanya diatur dari cakupan sekolah (Tahap 2). */}
         {tab === 'kategori' && target.scope === 'school' && (
           <SubjectCategoriesPanel
