@@ -1,0 +1,1 @@
+import{a as e}from"./constants-Cr6CQ8A8.js";import{St as t,ct as n,xt as r}from"./index-9MLsaZZD.js";function i(){let i=t(),a=r(),{user:o}=n();return()=>a.key==="default"?i(e[o.role]):i(-1)}export{i as t};
