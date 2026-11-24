@@ -363,6 +363,11 @@ Pola yang wajib dipakai ulang:
   Konten HTML5/H5P (MPI-K): langkah `embed`/`embed_task` di iframe sandbox dari ORIGIN LAIN (alamat domain LMS ditolak:
   `steps.blocked_embed_host`, setting `EMBED_BLOCKED_DOMAINS`; pemutar `mpi/bridge.js::isSafeEmbed`). Pesan bridge
   divalidasi (asal iframe + origin + nonce); laporan skor dari browser tidak terbukti -> hanya untuk latihan.
+  Simulasi (langkah `simulation`, `docs/mpi-simulasi.md`): peraga HTML mandiri di `frontend/public/mpi/.../sim/*.html`
+  (`src` WAJIB path `/mpi/...html`, URL luar ditolak backend `steps.SIMULATION_SRC` & frontend `mpi/simulation.js` — aturan
+  sama), iframe `sandbox="allow-scripts"` saja, protokol `mpi:ready/resize/progress/done` + `mpi:init {params}`. Tidak
+  berskor; `mpi:done` -> aksi stasiun `complete` (hanya `StepKind.completable`) menandai `run[step].done`, menahan Lanjut
+  jika `require_done`; tanpa `mpi:ready` 8 detik = Lanjut dibuka.
   Laporan (MPI-J): `reports.py` (N-Gain dari nilai pengerjaan pertama Tes Awal/Akhir), halaman `MediaReportPage`.
   Isi siap impor ada di `docs/mpi/` (dibuat skrip, dijaga `ContentTests`); ubah lewat skripnya lalu buat ulang.
 - **Task** (tugas; sengaja bukan "Assignment" agar tidak rancu dengan TeachingAssignment): `teaching_assignment` (PROTECT, tidak bisa dipindah), `title`, `instructions`, `attachment` + `attachment_filename` (opsional), `due_at`, `max_score` (1–1000), `allow_late`, `is_published`, `created_by`.
@@ -793,7 +798,7 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | POST   | `/api/learning-media/fprg/` (multipart `file`) | Guru & admin: file Flowgorithm .fprg -> program MPI (`program`, `warnings`) |
 | GET/POST | `/api/materials/{id}/media/report/`, `.../report/export/` (Excel), `.../remind/` (`students`, `message`) | Guru tim & admin: laporan media kelas; pengingat lewat Ruang Obrolan |
 | GET    | `/api/materials/{id}/media/leaderboard/` | Siswa/guru kelas itu; 403 jika dimatikan guru |
-| GET/POST | `/api/materials/{id}/media/`, `.../answer/` (`version`, `station`, `step`, `response`, `hint_level`, `client_uid`), `.../reveal/`, `.../station/` (`action` visit/restart/finish, `step`, `seconds`), `.../reflection/` (`station`, `text`) | Siswa kelas itu (disimpan, 120/menit); guru/admin & "masuk sebagai" = tidak disimpan |
+| GET/POST | `/api/materials/{id}/media/`, `.../answer/` (`version`, `station`, `step`, `response`, `hint_level`, `client_uid`), `.../reveal/`, `.../station/` (`action` visit/restart/finish/complete, `step`, `seconds`), `.../reflection/` (`station`, `text`) | Siswa kelas itu (disimpan, 120/menit); guru/admin & "masuk sebagai" = tidak disimpan |
 | GET    | `/api/school-settings/?scope=&scope_id=`, `/api/school-settings/history/` (`key`) | Admin (sekolah aktif): pengaturan per cakupan (bawaan, `stored`, `effective`, `source`) / riwayat |
 | PUT/DELETE | `/api/school-settings/{key}/` (PUT `scope`, `scope_id`, `value`; DELETE `?scope=&scope_id=` = kembalikan ke bawaan) | Admin; tercatat di riwayat |
 | GET    | `/api/school-settings/effective/` (`?classroom=`, `?subject=`) | Login: `{values, features}` sekolah aktif (tanpa sekolah = bawaan, fitur mati) |

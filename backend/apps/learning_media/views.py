@@ -504,6 +504,8 @@ class MediaPlayViewSet(viewsets.ViewSet):
         services._locate(version, station_id)
         if data["action"] == "restart":
             services.restart_station(ctx.material, ctx.student, station_id)
+        elif data["action"] == "complete":
+            services.complete_step(ctx.material, ctx.student, version, station_id, data["step"])
         else:
             services.visit_station(ctx.material, ctx.student, station_id, data["step"], data["seconds"])
         return Response({"saved": True})

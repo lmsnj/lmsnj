@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import SelectField from '../../components/SelectField'
 import TextAreaField from '../../components/TextAreaField'
 import TextField from '../../components/TextField'
 import { CheckField, ImageField, LinesField, ListEditor, NumberField, SmallInput } from './fields'
 import { PLUGIN_FORMS } from './forms'
+import { isSafeSimulationSrc, parseParams, SIM_MAX_HEIGHT, SIM_MIN_HEIGHT } from '../simulation'
+import { SimulationStep } from '../steps/SimulationStep'
 
 const SPEAKERS = [
   { value: 'mascot', label: 'Maskot' },
@@ -585,6 +588,99 @@ FORMS.embed_task = ({ step, set, mediaId }) => (
     <Explanation step={step} set={set} />
   </>
 )
+/** Simulasi: file HTML di frontend/public/mpi/... (protokol mpi:*, lihat docs/mpi-simulasi.md). */
+function SimulationFields({ step, set }) {
+  const [paramsText, setParamsText] = useState(() => JSON.stringify(step.params ?? {}, null, 2))
+  const [paramsError, setParamsError] = useState('')
+  const [previewDone, setPreviewDone] = useState(false)
+  const [previewKey, setPreviewKey] = useState(0)
+  const srcOk = isSafeSimulationSrc(step.src)
+  const changeParams = (text) => {
+    setParamsText(text)
+    const parsed = parseParams(text)
+    setParamsError(parsed.error ?? '')
+    if (!parsed.error) set({ params: parsed.value })
+  }
+  return (
+    <>
+      <Area
+        label="Teks instruksi"
+        value={step.text}
+        onChange={(text) => set({ text })}
+        rows={2}
+        hint={FORMAT_HINT}
+      />
+      <TextField
+        label="Path file simulasi"
+        value={step.src ?? ''}
+        placeholder="/mpi/eksponen/sim/pangkat.html"
+        onChange={(event) => set({ src: event.target.value })}
+        error={
+          step.src && !srcOk
+            ? 'Harus file .html di folder aplikasi yang diawali /mpi/. Alamat luar tidak diizinkan.'
+            : ''
+        }
+        hint="File diletakkan di frontend/public/mpi/... (ikut build & deploy aplikasi)."
+      />
+      <NumberField
+        label="Tinggi awal (piksel)"
+        value={step.height}
+        min={SIM_MIN_HEIGHT}
+        max={SIM_MAX_HEIGHT}
+        onChange={(height) => set({ height })}
+        hint="Simulasi bisa menyesuaikan tingginya sendiri lewat pesan mpi:resize."
+      />
+      <TextAreaField
+        label="Params (JSON, dikirim ke simulasi lewat mpi:init)"
+        value={paramsText}
+        rows={3}
+        error={paramsError}
+        hint='Contoh: {"target": 81}. Kosongkan jika tidak perlu.'
+        onChange={(event) => changeParams(event.target.value)}
+      />
+      <CheckField
+        label="Wajib selesai: tombol Lanjut aktif setelah simulasi mengirim mpi:done"
+        checked={step.require_done !== false}
+        onChange={(require_done) => set({ require_done })}
+      />
+      <Area
+        label="Penjelasan (tampil setelah selesai, opsional)"
+        value={step.explanation}
+        onChange={(explanation) => set({ explanation })}
+        rows={2}
+      />
+      <div className="space-y-2 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-700">Pratinjau langsung</p>
+          <button
+            type="button"
+            className="text-sm font-semibold text-brand-700 hover:underline"
+            onClick={() => {
+              setPreviewDone(false)
+              setPreviewKey((key) => key + 1)
+            }}
+          >
+            Muat ulang pratinjau
+          </button>
+        </div>
+        {srcOk ? (
+          <SimulationStep
+            key={`${step.src}-${previewKey}-${JSON.stringify(step.params ?? {})}`}
+            step={step}
+            done={previewDone}
+            onSimulationDone={() => setPreviewDone(true)}
+          />
+        ) : (
+          <p className="text-sm text-slate-500">
+            Isi path file yang benar untuk melihat pratinjau.
+          </p>
+        )}
+      </div>
+    </>
+  )
+}
+
+FORMS.simulation = SimulationFields
 FORMS.did_you_know = FORMS.text
 FORMS.flashcards = FORMS.flip_cards
 

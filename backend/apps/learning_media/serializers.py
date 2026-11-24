@@ -144,7 +144,7 @@ class RevealSerializer(serializers.Serializer):
 
 
 class StationActionSerializer(serializers.Serializer):
-    ACTIONS = ("visit", "restart", "finish")
+    ACTIONS = ("visit", "restart", "finish", "complete")
 
     # 0 = pratinjau Studio (versi bernomor 0); kosong/0 di pemutar = versi terbit terakhir.
     version = serializers.IntegerField(required=False, min_value=0)

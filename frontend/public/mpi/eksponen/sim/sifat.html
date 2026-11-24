@@ -1,0 +1,64 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga sifat eksponen</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal"></div>
+<div class="seg" id="seg" role="group" aria-label="Pilih sifat"><button data-k="kali">Dikali</button><button data-k="bagi">Dibagi</button><button data-k="pp">Pangkat dipangkatkan</button><button data-k="nol">Pangkat nol dan negatif</button></div>
+<div id="lab" style="margin-top:12px"></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+let K='kali',m=2,n=3,seen=new Set(),stair=3,NEED=3;
+const bx=(c,x)=>'<span style="width:42px;height:42px;border-radius:10px;display:inline-grid;place-items:center;font:800 19px Nunito;margin:3px;background:'+(c==='y'?'#ffd23f':'#1f8a4c')+';color:'+(c==='y'?'#2b2300':'#fff')+(x?';opacity:.25;text-decoration:line-through':'')+'">2</span>';
+const sl=(id,l,v,a,b)=>'<div class="ctrl"><label for="'+id+'">'+l+' <output>'+v+'</output></label><input type="range" id="'+id+'" min="'+a+'" max="'+b+'" value="'+v+'"></div>';
+const rule={kali:'Dikali → pangkat ditambah: a'+sup('m')+' × a'+sup('n')+' = a'+sup('m+n'),bagi:'Dibagi → pangkat dikurang: a'+sup('m')+' : a'+sup('n')+' = a'+sup('m−n'),pp:'Pangkat dipangkatkan → dikali: (a'+sup('m')+')'+sup('n')+' = a'+sup('m×n'),nol:'a'+sup(0)+' = 1 dan a'+sup('−n')+' = 1/a'+sup('n')};
+function draw(){let h='';
+ if(K==='kali')h=sl('m','Pangkat pertama',m,1,5)+sl('n','Pangkat kedua',n,1,5)+'<div class="big">2'+sup(m)+' × 2'+sup(n)+' = 2'+sup(m+n)+'</div><div>'+Array(m).fill(bx('g')).join('')+' <b>×</b> '+Array(n).fill(bx('y')).join('')+'</div><p class="mute">'+m+' kotak hijau + '+n+' kotak kuning = '+(m+n)+' kotak.</p>';
+ else if(K==='bagi'){if(n>m)n=m;h=sl('m','Pangkat atas',m,1,6)+sl('n','Pangkat bawah',n,1,m)+'<div class="big">2'+sup(m)+' : 2'+sup(n)+' = 2'+sup(m-n)+'</div><div>'+Array.from({length:m},(_,i)=>bx('g',i<n)).join('')+'</div><div style="height:4px;background:#173020;border-radius:2px;margin:4px 0"></div><div>'+Array(n).fill(bx('y',1)).join('')+'</div><p class="mute">'+n+' pasang dicoret, sisa '+(m-n)+' kotak'+(m===n?' (hasilnya 1)':'')+'.</p>'}
+ else if(K==='pp')h=sl('m','Pangkat di dalam',m,1,4)+sl('n','Pangkat di luar',n,1,4)+'<div class="big">(2'+sup(m)+')'+sup(n)+' = 2'+sup(m*n)+'</div>'+Array.from({length:n},(_,g)=>'<div><span class="mute">Kelompok '+(g+1)+'</span> '+Array(m).fill(bx(g%2?'y':'g')).join('')+'</div>').join('')+'<p class="mute">'+n+' kelompok × '+m+' kotak = '+(m*n)+' kotak.</p>';
+ else{const R=[3,2,1,0,-1,-2,-3];h='<div style="display:grid;gap:6px">'+R.map((p,i)=>'<div style="display:grid;grid-template-columns:6em 1fr;gap:10px;align-items:center;border-radius:10px;padding:6px 12px;background:'+(p===0?'#ffe3dc':'#dff2e4')+';opacity:'+(i>stair?.15:1)+'"><b style="font:800 22px Nunito;color:#1f8a4c">2'+sup(p)+'</b><span style="font:800 20px Nunito">= '+(p>=0?2**p:'1/'+2**(-p))+'</span></div>').join('')+'</div><div class="btns"><button class="btn" id="dn">Turun satu (÷ 2)</button><button class="btn ghost" id="up">Naik lagi</button></div>'}
+ $('lab').innerHTML=h+'<p style="font-weight:800;color:#1f8a4c">'+rule[K]+'</p>';
+ const a=$('m'),b=$('n');if(a)a.oninput=()=>{m=+a.value;track();draw()};if(b)b.oninput=()=>{n=+b.value;track();draw()};
+ const d=$('dn'),u=$('up');if(d)d.onclick=()=>{if(stair<6)stair++;draw();if(stair>=5){win('Dari 2'+sup(1)+' = 2 dibagi 2 jadi 1, jadi 2'+sup(0)+' = 1. Turun lagi jadi ½, jadi 2'+sup('−1')+' = ½.');MPI.done({mode:K})}};if(u)u.onclick=()=>{if(stair>0)stair--;draw()}}
+function track(){seen.add(K+m+'-'+n);MPI.progress({tried:seen.size});if(seen.size>=NEED){win('Bagus! Kamu sudah mencoba '+seen.size+' pasangan angka. Polanya selalu sama: '+rule[K]+'.');MPI.done({mode:K,tried:seen.size})}}
+function setK(k){K=k;m=k==='bagi'?5:2;n=k==='pp'?2:k==='bagi'?2:3;seen=new Set();stair=3;[...$('seg').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));
+ $('goal').textContent=k==='nol'?'Tantangan: turuni tangga sampai pangkat negatif, lalu lihat polanya.':'Tantangan: coba '+NEED+' pasangan angka berbeda dan perhatikan polanya.';draw()}
+function start(p){NEED=p.need||3;$('seg').style.display=p.lock?'none':'';setK(p.mode||'kali')}
+$('seg').onclick=e=>{const k=e.target.dataset.k;if(k){$('win').classList.remove('on');MPI._done=false;setK(k)}};</script></body></html>

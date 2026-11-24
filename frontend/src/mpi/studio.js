@@ -31,6 +31,14 @@ const STEP_DEFAULTS = {
   video: () => ({ url: '', start: 0, body: '' }),
   link: () => ({ url: 'https://', label: '', body: '' }),
   embed: () => ({ url: 'https://h5p.org/h5p/embed/612', body: '', height: 480 }),
+  simulation: () => ({
+    text: 'Coba peraganya sampai tantangannya selesai.',
+    src: '/mpi/eksponen/sim/pangkat.html',
+    height: 520,
+    params: {},
+    require_done: true,
+    explanation: '',
+  }),
   flip_cards: () => ({ cards: [{ front: 'Istilah', back: 'Artinya', image: '' }] }),
   flashcards: () => ({ cards: [{ front: 'Pertanyaan', back: 'Jawaban' }] }),
   worked_example: () => ({

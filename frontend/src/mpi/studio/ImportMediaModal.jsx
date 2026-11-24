@@ -445,6 +445,9 @@ export default function ImportMediaModal({
               <Badge color="blue">{preview.summary.stations} stasiun</Badge>
               <Badge color="green">{preview.summary.steps} langkah</Badge>
               <Badge color="blue">{preview.summary.graded} latihan</Badge>
+              {preview.summary.simulations > 0 && (
+                <Badge color="amber">{preview.summary.simulations} simulasi</Badge>
+              )}
               {preview.summary.images > 0 && (
                 <Badge color="amber">{preview.summary.images} gambar</Badge>
               )}

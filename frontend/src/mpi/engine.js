@@ -98,7 +98,11 @@ export function isAnswered(step, value) {
 
 /** Langkah boleh dilewati jika penjelasan, atau latihan yang sudah tuntas (benar / dibuka jawabannya). */
 export function canAdvance(step, stepState) {
-  return !step.graded || Boolean(stepState?.done)
+  if (step.graded) return Boolean(stepState?.done)
+  // Simulasi menahan Lanjut sampai mpi:done, kecuali peraga gagal dimuat (`unblocked`).
+  if (step.kind === 'simulation' && step.require_done !== false)
+    return Boolean(stepState?.done || stepState?.unblocked)
+  return true
 }
 
 /** Jumlah latihan utama yang sudah tuntas di percobaan berjalan. */

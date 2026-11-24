@@ -281,6 +281,8 @@ export default function StepPlayer({
   const [waiting, setWaiting] = useState(false)
   const [error, setError] = useState('')
   const [finish, setFinish] = useState(null)
+  // Simulasi di sesi ini: {id langkah: 'done' | 'unblocked'} (unblocked = peraga gagal dimuat).
+  const [simulations, setSimulations] = useState({})
   const lastMark = useRef(null)
   const topRef = useRef(null)
 
@@ -289,8 +291,12 @@ export default function StepPlayer({
   const definition = step ? stepDefinition(step.kind) : null
   const run = state?.run ?? {}
   const result = step ? results[step.id] : null
-  const stepState =
+  const baseState =
     list === 'steps' ? run[step?.id] : { done: Boolean(result?.correct || result?.revealed) }
+  const simulation = step ? simulations[step.id] : undefined
+  const stepState = simulation
+    ? { ...baseState, done: Boolean(baseState?.done) || simulation === 'done', unblocked: true }
+    : baseState
   const hintLevel = hints[step?.id] ?? 0
   const value = step ? (values[step.id] ?? initialValue(step)) : undefined
   const progress = stationProgress(station, run)
@@ -432,6 +438,21 @@ export default function StepPlayer({
     }
   }
 
+  const simulationDone = () => {
+    if (simulations[step.id] === 'done') return
+    setSimulations((current) => ({ ...current, [step.id]: 'done' }))
+    if (list !== 'steps') return
+    onStepState(station.id, step.id, { ...(run[step.id] ?? {}), done: true })
+    if (!readOnly) {
+      const data = { version, station: station.id, action: 'complete', step: step.id }
+      send(api, { uid: newUid(), type: 'station', materialId, data }).catch(() => {})
+    }
+  }
+  const simulationFailed = () =>
+    setSimulations((current) =>
+      current[step.id] ? current : { ...current, [step.id]: 'unblocked' },
+    )
+
   const doneBefore = step.graded && stepState?.done && !result
   const locked = Boolean(result) || doneBefore || waiting
   const wrongCount = (run[step.id]?.mistakes ?? 0) + (result && result.correct === false ? 1 : 0)
@@ -500,6 +521,9 @@ export default function StepPlayer({
                 : null
             }
             review={review}
+            done={Boolean(stepState?.done)}
+            onSimulationDone={simulationDone}
+            onSimulationFail={simulationFailed}
           />
         ) : (
           <Alert type="warning">Jenis langkah “{step.kind}” belum didukung pemutar ini.</Alert>

@@ -97,6 +97,12 @@ def _clean_step(raw, where, full, used, errors):
         errors.append(f"{where}: jenis langkah '{kind}' tidak dikenal.")
         return step
     if not full:
+        # Path simulasi selalu diperiksa (juga saat simpan draf/impor): alamat luar tidak boleh masuk sama sekali.
+        if kind == "simulation" and step.get("src"):
+            try:
+                step_kinds.simulation_src(step.get("src"))
+            except StepError as error:
+                errors.append(f"{where}: {error}")
         return step
     try:
         hints = text_list(step.get("hints"), "Petunjuk", 0, step_kinds.MAX_HINTS, 1000)

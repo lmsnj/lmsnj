@@ -17,6 +17,7 @@ import {
   WorkedExampleStep,
 } from './steps/ExplainSteps'
 import { EmbedStep, EmbedTaskStep } from './steps/EmbedSteps'
+import { SimulationStep } from './steps/SimulationStep'
 import {
   CategorizeStep,
   ChoiceStep,
@@ -33,6 +34,7 @@ const STEPS = {
   video: { Component: VideoStep, label: 'Video' },
   link: { Component: LinkStep, label: 'Tautan' },
   embed: { Component: EmbedStep, label: 'Konten HTML5/H5P' },
+  simulation: { Component: SimulationStep, label: 'Simulasi' },
   flip_cards: { Component: FlipCardsStep, label: 'Kartu bolak-balik' },
   flashcards: { Component: FlashcardsStep, label: 'Flashcard' },
   worked_example: { Component: WorkedExampleStep, label: 'Contoh langkah demi langkah' },

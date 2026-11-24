@@ -12,6 +12,7 @@ Plugin mapel (mis. Flowgorithm, simulator exposure DKV) cukup membuat subkelas `
 `register(...)`. Semua metode murni (tanpa database) agar mudah diuji.
 """
 
+import json
 import random
 import re
 import secrets
@@ -109,6 +110,8 @@ class StepKind:
     kind = ""
     label = ""
     graded = False
+    # True = langkah tanpa nilai yang bisa ditandai "selesai" (aksi stasiun "complete"), mis. simulasi.
+    completable = False
 
     def validate(self, step):
         """Rancangan -> rancangan bersih (field khusus jenis ini saja). Raise StepError jika salah."""
@@ -239,7 +242,9 @@ class FlipCardsStep(StepKind):
         cards = []
         for number_, card in enumerate(object_list(step.get("cards"), "Kartu", 1, 20), start=1):
             image = text(card.get("image"), "Gambar kartu")
-            if image and not (image.startswith(("https://", "http://", "asset:")) or BUILTIN_IMAGE.match(image)):
+            if image and not (
+                image.startswith(("https://", "http://", "asset:")) or BUILTIN_IMAGE.match(image)
+            ):
                 raise StepError(f"Kartu {number_}: gambar harus gambar unggahan atau alamat https://.")
             cards.append(
                 {
@@ -753,3 +758,61 @@ class EmbedTaskStep(GradedStep):
         if response.get("score") is None:
             return "selesai"
         return f"selesai, skor {response['score']:g}/{response['max']:g}"
+
+
+# ---------------------------------------------------------------- simulasi (peraga HTML bawaan aplikasi)
+
+# Peraga mandiri di frontend/public/mpi/... (mis. /mpi/eksponen/sim/pangkat.html). Hanya path relatif
+# /mpi/ tanpa ".." yang diterima: URL luar, javascript: atau data: ditolak. Dimuat di iframe
+# sandbox="allow-scripts" (tanpa allow-same-origin) sehingga origin-nya "null" dan tidak bisa membaca LMS.
+SIMULATION_SRC = re.compile(r"^/mpi/(?!.*\.\.)[\w./-]+\.html?(\?[\w=&.%-]*)?$", re.IGNORECASE)
+SIMULATION_MIN_HEIGHT = 240
+SIMULATION_MAX_HEIGHT = 1400
+MAX_SIMULATION_PARAMS = 4000
+
+
+def simulation_src(value):
+    src = text(value, "Path file simulasi", required=True)
+    if not SIMULATION_SRC.match(src):
+        raise StepError(
+            "Path file simulasi harus file .html di folder aplikasi yang diawali /mpi/ "
+            "(mis. /mpi/eksponen/sim/pangkat.html). Alamat luar tidak diizinkan."
+        )
+    return src
+
+
+@register
+class SimulationStep(StepKind):
+    """Peraga interaktif (file HTML di /mpi/) di iframe sandbox. Bukan latihan berskor: simulasi
+    melaporkan `mpi:done` lewat postMessage, lalu tombol Lanjut aktif (jika `require_done`).
+    Protokol lengkap: docs/mpi-simulasi.md."""
+
+    kind, label = "simulation", "Simulasi"
+    # Selesai dicatat lewat aksi stasiun "complete" (tanpa bintang/kunci jawaban).
+    completable = True
+
+    def validate(self, step):
+        params = step.get("params")
+        if params in (None, ""):
+            params = {}
+        if not isinstance(params, dict):
+            raise StepError('Params simulasi harus berupa objek JSON, mis. {"target": 81}.')
+        if len(json.dumps(params, ensure_ascii=False)) > MAX_SIMULATION_PARAMS:
+            raise StepError(f"Params simulasi maksimal {MAX_SIMULATION_PARAMS} karakter.")
+        require_done = step.get("require_done", True)
+        if not isinstance(require_done, bool):
+            raise StepError("Wajib selesai harus true atau false.")
+        return {
+            "text": text(step.get("text"), "Teks instruksi", MAX_TEXT),
+            "src": simulation_src(step.get("src")),
+            "height": number(
+                step.get("height"),
+                "Tinggi (piksel)",
+                SIMULATION_MIN_HEIGHT,
+                SIMULATION_MAX_HEIGHT,
+                default=520,
+            ),
+            "params": params,
+            "require_done": require_done,
+            "explanation": text(step.get("explanation"), "Penjelasan", MAX_TEXT),
+        }

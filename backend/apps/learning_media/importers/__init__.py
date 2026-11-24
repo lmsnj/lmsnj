@@ -203,7 +203,7 @@ def step_caption(step):
 
 def outline(parts):
     """Ringkasan isi hasil impor untuk ditampilkan sebelum diterapkan."""
-    result, totals = [], {"parts": 0, "stations": 0, "steps": 0, "graded": 0, "images": 0}
+    result, totals = [], {"parts": 0, "stations": 0, "steps": 0, "graded": 0, "images": 0, "simulations": 0}
     for part in parts:
         stations = []
         for station in part.get("stations", []):
@@ -225,6 +225,7 @@ def outline(parts):
                 totals["steps"] += 1
                 totals["graded"] += graded
                 totals["images"] += bool(image)
+                totals["simulations"] += step.get("kind") == "simulation"
             stations.append({"title": station.get("title", ""), "steps": items})
         totals["stations"] += len(stations)
         result.append({"title": part.get("title", ""), "stations": stations})

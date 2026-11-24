@@ -353,6 +353,20 @@ def visit_station(material, student, station_id, step_id="", seconds=0):
     return progress
 
 
+def complete_step(material, student, version, station_id, step_id):
+    """Tandai langkah tanpa nilai yang "bisa selesai" (mis. simulasi) sebagai tuntas di percobaan berjalan.
+    Tidak memengaruhi bintang: run_summary hanya menghitung latihan berskor."""
+    station, list_name, step = _locate(version, station_id, step_id)
+    if step is None or not step_kinds.KINDS[step["kind"]].completable:
+        raise ValidationError({"detail": "Langkah ini tidak bisa ditandai selesai."})
+    progress = _progress(material, student, station_id)
+    if list_name == "steps" and not (progress.run.get(step_id) or {}).get("done"):
+        progress.run = {**progress.run, step_id: {**(progress.run.get(step_id) or {}), "done": True}}
+    progress.last_step_id = step_id
+    progress.save()
+    return progress
+
+
 def restart_station(material, student, station_id):
     """Ulangi stasiun (mis. mengejar 3 bintang). Bintang terbaik & status selesai tetap."""
     progress = _progress(material, student, station_id)
