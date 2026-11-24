@@ -27,9 +27,11 @@
     "mathlive": "^0.110.0",
     "php-wasm": "^0.2.0",
     "pyodide": "^314.0.8",
+    "qrcode": "1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "zxing-wasm": "3.1.6"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

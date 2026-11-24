@@ -21,7 +21,13 @@ const TOOLS = [
     path: 'penilaian',
     feature: 'penilaian_langsung',
   },
-  { label: 'Kuis QR', info: 'Kuis satu kelas dengan kartu QR.', icon: QrCode, path: null },
+  {
+    label: 'Kuis QR',
+    info: 'Kuis satu kelas dengan kartu QR.',
+    icon: QrCode,
+    path: 'kuis-qr',
+    feature: 'kuis_qr',
+  },
 ]
 
 const loadMode = ({ classroom, subject }) => schoolSettingsApi.effective({ classroom, subject })
@@ -110,13 +116,18 @@ function QuickTools({ assignmentId, features }) {
 /**
  * Alat kelas Mapel Umum di Ringkasan kelas guru. Tidak tampil apa pun jika fitur-fiturnya mati:
  * - `mode_kelas` + mode tanpa perangkat siswa: panel kuning berisi alat (yang belum ada = "Segera");
- * - selain itu, alat yang fiturnya menyala (`presentasi`, `penilaian_langsung`) tampil sebagai tombol kecil.
+ * - selain itu, alat yang fiturnya menyala (`presentasi`, `penilaian_langsung`, `kuis_qr`) tampil sebagai tombol kecil.
  */
 export default function ClassModePanel({ assignmentId, classroomId, subjectId }) {
   const modeEnabled = useFeature('mode_kelas')
   const gradingEnabled = useFeature('penilaian_langsung')
   const presentationEnabled = useFeature('presentasi')
-  const features = { penilaian_langsung: gradingEnabled, presentasi: presentationEnabled }
+  const qrQuizEnabled = useFeature('kuis_qr')
+  const features = {
+    penilaian_langsung: gradingEnabled,
+    presentasi: presentationEnabled,
+    kuis_qr: qrQuizEnabled,
+  }
   if (modeEnabled) {
     return (
       <ModePanel

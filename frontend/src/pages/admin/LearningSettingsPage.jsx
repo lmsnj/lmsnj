@@ -1,5 +1,6 @@
-import { History, RotateCcw, Save, ToggleLeft, ToggleRight } from 'lucide-react'
+import { History, Printer, RotateCcw, Save, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { classroomsApi, subjectsApi } from '../../api/academics'
 import { schoolSettingsApi, subjectCategoriesApi } from '../../api/schoolSettings'
 import Alert from '../../components/Alert'
@@ -344,6 +345,21 @@ export default function LearningSettingsPage() {
         {/* Jenis penilaian (Tahap 3) diatur dari cakupan sekolah. */}
         {tab === 'penilaian' && target.scope === 'school' && (
           <GradeTypesPanel onChanged={changed} />
+        )}
+        {/* Set kartu Kuis QR (Tahap 5) dicetak sekali untuk sekolah, ukuran & jumlah dari pengaturan di atas. */}
+        {tab === 'kuis_qr' && target.scope === 'school' && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+            <p className="text-sm text-slate-600">
+              Cetak set kartu QR, laminating, lalu simpan di kelas. Guru memetakan kartu ke siswa
+              dari halaman Kuis QR kelasnya.
+            </p>
+            <Link
+              to="/cetak/kartu-qr"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              <Printer className="size-4" aria-hidden="true" /> Cetak Kartu QR
+            </Link>
+          </div>
         )}
         {/* Kategori & mode tiap mapel hanya diatur dari cakupan sekolah (Tahap 2). */}
         {tab === 'kategori' && target.scope === 'school' && (

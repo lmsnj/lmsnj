@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "apps.branding",
     "apps.school_settings",
     "apps.grading",
+    "apps.qr_quiz",
 ]
 
 MIDDLEWARE = [

@@ -69,6 +69,7 @@ lms-smknj/
 │   │   │                    #   & kontrak plugin, services.py = progres/bintang/kunci stasiun
 │   │   ├── branding/        # Identitas sekolah (nama, slogan, nama aplikasi, logo) yang diatur admin
 │   │   ├── grading/         # Penilaian langsung (nilai tanpa pengumpulan); scales.py = aturan skala, services.py
+│   │   ├── qr_quiz/         # Kuis kartu QR: peta kartu, sesi, jawaban pindai; services.py = nilai -> penilaian langsung
 │   │   ├── school_settings/ # Pengaturan Pembelajaran & saklar fitur per sekolah; registry.py = daftar kunci + bawaan,
 │   │   │                    #   services.py = get_setting (kelas -> mapel -> kategori -> sekolah -> bawaan)
 │   │   └── schools/         # Sekolah (multi-sekolah); context.py = sekolah aktif (header X-School / X-School-Code),
@@ -218,6 +219,21 @@ Pola yang wajib dipakai ulang:
   `.timer_default`. Remote di media "menekan" tombol berpenanda `data-present="next|prev|map"` (StepPlayer/MediaPlayer).
   Fungsi murni + test: `utils/presentation.js`. Pintu masuk (hanya jika fitur menyala): `ClassModePanel` ->
   `/guru/kelas/:id/presentasi` (`ClassPresentationPage`), tombol Presentasi di `MaterialsManager` & `MediaPlayerPage`.
+  **Kuis kartu QR** (Tahap 5, `apps/qr_quiz`, fitur `kuis_qr`; cukup fitur ini untuk menyimpan nilai): kartu = nomor 1..N
+  (tanpa tabel kartu), QR berisi `SG:<nomor>` (koreksi galat H), huruf A atas / B kanan / C bawah / D kiri; ARAH QR =
+  jawaban (`utils/qrQuiz.js::optionFromPosition`, sudut garis kiri-atas -> kanan-atas). `CardAssignment` (peta kartu
+  kelas -> siswa, unik nomor & siswa per kelas; isi otomatis urutan nama), `QuizSession` (per pengampu/tim, `questions`
+  = SALINAN soal [{text, choices, correct}] 2..`kuis_qr.jumlah_opsi`, bisa diambil dari soal PG asesmen kelas-mapel;
+  `current_question` + `revealed` = keadaan TV; soal terkunci setelah ada jawaban), `QuizAnswer` (satu per sesi-soal-
+  siswa; pindai ulang mengganti jika `kuis_qr.boleh_pindai_ulang`). Selesai (`services.finish`) = `GradeActivity`
+  sumber `kuis_qr`, jenis "Kuis QR" (dibuat otomatis), nilai = benar / jumlah soal x 100 dikonversi ke skala sekolah,
+  siswa tanpa jawaban = tidak hadir; setelah selesai terkunci. Pemindai `/kuis-qr/:id/pindai` (HP guru, `zxing-wasm`
+  reader, wasm disajikan sendiri lewat `?url`, `components/qrQuiz/qrScanner.js`; bacaan dikirim otomatis bila pilihan
+  sama di 2 gambar berturut-turut, `updateStreaks`), layar TV `/kuis-qr/:id/layar` (bingkai presentasi, grafik tanpa
+  nama jika `kuis_qr.tampil_hasil_layar`); keduanya membaca sesi tiap 2 detik (`hooks/useQuizSession.js`, polling).
+  Halaman kelas `/guru/kelas/:id/kuis-qr` (`QrQuizPage`: sesi, `QuizFormModal`, `CardMapModal`); cetak set kartu
+  `/cetak/kartu-qr?dari=&sampai=` (`QrCardsPrintPage`, pustaka `qrcode`, A5 = 2 / A6 = 4 per A4; tombol juga di tab Kuis
+  QR Pengaturan Pembelajaran). Uji baca banyak QR dengan gambar buatan sudah lolos; jarak baca di kelas asli belum diuji.
   Aturan fitur Mapel Umum: hanya MENAMBAH (tabel/endpoint/halaman baru), fitur lama tidak diubah, fitur baru dibungkus
   feature flag, migrasi bisa rollback, satu tahap per branch.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan. `weekly_hours` = JP resmi per minggu (opsional, dari distribusi JP).
@@ -785,6 +801,8 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
 | CRUD   | `/api/grade-types/` (+ `starter/`, `reorder/` `grade_types`) | Baca: admin & guru. Tulis: admin |
 | CRUD   | `/api/grade-activities/?teaching_assignment=` (`grade_type`, `title`, `date`) | Baca: admin & guru tim. Tulis: guru tim, fitur `penilaian_langsung` menyala |
 | GET/PUT | `/api/grade-activities/{id}/scores/` (PUT `records: [{student, value, status, note}]`, semua atau tidak sama sekali) | GET admin & guru tim; PUT guru tim |
+| GET/PUT | `/api/qr-quiz/cards/` (GET `?classroom=`; PUT `classroom`, `records: [{student, number}]` = ganti seluruh peta), POST `/api/qr-quiz/cards/auto/` (`classroom`) | Admin & guru yang mengajar/mewalikan kelas; tulis: fitur `kuis_qr` menyala |
+| CRUD   | `/api/qr-quiz/sessions/?teaching_assignment=` (`title`, `questions`), `.../{id}/control/` (`question`, `revealed`), `.../{id}/scans/` (`question`, `scans: [{card, option}]`), `.../{id}/finish/`, `/api/qr-quiz/sessions/bank/?teaching_assignment=` | Baca: admin & guru tim (detail berisi `roster`, `answers`, `options`). Tulis: guru tim, fitur `kuis_qr` menyala |
 | CRU    | `/api/class-modes/` (tanpa hapus; `code` tetap) | Baca: login. Tambah/ubah: Super Admin |
 | CRUD   | `/api/subject-categories/` (`name`, `is_active`, `mode` = mode bawaan kategori), `.../reorder/` (`categories`) | Admin (sekolah aktif) |
 | GET/PUT/POST | `/api/subject-profiles/`, `/api/subject-profiles/{subject_id}/` (`category`, `mode`; null = kosongkan), `/api/subject-profiles/bulk/` (`subjects`, `category`?, `mode`?) | Admin |
@@ -837,5 +855,6 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] Tahap 2: Kategori mapel & mode kelas (fitur `mode_kelas`)
   - [x] Tahap 3: Penilaian langsung (`apps/grading`, fitur `penilaian_langsung`)
   - [x] Tahap 4: Mode presentasi kelas
+  - [x] Tahap 5: Kuis kartu QR (`apps/qr_quiz`, fitur `kuis_qr`; uji jarak baca di kelas asli menyusul)
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar

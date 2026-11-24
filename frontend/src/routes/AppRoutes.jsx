@@ -26,6 +26,7 @@ const MyClassesPage = lazy(() => import('../pages/guru/MyClassesPage'))
 const TeacherClassPage = lazy(() => import('../pages/guru/TeacherClassPage'))
 const DirectGradingPage = lazy(() => import('../pages/guru/DirectGradingPage'))
 const ClassPresentationPage = lazy(() => import('../pages/guru/ClassPresentationPage'))
+const QrQuizPage = lazy(() => import('../pages/guru/QrQuizPage'))
 const TeacherDashboard = lazy(() => import('../pages/guru/TeacherDashboard'))
 const TeacherMaterialsPage = lazy(() => import('../pages/guru/TeacherMaterialsPage'))
 const TeacherTasksPage = lazy(() => import('../pages/guru/TeacherTasksPage'))
@@ -47,6 +48,9 @@ const MaterialPresentationPage = lazy(
   () => import('../pages/presentation/MaterialPresentationPage'),
 )
 const MediaPresentationPage = lazy(() => import('../pages/presentation/MediaPresentationPage'))
+const QrQuizScreenPage = lazy(() => import('../pages/presentation/QrQuizScreenPage'))
+const QrQuizScanPage = lazy(() => import('../pages/presentation/QrQuizScanPage'))
+const QrCardsPrintPage = lazy(() => import('../pages/QrCardsPrintPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const ReportPage = lazy(() => import('../pages/ReportPage'))
 const StatisticsPage = lazy(() => import('../pages/admin/StatisticsPage'))
@@ -97,6 +101,7 @@ export default function AppRoutes() {
           <Route element={<ProtectedRoute roles={[...ADMIN_ROLES, ROLES.TEACHER]} />}>
             <Route element={<SchoolRoute />}>
               <Route path="cetak/kartu-ujian/:id" element={<ExamCardsPrintPage />} />
+              <Route path="cetak/kartu-qr" element={<QrCardsPrintPage />} />
             </Route>
           </Route>
           <Route element={<ProtectedRoute roles={ADMIN_ROLES} />}>
@@ -113,6 +118,11 @@ export default function AppRoutes() {
               <Route path="presentasi/materi/:id" element={<MaterialPresentationPage />} />
               <Route path="presentasi/media/:id" element={<MediaPresentationPage />} />
             </Route>
+          </Route>
+          {/* Kuis Kartu QR: layar TV & pemindai HP guru (admin hanya melihat lewat API). */}
+          <Route element={<ProtectedRoute roles={[ROLES.TEACHER]} />}>
+            <Route path="kuis-qr/:id/layar" element={<QrQuizScreenPage />} />
+            <Route path="kuis-qr/:id/pindai" element={<QrQuizScanPage />} />
           </Route>
           <Route element={<DashboardLayout />}>
             <Route path="admin" element={<ProtectedRoute roles={ADMIN_ROLES} />}>
@@ -151,6 +161,7 @@ export default function AppRoutes() {
               <Route path="kelas/:id" element={<TeacherClassPage />} />
               <Route path="kelas/:id/penilaian" element={<DirectGradingPage />} />
               <Route path="kelas/:id/presentasi" element={<ClassPresentationPage />} />
+              <Route path="kelas/:id/kuis-qr" element={<QrQuizPage />} />
               <Route path="materi" element={<TeacherMaterialsPage />} />
               <Route path="tugas" element={<TeacherTasksPage />} />
               <Route path="tugas/:id" element={<TeacherTaskPage />} />
