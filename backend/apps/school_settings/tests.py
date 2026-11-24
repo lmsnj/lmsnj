@@ -200,6 +200,32 @@ class SettingApiTests(APITestCase):
             self.client.get(reverse("school-settings-effective")).status_code, status.HTTP_200_OK
         )
 
+    def test_presentation_settings_reach_teacher(self):
+        # Halaman presentasi (Tahap 4) membaca tema/timer lewat /effective/ dengan mapel kelasnya.
+        self.client.force_authenticate(self.admin)
+        self.client.put(detail("presentasi.tema"), {"value": "terang"}, format="json")
+        self.client.put(
+            detail("presentasi.timer_default"),
+            {"scope": "subject", "scope_id": self.subject.id, "value": 10},
+            format="json",
+        )
+        self.assertEqual(
+            self.client.put(detail("presentasi.tampil_timer"), {"value": "ya"}, format="json").status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.client.force_authenticate(self.teacher)
+        values = self.client.get(reverse("school-settings-effective"), {"subject": self.subject.id}).data[
+            "values"
+        ]
+        self.assertEqual(
+            (
+                values["presentasi.tema"],
+                values["presentasi.timer_default"],
+                values["presentasi.tampil_timer"],
+            ),
+            ("terang", 10, True),
+        )
+
     def test_settings_are_isolated_per_school(self):
         self.client.force_authenticate(self.admin)
         self.client.put(detail("nilai.kkm"), {"value": 70}, format="json")

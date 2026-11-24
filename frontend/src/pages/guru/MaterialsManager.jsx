@@ -11,6 +11,7 @@ import {
   Layers,
   ListChecks,
   Merge,
+  MonitorPlay,
   PencilLine,
   Sparkles,
   SquareCheckBig,
@@ -26,11 +27,13 @@ import MaterialList from '../../components/MaterialList'
 import MaterialViewer from '../../components/MaterialViewer'
 import Spinner from '../../components/Spinner'
 import useAuth from '../../hooks/useAuth'
+import useFeature from '../../hooks/useFeature'
 import useFetch from '../../hooks/useFetch'
 import { ALL } from '../../utils/academic'
 import { ROLE_HOME } from '../../utils/constants'
 import { getErrorMessage } from '../../utils/errors'
 import { groupByChapter, moveItem } from '../../utils/learningPath'
+import { presentationPath } from '../../utils/presentation'
 import ChaptersModal from './ChaptersModal'
 import CopyMaterialsModal from './CopyMaterialsModal'
 import GenerateAssessmentModal from './GenerateAssessmentModal'
@@ -70,6 +73,7 @@ export default function MaterialsManager({
   const [dialog, setDialog] = useState(openForm ? { type: 'form', material: null } : null)
   const navigate = useNavigate()
   const { user } = useAuth()
+  const presenting = useFeature('presentasi')
   const materials = useFetch(materialsApi.list, {
     ...ALL,
     teaching_assignment: assignmentId || undefined,
@@ -214,6 +218,16 @@ export default function MaterialsManager({
         <Code2 className="size-4" aria-hidden="true" /> Praktik
         {material.code_exercise_count > 0 && ` (${material.code_exercise_count})`}
       </Button>
+      {presenting && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(presentationPath(material))}
+          title="Tampilkan materi ini penuh di TV kelas"
+        >
+          <MonitorPlay className="size-4" aria-hidden="true" /> Presentasi
+        </Button>
+      )}
       <Button variant="ghost" size="sm" onClick={() => setDialog({ type: 'progress', material })}>
         <ListChecks className="size-4" aria-hidden="true" /> Progres
       </Button>

@@ -11,7 +11,8 @@ const TOOLS = [
     label: 'Presentasi',
     info: 'Tampilkan materi penuh di TV kelas.',
     icon: MonitorPlay,
-    path: null,
+    path: 'presentasi',
+    feature: 'presentasi',
   },
   {
     label: 'Penilaian Langsung',
@@ -109,12 +110,13 @@ function QuickTools({ assignmentId, features }) {
 /**
  * Alat kelas Mapel Umum di Ringkasan kelas guru. Tidak tampil apa pun jika fitur-fiturnya mati:
  * - `mode_kelas` + mode tanpa perangkat siswa: panel kuning berisi alat (yang belum ada = "Segera");
- * - selain itu, alat yang fiturnya menyala (mis. `penilaian_langsung`) tampil sebagai tombol kecil.
+ * - selain itu, alat yang fiturnya menyala (`presentasi`, `penilaian_langsung`) tampil sebagai tombol kecil.
  */
 export default function ClassModePanel({ assignmentId, classroomId, subjectId }) {
   const modeEnabled = useFeature('mode_kelas')
   const gradingEnabled = useFeature('penilaian_langsung')
-  const features = { penilaian_langsung: gradingEnabled }
+  const presentationEnabled = useFeature('presentasi')
+  const features = { penilaian_langsung: gradingEnabled, presentasi: presentationEnabled }
   if (modeEnabled) {
     return (
       <ModePanel

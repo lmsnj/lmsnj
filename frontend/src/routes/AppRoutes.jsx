@@ -25,6 +25,7 @@ const UsersPage = lazy(() => import('../pages/admin/UsersPage'))
 const MyClassesPage = lazy(() => import('../pages/guru/MyClassesPage'))
 const TeacherClassPage = lazy(() => import('../pages/guru/TeacherClassPage'))
 const DirectGradingPage = lazy(() => import('../pages/guru/DirectGradingPage'))
+const ClassPresentationPage = lazy(() => import('../pages/guru/ClassPresentationPage'))
 const TeacherDashboard = lazy(() => import('../pages/guru/TeacherDashboard'))
 const TeacherMaterialsPage = lazy(() => import('../pages/guru/TeacherMaterialsPage'))
 const TeacherTasksPage = lazy(() => import('../pages/guru/TeacherTasksPage'))
@@ -42,6 +43,10 @@ const MediaReportPage = lazy(() => import('../pages/MediaReportPage'))
 const MediaLibraryPage = lazy(() => import('../pages/MediaLibraryPage'))
 const MediaStudioPage = lazy(() => import('../pages/MediaStudioPage'))
 const MediaSummaryPrintPage = lazy(() => import('../pages/MediaSummaryPrintPage'))
+const MaterialPresentationPage = lazy(
+  () => import('../pages/presentation/MaterialPresentationPage'),
+)
+const MediaPresentationPage = lazy(() => import('../pages/presentation/MediaPresentationPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const ReportPage = lazy(() => import('../pages/ReportPage'))
 const StatisticsPage = lazy(() => import('../pages/admin/StatisticsPage'))
@@ -102,6 +107,13 @@ export default function AppRoutes() {
           <Route element={<SchoolRoute />}>
             <Route path="cetak/ringkasan-media/:id" element={<MediaSummaryPrintPage />} />
           </Route>
+          {/* Mode presentasi kelas (TV): layar penuh tanpa header & menu. */}
+          <Route element={<ProtectedRoute roles={[...ADMIN_ROLES, ROLES.TEACHER]} />}>
+            <Route element={<SchoolRoute />}>
+              <Route path="presentasi/materi/:id" element={<MaterialPresentationPage />} />
+              <Route path="presentasi/media/:id" element={<MediaPresentationPage />} />
+            </Route>
+          </Route>
           <Route element={<DashboardLayout />}>
             <Route path="admin" element={<ProtectedRoute roles={ADMIN_ROLES} />}>
               <Route index element={<AdminHome />} />
@@ -138,6 +150,7 @@ export default function AppRoutes() {
               <Route path="kelas" element={<MyClassesPage />} />
               <Route path="kelas/:id" element={<TeacherClassPage />} />
               <Route path="kelas/:id/penilaian" element={<DirectGradingPage />} />
+              <Route path="kelas/:id/presentasi" element={<ClassPresentationPage />} />
               <Route path="materi" element={<TeacherMaterialsPage />} />
               <Route path="tugas" element={<TeacherTasksPage />} />
               <Route path="tugas/:id" element={<TeacherTaskPage />} />

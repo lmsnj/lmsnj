@@ -118,6 +118,23 @@ SETTINGS = [
         unit="menit",
         help="Durasi awal timer di mode presentasi.",
     ),
+    Setting(
+        "presentasi.tema",
+        "umum",
+        "Tema presentasi",
+        "choice",
+        "gelap",
+        options=(("gelap", "Gelap"), ("terang", "Terang")),
+        help="Gelap lebih nyaman dibaca di TV kelas; terang cocok untuk ruangan yang sangat terang.",
+    ),
+    Setting(
+        "presentasi.tampil_timer",
+        "umum",
+        "Tampilkan timer",
+        "bool",
+        True,
+        help="Timer hitung mundur di pojok layar presentasi.",
+    ),
     # --- Kategori mapel & mode kelas (Tahap 2) ---
     Setting(
         "kelas.mode_default",

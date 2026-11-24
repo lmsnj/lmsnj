@@ -240,7 +240,7 @@ function Summary({
 
       <div className="flex flex-wrap gap-2">
         {onNext && (
-          <Button onClick={onNext}>
+          <Button onClick={onNext} data-present="next">
             Stasiun berikutnya <ArrowRight className="size-4" aria-hidden="true" />
           </Button>
         )}
@@ -590,6 +590,7 @@ export default function StepPlayer({
           className="min-h-12 px-5"
           disabled={index === 0}
           onClick={() => goTo(index - 1)}
+          data-present="prev"
         >
           <ArrowLeft className="size-4" aria-hidden="true" /> Kembali
         </Button>
@@ -598,6 +599,7 @@ export default function StepPlayer({
             className="min-h-12 px-5"
             disabled={!canAdvance(step, stepState)}
             onClick={() => goTo(index + 1)}
+            data-present="next"
           >
             Lanjut <ArrowRight className="size-4" aria-hidden="true" />
           </Button>
@@ -607,6 +609,7 @@ export default function StepPlayer({
             loading={busy}
             disabled={!canAdvance(step, stepState)}
             onClick={finishStation}
+            data-present="next"
           >
             Selesaikan stasiun
           </Button>
@@ -615,6 +618,7 @@ export default function StepPlayer({
             className="min-h-12 px-5"
             disabled={!canAdvance(step, stepState)}
             onClick={() => setFinish({ stars: state?.stars ?? 0, badges: [], suggestion: null })}
+            data-present="next"
           >
             Selesai
           </Button>

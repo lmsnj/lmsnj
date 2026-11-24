@@ -3,6 +3,7 @@ import { requestBody, uploadConfig } from './upload'
 
 export const materialsApi = {
   list: (params) => api.get('/materials/', { params }).then((res) => res.data),
+  get: (id) => api.get(`/materials/${id}/`).then((res) => res.data),
   create: (data, onProgress) =>
     api.post('/materials/', requestBody(data), uploadConfig(onProgress)).then((res) => res.data),
   update: (id, data, onProgress) =>

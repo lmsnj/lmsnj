@@ -402,7 +402,7 @@ export default function MediaPlayer({ data, api, materialId, user, title, onRelo
       {station ? (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="ghost" onClick={() => setCurrent(null)}>
+            <Button variant="ghost" onClick={() => setCurrent(null)} data-present="map">
               ← Peta stasiun
             </Button>
             <h2 className="text-[1.1em] font-bold text-slate-900">

@@ -196,7 +196,7 @@ Pola yang wajib dipakai ulang:
   aturan per kategori berlaku untuk semua kunci. `/effective/` mengirim `class_mode` {code, name,
   needs_student_device}. Admin: tab Kategori Mapel (`SubjectCategoriesPanel`: kategori, kategori & mode tiap mapel +
   isi massal, master mode). Guru: `components/ClassModePanel.jsx` di Ringkasan kelas, hanya jika fitur `mode_kelas`
-  menyala DAN mode tanpa perangkat siswa (alat Presentasi/Penilaian Langsung/Kuis QR masih "Segera").
+  menyala DAN mode tanpa perangkat siswa (alat Kuis QR masih "Segera").
   **Penilaian langsung** (Tahap 3, `apps/grading`, fitur `penilaian_langsung`): `GradeType` (jenis per sekolah, kelompok
   formatif/sumatif, `default_weight` untuk Tahap 7; dipakai = tidak bisa dihapus; "Buat jenis awal"), `GradeActivity`
   (per pengampu, dipakai bersama tim seperti konten; `scale` + `bands` DISALIN dari nilai.skala/nilai.predikat saat
@@ -208,6 +208,16 @@ Pola yang wajib dipakai ulang:
   `/guru/kelas/:id/penilaian` (`DirectGradingPage`, grid `components/grading/ScoreGrid.jsx`: Enter ke baris berikut,
   simpan otomatis 600 ms, "Isi yang kosong dengan", Tidak hadir, catatan). Pintu masuk: `ClassModePanel` (tombol kecil
   jika mode memakai perangkat). Admin: `GradeTypesPanel` di tab Penilaian.
+  **Mode presentasi kelas** (Tahap 4, fitur `presentasi`, TANPA tabel/endpoint baru): halaman di luar `DashboardLayout`
+  `/presentasi/materi/:id` (`MaterialPresentationPage`: slide pembuka judul + capaian, satu slide per konten PDF/video/
+  link, penutup; materi media dialihkan) dan `/presentasi/media/:id` (`MediaPresentationPage`: `MediaPlayer` mode
+  pratinjau = jawaban tidak disimpan, siswa tidak login, guru mengklik jawaban). Bingkai `components/presentation/
+  PresentationFrame.jsx`: tombol Mulai -> layar penuh, panah/Spasi/PageUp/PageDown (remote), B/titik = layar hitam,
+  tombol & kursor hilang saat tetikus diam, timer, A-/A+ (CSS zoom), tema. Pengaturan dibaca sendiri lewat
+  `/effective/` + mapel/kelas materi (`loadPresentation.js`): `presentasi.ukuran_huruf`, `.tema`, `.tampil_timer`,
+  `.timer_default`. Remote di media "menekan" tombol berpenanda `data-present="next|prev|map"` (StepPlayer/MediaPlayer).
+  Fungsi murni + test: `utils/presentation.js`. Pintu masuk (hanya jika fitur menyala): `ClassModePanel` ->
+  `/guru/kelas/:id/presentasi` (`ClassPresentationPage`), tombol Presentasi di `MaterialsManager` & `MediaPlayerPage`.
   Aturan fitur Mapel Umum: hanya MENAMBAH (tabel/endpoint/halaman baru), fitur lama tidak diubah, fitur baru dibungkus
   feature flag, migrasi bisa rollback, satu tahap per branch.
 - **TeachingAssignment** (pengampu): `teacher` + `subject` + `classroom` (semua PROTECT, kombinasi unik) → unit utama tempat materi & tugas ditempelkan. `weekly_hours` = JP resmi per minggu (opsional, dari distribusi JP).
@@ -826,6 +836,6 @@ Default: backend di `http://localhost:8000`, frontend di `http://localhost:5173`
   - [x] Tahap 1: Pengaturan Pembelajaran & feature flag (`apps/school_settings`)
   - [x] Tahap 2: Kategori mapel & mode kelas (fitur `mode_kelas`)
   - [x] Tahap 3: Penilaian langsung (`apps/grading`, fitur `penilaian_langsung`)
-  - [ ] Tahap 4: Mode presentasi kelas
+  - [x] Tahap 4: Mode presentasi kelas
 - [x] Tim pengampu & berbagi materi (MAT-TEAM-A..C): satu jalur belajar per kelas-mapel untuk beberapa
       guru, salin materi ke kelas lain, gabungkan materi kembar
