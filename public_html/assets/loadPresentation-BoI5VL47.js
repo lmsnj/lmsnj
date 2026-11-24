@@ -1,1 +1,0 @@
-import{rt as e}from"./index-BIeU2Q9G.js";import{i as t}from"./materials-Ch5_bzaX.js";import{n}from"./academics-C3Wij2EM.js";async function r(r){let i=await t.get(r),a=await n.get(i.teaching_assignment).catch(()=>null);return{material:i,settings:await e.effective(a?{subject:a.subject,classroom:a.classroom}:{})}}export{r as t};
