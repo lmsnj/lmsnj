@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga melipat kertas</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal">Klik "Lipat dua" dan hitung lapisan kertasnya. Lipat sampai 6 kali, lalu jawab tantangan di bawah.</div>
+<div class="row"><div>
+<div style="position:relative;height:290px;background:#f3f8ef;border-radius:16px;overflow:hidden"><svg id="svg" viewBox="0 0 400 290" style="position:absolute;inset:0;width:100%;height:100%" role="img" aria-label="Kertas yang dilipat"></svg></div>
+<div class="btns"><button class="btn" id="fold">Lipat dua</button><button class="btn ghost" id="open">Buka lipatan</button><button class="btn ghost" id="reset">Kertas baru</button></div>
+</div><div>
+<div class="big" id="cnt" style="font-size:clamp(30px,5vw,46px)"></div><p id="info" style="font-weight:800;margin:4px 0"></p><p class="mute" id="tebal"></p>
+<div class="scroll"><table id="tab"></table></div></div></div>
+<div id="q" style="display:none;margin-top:14px;background:#dff2e4;border-radius:14px;padding:12px 14px">
+<b>Tantangan:</b> tanpa melipat, berapa lapisan kertas jika dilipat <b id="qn">10</b> kali?
+<div class="btns"><input id="ans" type="number" inputmode="numeric" aria-label="Jawaban banyak lapisan" style="font:16px Nunito;padding:10px 12px;border:2px solid #cfe0d3;border-radius:12px;max-width:10em"><button class="btn" id="cek">Cek</button></div><p id="fb" style="margin:8px 0 0"></p></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+const PW=300,PH=210,OX=50,OY=40,MAXF=8;let n=0,busy=false,opened=false,QN=10,NEED=6;
+const sz=k=>[PW/2**Math.ceil(k/2),PH/2**Math.floor(k/2)];
+function stripes(x,y,w,h,k){if(k<1)return'';let s='';const L=Math.min(2**k,16);for(let i=1;i<L;i++){const o=i*3;if(o>Math.min(w,h)/2)break;s+='<rect x="'+(x+o)+'" y="'+(y+o)+'" width="'+Math.max(0,w-2*o)+'" height="'+Math.max(0,h-2*o)+'" fill="none" stroke="#e2d3a8" stroke-width="1"/>'}return s}
+function paper(k,flap){const[w,h]=sz(k);const vert=k%2===0;const OX=Math.round((340-w)/2+10),OY=Math.round((240-h)/2+15);let s='<rect x="'+(OX+4)+'" y="'+(OY+6)+'" width="'+w+'" height="'+h+'" rx="4" fill="#00000018"/>';
+ if(!flap){s+='<rect x="'+OX+'" y="'+OY+'" width="'+w+'" height="'+h+'" rx="4" fill="#fffaf0" stroke="#d9c58f" stroke-width="2"/>'+stripes(OX,OY,w,h,k);return s}
+ if(vert){const hw=w/2;s+='<rect x="'+OX+'" y="'+OY+'" width="'+hw+'" height="'+h+'" rx="4" fill="#fffaf0" stroke="#d9c58f" stroke-width="2"/>'+stripes(OX,OY,hw,h,k)+
+  '<g id="flap" style="transform-origin:'+(OX+hw)+'px 0;transition:transform .6s ease-in-out"><rect x="'+(OX+hw)+'" y="'+OY+'" width="'+hw+'" height="'+h+'" rx="4" fill="#fff3d6" stroke="#d9c58f" stroke-width="2"/></g>'+
+  '<line x1="'+(OX+hw)+'" y1="'+(OY-6)+'" x2="'+(OX+hw)+'" y2="'+(OY+h+6)+'" stroke="#ef5b3f" stroke-width="2" stroke-dasharray="5 4"/>'}
+ else{const hh=h/2;s+='<rect x="'+OX+'" y="'+OY+'" width="'+w+'" height="'+hh+'" rx="4" fill="#fffaf0" stroke="#d9c58f" stroke-width="2"/>'+stripes(OX,OY,w,hh,k)+
+  '<g id="flap" style="transform-origin:0 '+(OY+hh)+'px;transition:transform .6s ease-in-out"><rect x="'+OX+'" y="'+(OY+hh)+'" width="'+w+'" height="'+hh+'" rx="4" fill="#fff3d6" stroke="#d9c58f" stroke-width="2"/></g>'+
+  '<line x1="'+(OX-6)+'" y1="'+(OY+hh)+'" x2="'+(OX+w+6)+'" y2="'+(OY+hh)+'" stroke="#ef5b3f" stroke-width="2" stroke-dasharray="5 4"/>'}
+ return s}
+function side(){const L=2**n,h=Math.min(120,L*1.2+2),x=372,y=250;let s='<text x="'+x+'" y="'+(y+22)+'" text-anchor="middle" style="font-size:12px">tebal</text>';
+ const lines=Math.min(L,60);for(let i=0;i<lines;i++)s+='<line x1="'+(x-14)+'" x2="'+(x+14)+'" y1="'+(y-i*h/lines)+'" y2="'+(y-i*h/lines)+'" stroke="#c9a85a" stroke-width="'+(L>60?2:1.5)+'"/>';return s}
+function grid(){const c=2**Math.ceil(n/2),r=2**Math.floor(n/2);let s='<rect x="'+OX+'" y="'+OY+'" width="'+PW+'" height="'+PH+'" rx="4" fill="#fffaf0" stroke="#d9c58f" stroke-width="2"/>';
+ for(let i=1;i<c;i++)s+='<line x1="'+(OX+PW*i/c)+'" x2="'+(OX+PW*i/c)+'" y1="'+OY+'" y2="'+(OY+PH)+'" stroke="#c9a85a" stroke-dasharray="4 3"/>';
+ for(let j=1;j<r;j++)s+='<line y1="'+(OY+PH*j/r)+'" y2="'+(OY+PH*j/r)+'" x1="'+OX+'" x2="'+(OX+PW)+'" stroke="#c9a85a" stroke-dasharray="4 3"/>';
+ if(n<=6)s+='<text x="'+(OX+PW/2)+'" y="'+(OY+PH+30)+'" text-anchor="middle">'+c+' × '+r+' = '+(c*r)+' kotak bekas lipatan</text>';return s}
+function render(){$('svg').innerHTML=(opened?grid():paper(n,false))+side();const L=2**n;
+ $('cnt').innerHTML=fmt(L)+' lapis';$('info').innerHTML=n===0?'Belum dilipat: 1 lapis = 2'+sup(0):'Dilipat '+n+' kali: '+(n<=6?Array(n).fill(2).join(' × '):'2 × 2 × ... × 2 ('+n+' kali)')+' = 2'+sup(n)+' = '+fmt(L);
+ const mm=L*0.1;$('tebal').textContent='Tebal tumpukan sekitar '+fmt(Math.round(mm*10)/10)+' mm (1 lembar kira-kira 0,1 mm).';
+ let t='<tr><th>Lipatan</th><th>Lapisan</th><th>Pangkat</th></tr>';for(let k=0;k<=Math.max(n,3)&&k<=MAXF;k++)t+='<tr><td>'+k+'</td><td'+(k===n?' class="n"':'')+'>'+(k<=n?fmt(2**k):'?')+'</td><td>'+(k<=n?'2'+sup(k):'?')+'</td></tr>';$('tab').innerHTML=t;
+ $('fold').disabled=n>=MAXF||busy;$('open').textContent=opened?'Tutup lagi':'Buka lipatan';$('open').disabled=n===0;
+ if(n>=NEED)$('q').style.display='block';MPI.progress({folds:n})}
+function fold(){if(busy||n>=MAXF)return;if(opened){opened=false}busy=true;$('svg').innerHTML=paper(n,true)+side();const vert=n%2===0,f=$('flap');
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{f.style.transform=vert?'scaleX(-1)':'scaleY(-1)'}));
+ setTimeout(()=>{n++;busy=false;render();if(n===MAXF)$('goal').textContent='Kertas sudah terlalu tebal untuk dilipat lagi. Di dunia nyata, kertas biasa sulit dilipat lebih dari 7 kali.'},matchMedia('(prefers-reduced-motion: reduce)').matches?10:650)}
+function start(p){QN=p.predict||10;NEED=p.need||6;n=0;opened=false;busy=false;$('qn').textContent=QN;$('q').style.display='none';$('fb').textContent='';$('win').classList.remove('on');$('goal').textContent='Klik "Lipat dua" dan hitung lapisan kertasnya. Lipat sampai '+NEED+' kali, lalu jawab tantangan di bawah.';render()}
+$('fold').onclick=fold;$('open').onclick=()=>{opened=!opened;render()};$('reset').onclick=()=>{n=0;opened=false;render()};
+$('cek').onclick=()=>{const v=+$('ans').value,T=2**QN;if(v===T){$('fb').innerHTML='<b>Betul!</b> 2'+sup(QN)+' = '+fmt(T)+' lapisan.';win('Hebat! Setiap lipatan mengalikan lapisan dengan 2, jadi '+QN+' lipatan = 2'+sup(QN)+' = '+fmt(T)+' lapisan. Seru lagi: kalau kertas bisa dilipat 42 kali, tebalnya melebihi jarak Bumi ke Bulan!');MPI.done({folds:n,predict:QN,answer:v})}
+ else if(v===2*QN)$('fb').innerHTML='Hampir semua orang menjawab ini dulu. '+fmt(v)+' itu 2 × '+QN+'. Lihat tabelmu: lipatan ke-5 bukan 10 lapis, melainkan 32.';
+ else if(v===2**(QN-1))$('fb').innerHTML='Itu 2'+sup(QN-1)+', kurang satu lipatan lagi. Kalikan 2 sekali lagi.';
+ else $('fb').textContent='Belum tepat. Lanjutkan pola tabel: setiap lipatan, lapisannya dikali 2.'};</script></body></html>
