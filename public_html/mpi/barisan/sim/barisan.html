@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga barisan</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal"></div>
+<div style="position:relative;height:260px"><svg id="svg" style="position:absolute;inset:0;width:100%;height:100%" role="img" aria-label="Diagram batang suku-suku barisan"></svg></div>
+<div class="row"><div><div class="ctrl"><label for="n">Suku ke- <output id="no"></output></label><input type="range" id="n" min="1" max="20" value="5"></div>
+<div class="big" id="un" style="font-size:clamp(24px,4vw,34px)"></div><p id="urai" style="font-weight:800"></p></div>
+<div><p class="mute" id="rumus"></p><div id="q" style="background:#dff2e4;border-radius:14px;padding:12px 14px"><span id="qt"></span>
+<div class="btns"><input id="ans" type="number" inputmode="numeric" aria-label="Jawaban" style="font:16px Nunito;padding:10px 12px;border:2px solid #cfe0d3;border-radius:12px;max-width:10em"><button class="btn" id="cek">Cek</button></div><p id="fb" style="margin:8px 0 0"></p></div></div></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+let P={};const U=n=>P.mode==='geo'?P.a*P.r**(n-1):P.a+(n-1)*P.b;
+function draw(){const s=$('svg'),W=s.clientWidth,H=s.clientHeight;if(!W||!P.a)return;const N=Math.min(8,+$('n').max),cur=+$('n').value,max=Math.max(...Array.from({length:N},(_,i)=>U(i+1)));
+ const bw=(W-20)/N,base=H-28;let g='';
+ for(let i=1;i<=N;i++){const v=U(i),h=Math.max(3,(base-34)*v/max),x=10+(i-1)*bw;g+='<rect x="'+(x+6)+'" y="'+(base-h)+'" width="'+(bw-12)+'" height="'+h+'" rx="6" fill="'+(i===cur?'#ef5b3f':'#1f8a4c')+'"/><text x="'+(x+bw/2)+'" y="'+(base-h-6)+'" text-anchor="middle">'+fmt(v)+'</text><text x="'+(x+bw/2)+'" y="'+(H-8)+'" text-anchor="middle">U'+i+'</text>';
+  if(i<N&&W>420)g+='<text x="'+(x+bw)+'" y="'+(base-6)+'" text-anchor="middle" style="font-size:12px;fill:#4d6655">'+(P.mode==='geo'?'×'+P.r:'+'+fmt(P.b))+'</text>'}
+ s.innerHTML=g}
+function upd(){const n=+$('n').value,v=U(n);$('no').textContent=n;$('un').innerHTML='U<sub>'+n+'</sub> = '+fmt(v);
+ $('urai').innerHTML=P.mode==='geo'?fmt(P.a)+' dikali '+P.r+' sebanyak '+(n-1)+' kali = '+fmt(P.a)+' × '+P.r+sup(n-1):fmt(P.a)+' ditambah '+fmt(P.b)+' sebanyak '+(n-1)+' kali = '+fmt(P.a)+' + ('+(n-1)+' × '+fmt(P.b)+')';draw()}
+function start(p){P={mode:p.mode||'arit',a:p.a||20,b:p.b??4,r:p.r||3,qn:p.qn||15,ctx:p.ctx||''};
+ $('n').max=P.mode==='geo'?Math.min(12,p.maxN||12):(p.maxN||20);$('n').value=Math.min(5,+$('n').max);$('win').classList.remove('on');$('fb').textContent='';$('ans').value='';
+ $('goal').textContent=P.ctx||(P.mode==='geo'?'Barisan geometri: setiap suku dikali '+P.r+'.':'Barisan aritmetika: setiap suku ditambah '+P.b+'.');
+ $('rumus').innerHTML=P.mode==='geo'?'Rumus: U<sub>n</sub> = a · r'+sup('n−1')+', dengan a = '+fmt(P.a)+' dan r = '+P.r+'.':'Rumus: U<sub>n</sub> = a + (n − 1)b, dengan a = '+fmt(P.a)+' dan b = '+fmt(P.b)+'.';
+ $('qt').innerHTML='<b>Tantangan:</b> berapa nilai U<sub>'+P.qn+'</sub>? Geser penggeser untuk membantu, atau pakai rumus.';upd()}
+$('n').oninput=upd;
+$('cek').onclick=()=>{const v=+$('ans').value,T=U(P.qn);if(v===T){$('fb').innerHTML='<b>Betul!</b>';win('U<sub>'+P.qn+'</sub> = '+(P.mode==='geo'?fmt(P.a)+' · '+P.r+sup(P.qn-1):fmt(P.a)+' + ('+(P.qn-1)+' × '+fmt(P.b)+')')+' = '+fmt(T)+'.');MPI.done({answer:v})}
+ else if(P.mode!=='geo'&&v===P.a+P.qn*P.b)$('fb').textContent='Hampir. Itu menambah beda sebanyak '+P.qn+' kali. Dari suku ke-1 ke suku ke-'+P.qn+' hanya ada '+(P.qn-1)+' langkah.';
+ else if(P.mode==='geo'&&v===P.a*P.r**P.qn)$('fb').textContent='Hampir. Itu mengalikan rasio sebanyak '+P.qn+' kali. Seharusnya '+(P.qn-1)+' kali.';
+ else if(P.mode!=='geo'&&v===P.a*P.qn)$('fb').textContent='Itu suku pertama dikali '+P.qn+'. Pada barisan aritmetika, yang ditambahkan berulang adalah bedanya.';
+ else $('fb').textContent='Belum tepat. Coba pakai rumus di samping.'};
+const ro=new ResizeObserver(draw);ro.observe($('svg'));</script></body></html>

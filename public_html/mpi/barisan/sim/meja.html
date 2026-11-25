@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga meja dan kursi</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal">Tambah meja satu per satu. Perhatikan banyak kursi yang muat di sekelilingnya.</div>
+<div style="position:relative;height:250px;background:#f3f8ef;border-radius:16px;overflow:hidden"><svg id="svg" style="position:absolute;inset:0;width:100%;height:100%" role="img" aria-label="Susunan meja dan kursi"></svg></div>
+<div class="btns"><button class="btn" id="add">Tambah meja</button><button class="btn ghost" id="rm">Kurangi meja</button></div>
+<div class="row" style="margin-top:10px"><div><div class="big" id="cnt" style="font-size:clamp(28px,5vw,42px)"></div><p id="pola" style="font-weight:800"></p></div><div class="scroll"><table id="tab"></table></div></div>
+<div id="q" style="display:none;margin-top:12px;background:#dff2e4;border-radius:14px;padding:12px 14px"><b>Tantangan:</b> ada <b id="qp">20</b> santri yang ingin duduk bersama. Berapa meja yang harus disusun?
+<div class="btns"><input id="ans" type="number" inputmode="numeric" aria-label="Jawaban banyak meja" style="font:16px Nunito;padding:10px 12px;border:2px solid #cfe0d3;border-radius:12px;max-width:9em"><button class="btn" id="cek">Cek</button></div><p id="fb" style="margin:8px 0 0"></p></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+let m=1,QP=20;const chairs=k=>2*k+2;
+function draw(){const s=$('svg'),W=s.clientWidth,H=s.clientHeight;if(!W)return;const tw=Math.min(70,(W-60)/Math.max(m,1)),th=50,x0=(W-tw*m)/2,y0=H/2-th/2;let g='';
+ const ch=(x,y)=>'<rect x="'+(x-10)+'" y="'+(y-10)+'" width="20" height="20" rx="5" fill="#ef5b3f"/>';
+ for(let i=0;i<m;i++){g+='<rect x="'+(x0+i*tw)+'" y="'+y0+'" width="'+(tw-2)+'" height="'+th+'" rx="6" fill="#c98b4a" stroke="#8a5a2b" stroke-width="2"/>';g+=ch(x0+i*tw+tw/2-1,y0-18)+ch(x0+i*tw+tw/2-1,y0+th+18)}
+ g+=ch(x0-18,y0+th/2)+ch(x0+tw*m+16,y0+th/2);s.innerHTML=g}
+function render(){draw();$('cnt').textContent=m+' meja → '+chairs(m)+' kursi';$('pola').textContent='Setiap tambah 1 meja, kursi bertambah 2.';
+ let a='<tr><th>Meja</th>',b='<tr><td>Kursi</td>';for(let k=1;k<=Math.max(m,4);k++){a+='<th>'+k+'</th>';b+='<td'+(k===m?' class="n"':'')+'>'+(k<=m?chairs(k):'?')+'</td>'}$('tab').innerHTML=a+'</tr>'+b+'</tr>';
+ $('rm').disabled=m<=1;$('add').disabled=m>=8;if(m>=5)$('q').style.display='block';MPI.progress({meja:m})}
+function start(p){QP=p.people||20;m=1;$('qp').textContent=QP;$('q').style.display='none';$('fb').textContent='';$('win').classList.remove('on');render()}
+$('add').onclick=()=>{if(m<8){m++;render()}};$('rm').onclick=()=>{if(m>1){m--;render()}};
+$('cek').onclick=()=>{const v=+$('ans').value,T=(QP-2)/2;if(v===T){$('fb').innerHTML='<b>Betul!</b> '+T+' meja memberi 2 × '+T+' + 2 = '+QP+' kursi.';win('Hebat! Banyak kursi membentuk barisan 4, 6, 8, 10, ... dengan selisih tetap 2. Barisan seperti ini disebut barisan aritmetika.');MPI.done({answer:v})}
+ else if(v===QP/2)$('fb').textContent='Hampir. '+v+' meja memberi '+chairs(v)+' kursi, lebih dari yang dibutuhkan. Kurangi satu meja.';
+ else if(v===QP/4)$('fb').textContent='Itu kalau setiap meja selalu 4 kursi. Saat meja disambung, kursi di sambungan hilang.';
+ else $('fb').textContent='Belum tepat. Lanjutkan pola tabel: 4, 6, 8, 10, ... sampai '+QP+'.'};
+const ro=new ResizeObserver(draw);ro.observe($('svg'));</script></body></html>
