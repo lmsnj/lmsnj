@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga roda warna</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal"></div>
+<div class="row"><div><div style="position:relative;height:300px"><svg id="wheel" viewBox="-150 -150 300 300" style="position:absolute;inset:0;width:100%;height:100%" role="img" aria-label="Roda warna 12 bagian"></svg></div></div>
+<div><div class="seg" id="mode" role="group" aria-label="Pilih harmoni warna"><button data-m="komplementer">Komplementer</button><button data-m="analog">Analog</button><button data-m="triadik">Triadik</button></div>
+<div id="pal" style="display:flex;gap:8px;margin:14px 0"></div><div id="prev" style="border-radius:14px;padding:16px;min-height:110px"></div><p class="mute" id="ket"></p></div></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+const N=['Merah','Merah jingga','Jingga','Kuning jingga','Kuning','Kuning hijau','Hijau','Biru hijau','Biru','Biru ungu','Ungu','Merah ungu'];
+const HUE=[0,18,30,42,55,80,120,170,215,245,275,320];const col=i=>'hsl('+HUE[(i+12)%12]+',78%,'+(i%12===4?'52%':'48%')+')';
+let base=6,M='komplementer',P={};
+const idx=()=>M==='komplementer'?[base,base+6]:M==='analog'?[base-1,base,base+1]:[base,base+4,base+8];
+function draw(){let g='';for(let i=0;i<12;i++){const a0=(i*30-105)*Math.PI/180,a1=((i+1)*30-105)*Math.PI/180,r=140,r0=55;const sel=idx().map(x=>(x+12)%12).includes(i);
+ g+='<path data-i="'+i+'" d="M'+(r0*Math.cos(a0))+','+(r0*Math.sin(a0))+' L'+(r*Math.cos(a0))+','+(r*Math.sin(a0))+' A'+r+','+r+' 0 0 1 '+(r*Math.cos(a1))+','+(r*Math.sin(a1))+' L'+(r0*Math.cos(a1))+','+(r0*Math.sin(a1))+' A'+r0+','+r0+' 0 0 0 '+(r0*Math.cos(a0))+','+(r0*Math.sin(a0))+'Z" fill="'+col(i)+'" stroke="#fff" stroke-width="'+(sel?5:2)+'" style="cursor:pointer;opacity:'+(sel?1:.55)+'"/>'}
+ g+='<circle r="50" fill="#fff"/><text text-anchor="middle" y="6" style="font-size:13px">'+N[base]+'</text>';$('wheel').innerHTML=g;
+ const ids=idx().map(x=>(x+12)%12);$('pal').innerHTML=ids.map(i=>'<div style="flex:1;height:56px;border-radius:12px;background:'+col(i)+'"></div>').join('');
+ $('prev').style.background=col(ids[0]);$('prev').innerHTML='<div style="font:900 22px Arial;color:#fff">PEKAN KREASI</div><div style="display:inline-block;margin-top:8px;padding:6px 12px;border-radius:999px;background:'+col(ids[1])+';color:#fff;font-weight:800">Daftar sekarang</div>';
+ const warm=[0,1,2,3,4,5].includes(base);$('ket').textContent=N[base]+' termasuk warna '+(warm?'hangat (semangat, ceria)':'dingin (tenang, segar)')+'. '+({komplementer:'Komplementer: dua warna berseberangan, kontras dan mencolok.',analog:'Analog: tiga warna bersebelahan, lembut dan harmonis.',triadik:'Triadik: tiga warna berjarak sama, ceria dan seimbang.'})[M];
+ [...$('mode').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===M));
+ if(M===P.tm&&base===P.tb){win('Mantap! Palet '+M+' dari '+N[base]+': '+ids.map(i=>N[i]).join(', ')+'. Warna komplementer cocok untuk tombol atau tulisan yang ingin menonjol.');MPI.done({mode:M,base})}}
+function start(p){P={tm:p.mode||'komplementer',tb:p.base??6};base=p.start??0;M='analog';$('win').classList.remove('on');$('goal').textContent='Tantangan: buat palet '+P.tm+' dari warna '+N[P.tb].toLowerCase()+'. Klik warna di roda, lalu pilih jenis harmoninya.';draw()}
+$('wheel').addEventListener('click',e=>{const i=e.target.dataset&&e.target.dataset.i;if(i!==undefined){base=+i;draw()}});
+$('mode').onclick=e=>{const m=e.target.dataset.m;if(m){M=m;draw()}};</script></body></html>
