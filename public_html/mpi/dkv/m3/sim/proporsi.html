@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga proporsi dan keseimbangan</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal">Atur penggeser sampai logo <b>seimbang</b>: simbol dan teks proporsional, jaraknya pas, dan teks tepat di tengah.</div>
+<div class="row"><div><svg id="sv" viewBox="0 0 400 420" style="width:100%;height:auto;background:#fff;border:2px solid #cfe0d3;border-radius:14px">
+<line x1="200" y1="0" x2="200" y2="420" stroke="#1e88e5" stroke-dasharray="5 5" opacity=".5"/>
+<g id="sym"></g><text id="tx" text-anchor="middle" font-family="Segoe UI,Arial" font-weight="800" fill="#009640" style="stroke:none">PEKAN KREASI SANTRI</text></svg></div>
+<div><div class="ctrl"><label for="s1">Ukuran simbol <output id="o1"></output></label><input type="range" id="s1" min="40" max="180" value="160"></div>
+<div class="ctrl"><label for="s2">Ukuran teks <output id="o2"></output></label><input type="range" id="s2" min="8" max="40" value="34"></div>
+<div class="ctrl"><label for="s3">Jarak simbol ke teks <output id="o3"></output></label><input type="range" id="s3" min="0" max="120" value="6"></div>
+<div class="ctrl"><label for="s4">Geser teks kiri/kanan <output id="o4"></output></label><input type="range" id="s4" min="-60" max="60" value="38"></div>
+<ul id="ck" style="list-style:none;padding:0;margin:8px 0;font-weight:800"></ul></div></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+const CK=[['Lebar teks seimbang dengan simbol (kira-kira 1 sampai 1,5 kali lebar simbol)',v=>v.tw>=v.d*0.95&&v.tw<=v.d*1.5],['Jarak simbol ke teks tidak terlalu rapat atau renggang',v=>v.g>=v.d*0.1&&v.g<=v.d*0.35],['Teks tepat di tengah simbol (Align Center)',v=>Math.abs(v.o)<=2],['Logo masih muat di dalam bidang',v=>v.top>=8&&v.bot<=412&&v.l>=8&&v.r<=392]];
+let done=false;
+function draw(){const r=+$('s1').value/2,fs=+$('s2').value,g=+$('s3').value,o=+$('s4').value;const tot=2*r+g+fs,top=(420-tot)/2,cy=top+r;
+ $('sym').innerHTML='<g transform="translate(200 '+cy+') scale('+(r/95)+')"><circle cx="0" cy="0" r="95" fill="#009640"/><path d="M-20 35 C-20 -20 15 -52 65 -60 C62 -5 30 30 -20 35Z" fill="#ffed00"/><path d="M-55 85 L-42 52 L22 -42 L38 -31 L-25 62 Z" fill="#fff"/><path d="M22 -42 L38 -31 L30 -48Z" fill="#e30613"/></g>';const t=$('tx');t.setAttribute('x',200+o);t.setAttribute('y',cy+r+g+fs*0.8);t.style.font='800 '+fs+'px "Segoe UI",Arial,sans-serif';t.style.fill='#009640';
+ const tw=t.getComputedTextLength(),v={d:2*r,tw,g,o,top,bot:cy+r+g+fs,l:200+o-tw/2,r:200+o+tw/2};$('o1').textContent=2*r;$('o2').textContent=fs;$('o3').textContent=g;$('o4').textContent=o;
+ let ok=0;$('ck').innerHTML=CK.map(([n,f])=>{const b=f(v);if(b)ok++;return'<li style="color:'+(b?'#1f8a4c':'#4d6655')+'">'+(b?'☑ ':'☐ ')+n+'</li>'}).join('');MPI.progress({ok});
+ if(ok===CK.length&&!done){done=true;win('Seimbang! Proporsi yang baik membuat simbol dan teks terlihat sebagai satu kesatuan. Di CorelDRAW, ratakan dengan <b>Align Centers Vertically (C)</b>, lalu cek jarak dengan mata dan dengan angka di Property Bar.');MPI.done({})}}
+function start(){done=false;$('win').classList.remove('on');['s1','s2','s3','s4'].forEach((k,i)=>$(k).value=[160,34,6,38][i]);draw()}
+['s1','s2','s3','s4'].forEach(k=>$(k).oninput=draw);</script></body></html>

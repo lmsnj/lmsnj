@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga versi logo</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal"></div>
+<div id="a1"><div class="row"><div style="text-align:center"><svg viewBox="-110 -110 220 220" width="100%" style="max-width:260px" id="gl"><circle cx="0" cy="0" r="95" fill="#009640"/><path d="M-20 35 C-20 -20 15 -52 65 -60 C62 -5 30 30 -20 35Z" fill="#ffed00"/><path d="M-55 85 L-42 52 L22 -42 L38 -31 L-25 62 Z" fill="#fff"/><path d="M22 -42 L38 -31 L30 -48Z" fill="#e30613"/></svg><p class="mute" id="cap">Logo versi warna</p></div>
+<div><p>Logo berwarna sering difotokopi atau dicetak dengan satu tinta. Apa yang terjadi?</p><button class="btn" id="fc">Fotokopi (abu-abu)</button><p id="f1" style="font-weight:800"></p></div></div></div>
+<div id="a2" style="display:none"><div class="row"><div style="text-align:center"><div id="mock" style="border-radius:14px;padding:16px;min-height:240px;display:grid;place-items:center"></div><p class="mute" id="mcap"></p></div>
+<div><p id="q" style="font-weight:800"></p><div class="seg" id="opt"><button data-v="w">Warna</button><button data-v="h">Hitam putih</button><button data-v="n">Negatif (putih)</button></div><p id="f2" style="font-weight:800;min-height:3em"></p><span class="chip" id="cnt">1/4</span></div></div></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+const V={w:'<circle cx="0" cy="0" r="95" fill="#009640"/><path d="M-20 35 C-20 -20 15 -52 65 -60 C62 -5 30 30 -20 35Z" fill="#ffed00"/><path d="M-55 85 L-42 52 L22 -42 L38 -31 L-25 62 Z" fill="#fff"/><path d="M22 -42 L38 -31 L30 -48Z" fill="#e30613"/>',h:'<circle cx="0" cy="0" r="95" fill="#000"/><path d="M-20 35 C-20 -20 15 -52 65 -60 C62 -5 30 30 -20 35Z" fill="#fff"/><path d="M-55 85 L-42 52 L22 -42 L38 -31 L-25 62 Z" fill="#fff"/><path d="M22 -42 L38 -31 L30 -48Z" fill="#fff"/>',n:'<circle cx="0" cy="0" r="95" fill="#fff"/><path d="M-20 35 C-20 -20 15 -52 65 -60 C62 -5 30 30 -20 35Z" fill="#1d1d1b"/><path d="M-55 85 L-42 52 L22 -42 L38 -31 L-25 62 Z" fill="#1d1d1b"/><path d="M22 -42 L38 -31 L30 -48Z" fill="#1d1d1b"/>'};
+const SCN=[{q:'Logo akan dibuat <b>stempel</b> (satu warna tinta).',bg:'#f6f3ea',a:'h',cap:'Stempel tinta biru',ink:'#1e3a8a',ok:'Stempel hanya punya satu warna tinta, jadi pakai versi <b>hitam putih</b>. Tintanya tinggal diganti warna stempel.'},
+ {q:'Logo akan disablon di <b>kaos hitam</b> panitia.',bg:'#1d1d1b',a:'n',cap:'Kaos hitam',ok:'Di atas latar gelap, versi <b>negatif (putih)</b> paling terbaca.'},
+ {q:'Logo akan dicetak di <b>spanduk berwarna penuh</b>.',bg:'#fff8e1',a:'w',cap:'Spanduk',ok:'Media cetak penuh warna memakai versi <b>warna</b> sesuai konsep.'},
+ {q:'Logo akan dicetak di <b>surat pengumuman</b> yang diperbanyak dengan fotokopi.',bg:'#fff',a:'h',cap:'Surat fotokopi',ok:'Fotokopi hanya hitam putih. Versi <b>hitam putih</b> tetap tegas, sedangkan versi warna jadi abu-abu kusam.'}];
+let i,ok;
+function start(){i=0;ok=false;$('a1').style.display='';$('a2').style.display='none';$('gl').style.filter='';$('f1').textContent='';$('cap').textContent='Logo versi warna';$('goal').innerHTML='Langkah 1. Uji logo berwarna jika difotokopi.';$('win').classList.remove('on')}
+$('fc').onclick=()=>{$('gl').style.filter='grayscale(1)';$('cap').textContent='Hasil fotokopi';$('f1').innerHTML='Daun kuning dan lingkaran hijau menjadi abu-abu yang hampir sama, sehingga daunnya <b>sulit terlihat</b>. Karena itu logo perlu <b>versi hitam putih</b> yang dibuat khusus, bukan sekadar logo warna yang dicetak abu-abu.';setTimeout(()=>{$('a1').style.display='none';$('a2').style.display='';show()},4200)};
+function show(){const s=SCN[i];$('goal').innerHTML='Langkah 2. Pilih versi logo yang tepat untuk setiap media.';$('q').innerHTML=s.q;$('mock').style.background=s.bg;$('mock').innerHTML='';$('mcap').textContent=s.cap;$('f2').textContent='';$('cnt').textContent=(i+1)+'/4';[...$('opt').children].forEach(b=>b.setAttribute('aria-pressed','false'))}
+$('opt').onclick=e=>{const v=e.target.dataset.v;if(!v)return;const s=SCN[i];[...$('opt').children].forEach(b=>b.setAttribute('aria-pressed',b===e.target));
+ let g=V[v];if(i===0&&v==='h')g=g.replace(/#000/g,s.ink);$('mock').innerHTML='<svg viewBox="-110 -110 220 220" width="200">'+g+'</svg>';
+ if(v===s.a){$('f2').innerHTML='<span style="color:#1f8a4c">Tepat!</span> '+s.ok;i++;MPI.progress({i});if(i<SCN.length)setTimeout(show,2600);else{win('Satu logo minimal punya versi <b>warna</b> dan <b>hitam putih</b>, ditambah versi <b>negatif</b> untuk latar gelap. Di CorelDRAW: duplikat logo (Ctrl+D), lalu ubah isiannya menjadi hitam dan putih lewat palet.');MPI.done({})}}
+ else $('f2').innerHTML='<span style="color:#ef5b3f">Kurang tepat.</span> Lihat hasilnya di pratinjau: apakah logo terbaca jelas dan sesuai jumlah warna medianya?'};</script></body></html>
