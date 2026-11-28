@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga jenis node</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal"></div>
+<svg id="nv" viewBox="0 0 600 320" style="width:100%;height:auto;background:#fff;border:2px solid #cfe0d3;border-radius:14px;touch-action:none">
+<path id="tg" fill="none" stroke="#ffd23f" stroke-width="14" stroke-linecap="round" opacity=".55"/>
+<path id="us" fill="none" stroke="#173020" stroke-width="3"/><g id="hd"></g></svg>
+<div class="btns" id="types"><span class="mute" style="align-self:center;font-weight:800">Jenis node tengah:</span>
+<div class="seg"><button data-t="cusp">Cusp (tajam)</button><button data-t="smooth">Smooth (halus)</button><button data-t="sym">Symmetrical</button></div></div>
+<p id="fb" style="font-weight:800;min-height:2.4em;margin:8px 0 0"></p>
+<div class="btns"><span class="chip" id="lv">1/3</span><button class="btn ghost" id="rs">Ulang level</button></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+const LV=[
+ {t:'Level 1. Tarik dua <b>tuas biru</b> sampai garis hitam menempel pada jalur kuning (lengkungan seperti pelangi).',tg:'M80 260 C140 40 460 40 520 260',n:[{x:80,y:260,ho:{x:150,y:250}},{x:520,y:260,hi:{x:450,y:250}}],mid:false,
+  ok:'Tuas (handle) menentukan arah dan seberapa jauh garis melengkung. Makin panjang tuas, makin besar lengkungannya.'},
+ {t:'Level 2. Bentuk ujung daun yang <b>tajam</b> di node tengah. Node tengah sekarang <b>Smooth</b>, jadi kedua tuasnya selalu lurus. Ganti jenisnya agar tuas bisa ditarik terpisah.',tg:'M80 250 C150 120 260 110 300 60 C340 110 450 120 520 250',n:[{x:80,y:250,ho:{x:130,y:230}},{x:300,y:60,hi:{x:230,y:60},ho:{x:370,y:60},type:'smooth'},{x:520,y:250,hi:{x:470,y:230}}],mid:true,need:'cusp',
+  ok:'Node <b>Cusp</b> membuat sudut tajam karena kedua tuasnya bebas bergerak sendiri-sendiri. Dipakai untuk ujung daun, puncak tetes air, atau sudut huruf.'},
+ {t:'Level 3. Buat gelombang yang <b>mulus dan seimbang</b>. Ubah node tengah menjadi <b>Symmetrical</b>, lalu tarik tuasnya.',tg:'M60 160 C140 20 220 20 300 160 C380 300 460 300 540 160',n:[{x:60,y:160,ho:{x:140,y:20}},{x:300,y:160,hi:{x:250,y:200},ho:{x:330,y:110},type:'cusp'},{x:540,y:160,hi:{x:460,y:300}}],mid:true,need:'sym',
+  ok:'Node <b>Symmetrical</b> membuat kedua tuas lurus dan sama panjang, sehingga lengkungan kiri dan kanan seimbang. <b>Smooth</b> juga mulus, tapi panjang tuasnya boleh berbeda.'}];
+let L,N,dg=null,lv=0;const C=x=>JSON.parse(JSON.stringify(x));
+function d(n){let s='M'+n[0].x+' '+n[0].y;for(let i=1;i<n.length;i++){const a=n[i-1],b=n[i],c1=a.ho||a,c2=b.hi||b;s+=' C'+c1.x+' '+c1.y+' '+c2.x+' '+c2.y+' '+b.x+' '+b.y}return s}
+function draw(){$('us').setAttribute('d',d(N));const g=$('hd');g.innerHTML='';const ns='http://www.w3.org/2000/svg';
+ N.forEach((n,i)=>{['hi','ho'].forEach(h=>{if(!n[h])return;const l=document.createElementNS(ns,'line');Object.entries({x1:n.x,y1:n.y,x2:n[h].x,y2:n[h].y,stroke:'#1e88e5','stroke-width':2}).forEach(([k,v])=>l.setAttribute(k,v));g.appendChild(l);const c=document.createElementNS(ns,'circle');Object.entries({cx:n[h].x,cy:n[h].y,r:11,fill:'#1e88e5','data-i':i,'data-h':h,style:'cursor:grab'}).forEach(([k,v])=>c.setAttribute(k,v));g.appendChild(c)});
+  const r=document.createElementNS(ns,(n.type==='cusp'||!n.type)?'rect':'circle');const a=(n.type==='cusp'||!n.type)?{x:n.x-8,y:n.y-8,width:16,height:16}:{cx:n.x,cy:n.y,r:9};Object.entries(Object.assign(a,{fill:'#fff',stroke:'#1e88e5','stroke-width':3})).forEach(([k,v])=>r.setAttribute(k,v));g.appendChild(r)});
+ [...document.querySelectorAll('#types button')].forEach(b=>b.setAttribute('aria-pressed',L.mid&&N[1].type===b.dataset.t));$('types').style.display=L.mid?'flex':'none'}
+function samp(p,k){const e=p,len=e.getTotalLength(),a=[];for(let i=0;i<=k;i++){const q=e.getPointAtLength(len*i/k);a.push([q.x,q.y])}return a}
+function dist(A,B){let s=0,m=0;A.forEach(([x,y])=>{let b=1e9;B.forEach(([u,v])=>{const dd=Math.hypot(x-u,y-v);if(dd<b)b=dd});s+=b;m=Math.max(m,b)});return[s/A.length,m]}
+function test(){const A=samp($('us'),60),B=samp($('tg'),60);const[a1,m1]=dist(A,B),[a2,m2]=dist(B,A);const av=(a1+a2)/2,mx=Math.max(m1,m2);
+ $('fb').textContent=av<9&&mx<22?'':'Jarak rata-rata ke jalur kuning: '+Math.round(av)+' (target di bawah 9)';
+ if(av<9&&mx<22){if(L.need&&N[1].type!==L.need){$('fb').innerHTML='Bentuknya sudah mirip, tapi coba gunakan jenis node yang diminta.';return}$('fb').innerHTML='<span style="color:#1f8a4c">Pas!</span> '+L.ok;lv++;MPI.progress({lv});if(lv<LV.length){setTimeout(load,2200)}else{win('Kamu sudah memahami tiga jenis node: <b>Cusp</b> untuk sudut tajam, <b>Smooth</b> untuk lengkung halus, dan <b>Symmetrical</b> untuk lengkung halus yang seimbang. Di CorelDRAW, pilih node dengan Shape Tool (F10), lalu klik jenisnya di Property Bar.');MPI.done({})}}}
+function load(){L=LV[lv];N=C(L.n);$('tg').setAttribute('d',L.tg);$('goal').innerHTML=L.t;$('lv').textContent=(lv+1)+'/3';$('fb').textContent='';draw()}
+function start(){lv=0;$('win').classList.remove('on');load()}
+function P(e){const m=$('nv').getScreenCTM().inverse(),q=$('nv').createSVGPoint();q.x=e.clientX;q.y=e.clientY;return q.matrixTransform(m)}
+$('nv').addEventListener('pointerdown',e=>{const t=e.target;if(t.dataset.h){dg={i:+t.dataset.i,h:t.dataset.h};$('nv').setPointerCapture(e.pointerId)}});
+$('nv').addEventListener('pointermove',e=>{if(!dg)return;const p=P(e),n=N[dg.i];n[dg.h]={x:Math.round(p.x),y:Math.round(p.y)};const o=dg.h==='hi'?'ho':'hi';
+ if(n[o]&&(n.type==='smooth'||n.type==='sym')){const dx=n.x-p.x,dy=n.y-p.y,dd=Math.hypot(dx,dy)||1,l=n.type==='sym'?dd:Math.hypot(n[o].x-n.x,n[o].y-n.y);n[o]={x:Math.round(n.x+dx/dd*l),y:Math.round(n.y+dy/dd*l)}}draw()});
+$('nv').addEventListener('pointerup',()=>{if(dg){dg=null;test()}});
+$('types').addEventListener('click',e=>{const t=e.target.dataset.t;if(!t||!L.mid)return;const n=N[1];n.type=t;if(t!=='cusp'){const dx=n.ho.x-n.hi.x,dy=n.ho.y-n.hi.y,dd=Math.hypot(dx,dy)||1;let li=Math.hypot(n.hi.x-n.x,n.hi.y-n.y),lo=Math.hypot(n.ho.x-n.x,n.ho.y-n.y);if(t==='sym')li=lo=(li+lo)/2;n.hi={x:Math.round(n.x-dx/dd*li),y:Math.round(n.y-dy/dd*li)};n.ho={x:Math.round(n.x+dx/dd*lo),y:Math.round(n.y+dy/dd*lo)}}draw();test()});
+$('rs').onclick=load;</script></body></html>

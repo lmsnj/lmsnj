@@ -1,0 +1,330 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Editor Logo Mini</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--ui:#eef1ef;--ui2:#dfe4e1}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:#fff;color:var(--ink);font:15px/1.4 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:10px;max-width:1000px;margin:auto}
+.mis{background:var(--y2);border-radius:12px;padding:8px 12px;margin-bottom:8px}
+.mis h3{margin:0 0 4px;font-size:16px}
+.mis ul{margin:4px 0 0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 12px}
+.mis li{font-weight:700}.mis li:before{content:"☐ ";color:var(--mute)}.mis li.ok{color:var(--g)}.mis li.ok:before{content:"☑ ";color:var(--g)}
+.app{border:2px solid var(--ui2);border-radius:12px;overflow:hidden;background:var(--ui)}
+.prop{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:5px 6px;background:#f7f9f8;border-bottom:1px solid var(--ui2);min-height:44px}
+.prop .lbl{font-size:12px;color:var(--mute);font-weight:800;margin:0 2px 0 6px}
+.prop button,.prop select,.prop input{font:700 13px Nunito,sans-serif;border:1px solid var(--ui2);background:#fff;border-radius:7px;padding:5px 8px;min-height:32px;cursor:pointer;color:var(--ink)}
+.prop button:hover{background:var(--g2)}.prop button.on{background:var(--g);color:#fff;border-color:var(--g)}
+.prop input[type=text]{width:170px;cursor:text}
+.sw{width:26px;height:26px;border-radius:6px;border:2px solid #999;display:inline-block;vertical-align:middle;background:#fff}
+.sw.none{background:linear-gradient(45deg,#fff 45%,#e53935 45%,#e53935 55%,#fff 55%)}
+.mid{display:grid;grid-template-columns:50px minmax(0,1fr) 34px}
+.tools{display:flex;flex-direction:column;gap:3px;padding:5px;background:#f7f9f8;border-right:1px solid var(--ui2)}
+.tools button{width:40px;height:40px;border:1px solid transparent;border-radius:8px;background:none;cursor:pointer;display:grid;place-items:center;padding:0}
+.tools button:hover{background:var(--g2)}.tools button.on{background:var(--g2);border-color:var(--g)}
+.tools svg{width:24px;height:24px}
+.stage{position:relative;background:#c9cfcb;touch-action:none}
+#cv{display:block;width:100%;height:auto;max-height:560px;user-select:none;-webkit-user-select:none}
+.pal{display:flex;flex-direction:column;gap:2px;padding:3px;background:#f7f9f8;border-left:1px solid var(--ui2)}
+.pal button{width:26px;height:22px;border:1px solid #888;border-radius:4px;cursor:pointer;padding:0}
+.stat{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:5px 10px;font-size:13px;background:#f7f9f8;border-top:1px solid var(--ui2);color:var(--mute)}
+.stat b{color:var(--ink)}
+.msg{margin-top:8px;border-radius:12px;padding:8px 12px;font-weight:700;display:none}
+.msg.on{display:block}.msg.info{background:var(--g2)}.msg.warn{background:#ffe3dc}.msg.good{background:var(--g);color:#fff}
+.btn{border:0;border-radius:10px;padding:8px 14px;font:800 15px Nunito,sans-serif;cursor:pointer;min-height:40px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+button:focus-visible{outline:3px solid var(--c);outline-offset:1px}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:9;padding:16px}
+.ov.on{display:grid}.ov .box{background:#fff;border-radius:14px;padding:14px;max-width:520px;width:100%}
+.ov img{max-width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+@media(max-width:640px){.mid{grid-template-columns:minmax(0,1fr)}.tools{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--ui2)}.pal{flex-direction:row;flex-wrap:wrap;border-left:0;border-top:1px solid var(--ui2)}}
+</style></head><body><div class="wrap">
+<div class="mis" id="mis"></div>
+<div class="app">
+ <div class="prop" id="prop"></div>
+ <div class="mid">
+  <div class="tools" id="tools" role="toolbar" aria-label="Toolbox"></div>
+  <div class="stage"><svg id="cv" viewBox="-30 -30 460 460" xmlns="http://www.w3.org/2000/svg">
+   <rect x="-30" y="-30" width="460" height="460" fill="#c9cfcb"/>
+   <rect x="3" y="4" width="400" height="400" fill="#9aa39d"/>
+   <rect x="0" y="0" width="400" height="400" fill="#fff"/>
+   <g id="tgt"></g><g id="objs"></g><g id="ovl"></g></svg></div>
+  <div class="pal" id="pal" aria-label="Palet warna"></div>
+ </div>
+ <div class="stat"><span id="st1">Pilih alat di toolbox kiri.</span><span id="st2"></span></div>
+</div>
+<div class="msg" id="msg" role="status"></div>
+<div class="btns" id="act"></div>
+<input type="file" id="file" accept="image/*" hidden>
+<div class="ov" id="ov"><div class="box"><b>Hasil logomu</b><p class="mute" id="ovt" style="margin:4px 0 8px;font-size:14px"></p><img id="ovimg" alt="Hasil logo"><div class="btns"><a class="btn" id="ovdl" download="logo-saya.png" href="#">Unduh PNG</a><a class="btn ghost" id="ovsvg" download="logo-saya.svg" href="#">Unduh SVG</a><button class="btn ghost" id="ovx">Tutup</button></div></div></div>
+</div>
+<script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script>
+<script>
+const NS='http://www.w3.org/2000/svg',cv=$('cv'),G=$('objs'),OV=$('ovl'),TG=$('tgt');
+const GRAY='#d9d9d9';
+const PAL=[null,'#000000','#ffffff','#9e9e9e','#e53935','#fb8c00','#ffd23f','#7cb342','#1f8a4c','#00897b','#1e88e5','#0d3b66','#8e24aa','#ec407a','#6d4c41','#f5e6c8'];
+const ICON={
+ pick:'<path d="M5 3l13 7-6 1.6L9 18z" fill="#173020"/>',
+ shape:'<path d="M4 18 C8 4 16 4 20 18" fill="none" stroke="#173020" stroke-width="1.6"/><rect x="2" y="16" width="4" height="4" fill="#fff" stroke="#173020"/><rect x="18" y="16" width="4" height="4" fill="#fff" stroke="#173020"/><path d="M11 10l7 4-3.5 1-1.5 3z" fill="#ef5b3f"/>',
+ bezier:'<path d="M3 20 C6 8 12 8 14 13 S19 18 21 6" fill="none" stroke="#173020" stroke-width="1.8"/><circle cx="3" cy="20" r="2" fill="#1f8a4c"/><circle cx="14" cy="13" r="2" fill="#1f8a4c"/><circle cx="21" cy="6" r="2" fill="#1f8a4c"/>',
+ pen:'<path d="M12 2l5 9-5 11-5-11z" fill="#173020"/><circle cx="12" cy="11" r="1.6" fill="#fff"/><path d="M12 12v9" stroke="#fff" stroke-width="1"/>',
+ rect:'<rect x="3" y="6" width="18" height="12" fill="none" stroke="#173020" stroke-width="2"/>',
+ ell:'<ellipse cx="12" cy="12" rx="9" ry="7" fill="none" stroke="#173020" stroke-width="2"/>',
+ poly:'<path d="M12 3l8.5 6.2-3.2 10H6.7L3.5 9.2z" fill="none" stroke="#173020" stroke-width="2"/>',
+ text:'<path d="M5 5h14v3M12 5v14M9 19h6" fill="none" stroke="#173020" stroke-width="2.2"/>'};
+const TOOLS=[['pick','Pick Tool (pilih, geser, ubah ukuran) · Spasi'],['shape','Shape Tool (edit node) · F10'],['bezier','Bezier Tool (klik = garis lurus, klik-tarik = lengkung)'],['pen','Pen Tool (seperti Bezier, dengan pratinjau garis)'],['rect','Rectangle Tool · F6 (tahan Ctrl = persegi)'],['ell','Ellipse Tool · F7 (tahan Ctrl = lingkaran)'],['poly','Polygon Tool · Y'],['text','Text Tool · F8']];
+let O=[],sel=null,tool='pick',nsel=-1,undo=[],redo=[],drag=null,draw=null,cur=null,palMode='fill',flags={},M=null,doneSent=false,sketchHidden=false,uid=1,lastSw=2,nextFont='sans';
+const P=(x,y)=>({x,y});const clone=o=>JSON.parse(JSON.stringify(o));
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function pt(e){const m=cv.getScreenCTM().inverse(),q=cv.createSVGPoint();q.x=e.clientX;q.y=e.clientY;const r=q.matrixTransform(m);return P(r.x,r.y)}
+function px(){const m=cv.getScreenCTM();return 1/(m?m.a:1)}
+function save(){undo.push(JSON.stringify(O));if(undo.length>60)undo.shift();redo=[]}
+function byId(id){return O.find(o=>o.id===id)}
+function S(){return sel?byId(sel):null}
+/* ---------- geometri ---------- */
+function pathD(o){const n=o.nodes;if(!n.length)return'';let d='M'+r(n[0].x)+' '+r(n[0].y);const L=n.length,segs=o.closed?L:L-1;
+ for(let i=0;i<segs;i++){const a=n[i],b=n[(i+1)%L];if(a.ho||b.hi){const c1=a.ho||a,c2=b.hi||b;d+=' C'+r(c1.x)+' '+r(c1.y)+' '+r(c2.x)+' '+r(c2.y)+' '+r(b.x)+' '+r(b.y)}else d+=' L'+r(b.x)+' '+r(b.y)}
+ return d+(o.closed?' Z':'')}
+function r(v){return Math.round(v*10)/10}
+function toD(o){if(o.t==='rect'){const b=nb(o);return`M${b.x} ${b.y}h${b.w}v${b.h}h${-b.w}Z`}
+ if(o.t==='ell')return`M${o.cx-o.rx} ${o.cy}A${o.rx} ${o.ry} 0 1 0 ${o.cx+o.rx} ${o.cy}A${o.rx} ${o.ry} 0 1 0 ${o.cx-o.rx} ${o.cy}Z`;
+ if(o.t==='path')return pathD(o);return''}
+function nb(o){return{x:Math.min(o.x,o.x+o.w),y:Math.min(o.y,o.y+o.h),w:Math.abs(o.w),h:Math.abs(o.h)}}
+function bbox(o){if(o.t==='rect'||o.t==='img')return nb(o);if(o.t==='ell')return{x:o.cx-o.rx,y:o.cy-o.ry,w:2*o.rx,h:2*o.ry};
+ if(o.t==='path'){const xs=[],ys=[];o.nodes.forEach(n=>{xs.push(n.x);ys.push(n.y);[n.hi,n.ho].forEach(h=>{if(h){xs.push(h.x);ys.push(h.y)}})});const x=Math.min(...xs),y=Math.min(...ys);return{x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y}}
+ if(o.t==='text'){const e=G.querySelector('[data-id="'+o.id+'"]');if(e){const b=e.getBBox();return{x:b.x,y:b.y,w:b.width,h:b.height}}return{x:o.x,y:o.y-o.size,w:o.size*3,h:o.size}}}
+function mapObj(o,f,sx,sy){const m=p=>p&&f(p);
+ if(o.t==='rect'||o.t==='img'){const a=f(P(o.x,o.y)),b=f(P(o.x+o.w,o.y+o.h));o.x=a.x;o.y=a.y;o.w=b.x-a.x;o.h=b.y-a.y}
+ else if(o.t==='ell'){const c=f(P(o.cx,o.cy));o.cx=c.x;o.cy=c.y;o.rx=Math.abs(o.rx*sx);o.ry=Math.abs(o.ry*sy)}
+ else if(o.t==='path')o.nodes.forEach(n=>{const q=f(n);const hi=m(n.hi),ho=m(n.ho);n.x=q.x;n.y=q.y;n.hi=hi;n.ho=ho});
+ else if(o.t==='text'){const q=f(P(o.x,o.y));o.x=q.x;o.y=q.y;o.size=Math.max(6,o.size*Math.abs(sy))}}
+function boxMap(a,b){const sx=a.w?b.w/a.w:1,sy=a.h?b.h/a.h:1;return[p=>P(b.x+(p.x-a.x)*sx,b.y+(p.y-a.y)*sy),sx,sy]}
+/* ---------- render ---------- */
+function render(){G.innerHTML='';O.forEach(o=>{let e;const a={'data-id':o.id,'pointer-events':o.t==='img'?'all':'visible'};
+ if(o.t==='img'){if(sketchHidden)return;e=el('image',Object.assign(a,{href:o.href,x:nb(o).x,y:nb(o).y,width:nb(o).w,height:nb(o).h,opacity:o.op||.55,preserveAspectRatio:'none'}),G)}
+ else if(o.t==='text'){e=el('text',Object.assign(a,{x:o.x,y:o.y,'font-size':o.size,'font-family':FONTS[o.font]||FONTS.sans,'font-weight':o.font==='script'?400:800,fill:o.fill||'none',stroke:o.stroke||'none','stroke-width':o.stroke?o.sw:0,'text-anchor':'middle'}),G);e.textContent=o.txt}
+ else e=el('path',Object.assign(a,{d:toD(o),fill:o.fill||'none',stroke:o.stroke||'none','stroke-width':o.stroke?o.sw:0,'stroke-linejoin':'round','fill-rule':'nonzero'}),G);
+ e.style.cursor=tool==='pick'?'move':'default'});renderOv();updProp();check()}
+const FONTS={sans:'"Segoe UI",Arial,Helvetica,sans-serif',serif:'Georgia,"Times New Roman",serif',script:'"Segoe Script","Brush Script MT","Comic Sans MS",cursive'};
+function renderOv(){OV.innerHTML='';const k=px(),o=S();
+ if(draw&&draw.o){const pth=el('path',{d:pathD(draw.o),fill:'none',stroke:'#1e88e5','stroke-width':1.5*k},OV);
+  const n=draw.o.nodes;if(tool==='pen'&&cur&&n.length&&!draw.dn){const a=n[n.length-1];const tmp={nodes:[a,{x:cur.x,y:cur.y}],closed:false};el('path',{d:pathD(tmp),fill:'none',stroke:'#1e88e5','stroke-width':1.2*k,'stroke-dasharray':4*k+' '+3*k},OV)}
+  n.forEach((q,i)=>el('rect',{x:q.x-3.5*k,y:q.y-3.5*k,width:7*k,height:7*k,fill:i===0?'#ffd23f':'#fff',stroke:'#1e88e5','stroke-width':k},OV));
+  const L=n[n.length-1];if(L&&L.ho){el('line',{x1:L.hi.x,y1:L.hi.y,x2:L.ho.x,y2:L.ho.y,stroke:'#1e88e5','stroke-width':k},OV);[L.hi,L.ho].forEach(h=>el('circle',{cx:h.x,cy:h.y,r:3.5*k,fill:'#1e88e5'},OV))}
+  if(n.length>=2&&cur&&Math.hypot(cur.x-n[0].x,cur.y-n[0].y)<10*k)el('circle',{cx:n[0].x,cy:n[0].y,r:8*k,fill:'none',stroke:'#ef5b3f','stroke-width':2*k},OV)}
+ if(drag&&drag.rb){const b=drag.rb;el(drag.rb.t==='ell'?'ellipse':'rect',drag.rb.t==='ell'?{cx:b.x+b.w/2,cy:b.y+b.h/2,rx:Math.abs(b.w/2),ry:Math.abs(b.h/2),fill:'none',stroke:'#1e88e5','stroke-width':1.5*k}:{x:Math.min(b.x,b.x+b.w),y:Math.min(b.y,b.y+b.h),width:Math.abs(b.w),height:Math.abs(b.h),fill:'none',stroke:'#1e88e5','stroke-width':1.5*k},OV)}
+ if(!o)return;const b=bbox(o);
+ if(tool==='shape'&&o.t==='path'){el('path',{d:pathD(o),fill:'none',stroke:'#1e88e5','stroke-width':k,'pointer-events':'none'},OV);
+  o.nodes.forEach((n,i)=>{if(i===nsel)[n.hi,n.ho].forEach((h,j)=>{if(!h)return;el('line',{x1:n.x,y1:n.y,x2:h.x,y2:h.y,stroke:'#1e88e5','stroke-width':k,'pointer-events':'none'},OV);el('circle',{cx:h.x,cy:h.y,r:5*k,fill:'#1e88e5','data-h':j?'ho':'hi',style:'cursor:pointer'},OV)});
+   const t=n.type==='cusp'?'rect':'circle',sz=5*k;el(t,t==='rect'?{x:n.x-sz,y:n.y-sz,width:2*sz,height:2*sz,fill:i===nsel?'#1e88e5':'#fff',stroke:'#1e88e5','stroke-width':1.3*k,'data-n':i,style:'cursor:pointer'}:{cx:n.x,cy:n.y,r:sz*1.1,fill:i===nsel?'#1e88e5':'#fff',stroke:'#1e88e5','stroke-width':1.3*k,'data-n':i,style:'cursor:pointer'},OV)});return}
+ el('rect',{x:b.x,y:b.y,width:b.w,height:b.h,fill:'none',stroke:'#1e88e5','stroke-width':k,'stroke-dasharray':4*k+' '+3*k,'pointer-events':'none'},OV);
+ if(tool!=='pick')return;
+ if(o.lock){el('text',{x:b.x+b.w/2,y:b.y-6*k,'font-size':13*k,'text-anchor':'middle',fill:'#1e88e5'},OV).textContent='🔒 terkunci';return}
+ [['nw',b.x,b.y],['ne',b.x+b.w,b.y],['sw',b.x,b.y+b.h],['se',b.x+b.w,b.y+b.h]].forEach(([h,x,y])=>el('rect',{x:x-5*k,y:y-5*k,width:10*k,height:10*k,fill:'#000','data-hd':h,style:'cursor:'+(h==='nw'||h==='se'?'nwse':'nesw')+'-resize'},OV));
+ el('text',{x:b.x+b.w/2,y:b.y+b.h/2,'font-size':16*k,'text-anchor':'middle','dominant-baseline':'middle',fill:'#1e88e5','pointer-events':'none'},OV).textContent='×'}
+/* ---------- property bar ---------- */
+function updProp(){const o=S(),pr=$('prop');let h='';
+ const sw=c=>`<span class="sw ${c?'':'none'}" style="${c?'background:'+c:''}"></span>`;
+ if(tool==='shape'){h+='<span class="lbl">Node</span>';
+  if(o&&o.t==='path'&&nsel>=0){const n=o.nodes[nsel];['cusp','smooth','sym'].forEach(t=>h+=`<button data-a="nt" data-v="${t}" class="${n.type===t?'on':''}">${{cusp:'Cusp (tajam)',smooth:'Smooth (halus)',sym:'Symmetrical'}[t]}</button>`);h+='<button data-a="ntline">Jadikan lurus</button><button data-a="ndel">Hapus node</button>'}
+  else h+='<span class="mute" style="font-size:13px">Klik objek kurva, lalu klik salah satu node (kotak/bulat).</span>';
+  if(o&&o.t==='path')h+=`<button data-a="close">${o.closed?'Buka path':'Tutup path'}</button><span class="lbl">Node: <b>${o.nodes.length}</b></span>`}
+ else if(o){h+=`<span class="lbl">Isi</span>${sw(o.fill)}<span class="lbl">Garis</span>${sw(o.stroke)}`;
+  if(o.t!=='img'){h+='<select data-a="sw" title="Tebal garis tepi">'+[0,1,2,4,6,10].map(v=>`<option value="${v}" ${(o.stroke?o.sw:0)==v?'selected':''}>${v?v+' pt':'tanpa garis'}</option>`).join('')+'</select>'}
+  if(o.t==='text'){h+=`<input type="text" data-a="txt" value="${o.txt.replace(/"/g,'&quot;')}" aria-label="Isi teks"><select data-a="font">`+['sans','serif','script'].map(f=>`<option value="${f}" ${o.font===f?'selected':''}>${{sans:'Sans serif',serif:'Serif',script:'Script'}[f]}</option>`).join('')+'</select>'}
+  h+='<button data-a="dup" title="Ctrl+D">Duplikat</button><button data-a="front">Ke depan</button><button data-a="back">Ke belakang</button><button data-a="flip">Cermin</button>';
+  if(o.t==='rect'||o.t==='ell')h+='<button data-a="curve" title="Ctrl+Q">Ubah ke kurva</button>';
+  h+=`<button data-a="lock">${o.lock?'🔓 Buka kunci':'🔒 Kunci'}</button><button data-a="del">Hapus</button>`}
+ else{h+='<span class="lbl">Halaman 400×400</span><button data-a="img">Pasang sketsa (gambar)</button>';if(O.some(o=>o.t==='img'))h+=`<button data-a="hide">${sketchHidden?'Tampilkan sketsa':'Sembunyikan sketsa'}</button>`;
+  h+=`<span class="lbl">Palet mengisi</span><button data-a="pm" class="${palMode==='fill'?'on':''}" data-v="fill">Isi</button><button data-a="pm" class="${palMode==='stroke'?'on':''}" data-v="stroke">Garis</button>`}
+ h+='<span style="flex:1"></span><button data-a="undo" title="Ctrl+Z">↶</button><button data-a="redo" title="Ctrl+Y">↷</button>';
+ if(draw)h+='<button data-a="finish" class="on">Selesai menggambar (Enter)</button>';
+ pr.innerHTML=h;
+ const n=O.filter(o=>o.t!=='img').length;$('st2').innerHTML=`Objek: <b>${n}</b>`+(o?` · Terpilih: <b>${NAMA[o.t]}</b>${o.t==='path'?' ('+o.nodes.length+' node)':''}`:'')}
+const NAMA={rect:'Persegi panjang',ell:'Elips',path:'Kurva',text:'Teks',img:'Sketsa/gambar'};
+$('prop').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;act(b.dataset.a,b.dataset.v)});
+$('prop').addEventListener('change',e=>{const t=e.target,o=S();if(!o)return;save();if(t.dataset.a==='sw'){const v=+t.value;if(v===0)o.stroke=null;else{if(!o.stroke)o.stroke='#000000';o.sw=v;lastSw=v}flags.outline=true}if(t.dataset.a==='font'){o.font=t.value}render()});
+$('prop').addEventListener('input',e=>{const t=e.target,o=S();if(t.dataset.a==='txt'&&o){o.txt=t.value;const p=t.selectionStart;render();const i=$('prop').querySelector('[data-a=txt]');if(i){i.focus();i.setSelectionRange(p,p)}}});
+function act(a,v){const o=S();
+ if(a==='undo'){if(!undo.length)return;redo.push(JSON.stringify(O));O=JSON.parse(undo.pop());if(sel&&!S())sel=null;nsel=-1;render();return}
+ if(a==='redo'){if(!redo.length)return;undo.push(JSON.stringify(O));O=JSON.parse(redo.pop());render();return}
+ if(a==='finish'){finishDraw();return}
+ if(a==='pm'){palMode=v;render();return}
+ if(a==='img'){$('file').click();return}
+ if(a==='hide'){sketchHidden=!sketchHidden;render();return}
+ if(!o)return;
+ if(a==='nt'){save();setType(o,nsel,v);flags.nodetype=true;render();return}
+ if(a==='ntline'){save();const n=o.nodes[nsel];n.hi=n.ho=null;n.type='cusp';render();return}
+ if(a==='ndel'){delNode(o,nsel);return}
+ if(a==='close'){save();o.closed=!o.closed;render();return}
+ save();
+ if(a==='dup'){const c=clone(o);c.id=uid++;delete c.preset;mapObj(c,p=>P(p.x+15,p.y+15),1,1);O.push(c);sel=c.id;flags.dup=true}
+ if(a==='front'){O=O.filter(x=>x!==o);O.push(o);flags.order=true}
+ if(a==='back'){O=O.filter(x=>x!==o);const i=O.findIndex(x=>x.t!=='img');O.splice(i<0?O.length:i,0,o);flags.order=true}
+ if(a==='flip'){const b=bbox(o);mapObj(o,p=>P(2*b.x+b.w-p.x,p.y),-1,1);if(o.t==='rect'){const c=nb(o);o.x=c.x;o.w=c.w}}
+ if(a==='curve')toCurve(o);
+ if(a==='lock'){o.lock=!o.lock;flags.lock=flags.lock||o.lock}
+ if(a==='del'){O=O.filter(x=>x!==o);sel=null}
+ render()}
+function toCurve(o){let nodes;const k=0.5523;
+ if(o.t==='rect'){const b=nb(o);nodes=[P(b.x,b.y),P(b.x+b.w,b.y),P(b.x+b.w,b.y+b.h),P(b.x,b.y+b.h)].map(p=>({x:p.x,y:p.y,hi:null,ho:null,type:'cusp'}))}
+ else if(o.t==='ell'){const{cx,cy,rx,ry}=o;nodes=[[cx,cy-ry,1,0],[cx+rx,cy,0,1],[cx,cy+ry,-1,0],[cx-rx,cy,0,-1]].map(([x,y,dx,dy])=>({x,y,hi:P(x-dx*rx*k,y-dy*ry*k),ho:P(x+dx*rx*k,y+dy*ry*k),type:'sym'}))}
+ else return;const keep={id:o.id,fill:o.fill,stroke:o.stroke,sw:o.sw,lock:o.lock,src:o.t,part:o.part};for(const k2 in o)delete o[k2];Object.assign(o,keep,{t:'path',nodes,closed:true});flags.curve=true}
+function setType(o,i,t){const n=o.nodes[i],L=o.nodes.length;n.type=t;if(t==='cusp')return;
+ const pv=o.nodes[(i-1+L)%L],nx=o.nodes[(i+1)%L];const hasPrev=o.closed||i>0,hasNext=o.closed||i<L-1;
+ let dx,dy;if(n.hi&&n.ho){dx=n.ho.x-n.hi.x;dy=n.ho.y-n.hi.y}else{dx=(hasNext?nx.x:n.x)-(hasPrev?pv.x:n.x);dy=(hasNext?nx.y:n.y)-(hasPrev?pv.y:n.y)}
+ const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;let li=n.hi?Math.hypot(n.hi.x-n.x,n.hi.y-n.y):Math.hypot(pv.x-n.x,pv.y-n.y)/3,lo=n.ho?Math.hypot(n.ho.x-n.x,n.ho.y-n.y):Math.hypot(nx.x-n.x,nx.y-n.y)/3;
+ if(t==='sym')li=lo=(li+lo)/2;n.hi=P(n.x-dx*li,n.y-dy*li);n.ho=P(n.x+dx*lo,n.y+dy*lo)}
+function delNode(o,i){if(i<0||o.nodes.length<=2){say('Kurva minimal punya 2 node.','warn');return}save();o.nodes.splice(i,1);nsel=-1;flags.nodedel=true;render()}
+/* ---------- palet & toolbox ---------- */
+$('pal').innerHTML=PAL.map((c,i)=>`<button data-i="${i}" title="${c?c+' · klik kiri = isi, klik kanan = garis':'Tanpa warna'}" style="${c?'background:'+c:''}" class="${c?'':'sw none'}" aria-label="${c||'tanpa warna'}"></button>`).join('');
+function palApply(i,mode){const o=S();if(!o){say('Pilih objek dulu dengan Pick Tool, lalu klik warna.','info');return}if(o.t==='img')return;save();const c=PAL[i];
+ if(mode==='fill'){o.fill=c;if(c)flags.fill=true}else{o.stroke=c;if(c&&!o.sw)o.sw=lastSw;flags.outline=true}render()}
+$('pal').addEventListener('click',e=>{const b=e.target.closest('button');if(b)palApply(+b.dataset.i,palMode)});
+$('pal').addEventListener('contextmenu',e=>{const b=e.target.closest('button');if(!b)return;e.preventDefault();palApply(+b.dataset.i,'stroke')});
+$('tools').innerHTML=TOOLS.map(([k,t])=>`<button data-t="${k}" title="${t}" aria-label="${t}"><svg viewBox="0 0 24 24">${ICON[k]}</svg></button>`).join('');
+$('tools').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setTool(b.dataset.t)});
+const HINT={pick:'Pick Tool: klik objek untuk memilih, tarik untuk menggeser, tarik kotak hitam di sudut untuk mengubah ukuran.',shape:'Shape Tool: klik kurva, lalu tarik node atau tuas biru. Klik ganda di garis = tambah node, klik ganda node = hapus.',bezier:'Bezier: klik = titik sudut (garis lurus). Klik sambil tarik = titik lengkung. Klik node kuning pertama untuk menutup.',pen:'Pen: sama seperti Bezier, tapi garis berikutnya terlihat dulu (garis putus-putus) sebelum kamu klik.',rect:'Rectangle: tarik di halaman. Tahan Ctrl untuk persegi sempurna.',ell:'Ellipse: tarik di halaman. Tahan Ctrl untuk lingkaran sempurna.',poly:'Polygon: tarik di halaman untuk membuat segi lima.',text:'Text: klik di halaman, lalu ketik isi teks di property bar atas.'};
+function setTool(t){if(draw)finishDraw();tool=t;nsel=-1;if(t==='shape'&&S()&&S().t!=='path'&&S().t!=='img'&&S().t!=='text')say('Objek ini masih bentuk dasar. Klik "Ubah ke kurva" (Ctrl+Q) dulu supaya node-nya bisa diedit.','info');
+ [...$('tools').children].forEach(b=>b.classList.toggle('on',b.dataset.t===t));$('st1').textContent=HINT[t];cv.style.cursor=t==='pick'||t==='shape'?'default':'crosshair';render()}
+/* ---------- pointer ---------- */
+function hitObj(e){const t=e.target.closest&&e.target.closest('[data-id]');return t?byId(+t.dataset.id):null}
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('pointerdown',e=>{if(e.button===2)return;const p=pt(e);cv.setPointerCapture(e.pointerId);const k=px();
+ if(tool==='bezier'||tool==='pen'){if(!draw){save();const o={id:uid++,t:'path',nodes:[],closed:false,fill:null,stroke:'#000000',sw:2,src:tool};draw={o};O.push(o)}
+  const n=draw.o.nodes;if(n.length>=2&&Math.hypot(p.x-n[0].x,p.y-n[0].y)<10*k){draw.o.closed=true;finishDraw();return}
+  n.push({x:p.x,y:p.y,hi:null,ho:null,type:'cusp'});draw.dn=P(p.x,p.y);render();return}
+ if(tool==='rect'||tool==='ell'||tool==='poly'){drag={rb:{t:tool,x:p.x,y:p.y,w:0,h:0},p0:p};renderOv();return}
+ if(tool==='text'){save();const o={id:uid++,t:'text',x:p.x,y:p.y,txt:'Teks',size:28,font:nextFont,fill:'#000000',stroke:null,sw:2};O.push(o);sel=o.id;setTool('pick');setTimeout(()=>{const i=$('prop').querySelector('[data-a=txt]');if(i){i.focus();i.select()}},30);return}
+ if(tool==='shape'){const o=S();const hd=e.target.dataset&&e.target.dataset.h,nn=e.target.dataset&&e.target.dataset.n;
+  if(o&&hd){save();drag={h:hd,o};return}
+  if(o&&nn!==undefined){nsel=+nn;save();const q=o.nodes[nsel];drag={node:nsel,o,p0:p,s:clone(q)};render();return}
+  const h=hitObj(e);if(h){if(h.id!==sel){sel=h.id;nsel=-1;if(h.t!=='path'&&h.t!=='img')say('Objek ini masih bentuk dasar. Klik "Ubah ke kurva" (Ctrl+Q) dulu supaya node-nya bisa diedit.','info')}render()}else{sel=null;nsel=-1;render()}return}
+ /* pick */
+ const hd=e.target.dataset&&e.target.dataset.hd,o=S();
+ if(o&&hd&&!o.lock){save();drag={hd,o,b0:bbox(o),s:clone(o)};return}
+ const h=hitObj(e);if(h){sel=h.id;if(!h.lock){save();drag={mv:true,o:h,p0:p,s:clone(h)}}render()}else{sel=null;render()}});
+cv.addEventListener('pointermove',e=>{const p=pt(e);cur=p;
+ if(draw){if(draw.dn){const n=draw.o.nodes[draw.o.nodes.length-1],dx=p.x-n.x,dy=p.y-n.y;if(Math.hypot(dx,dy)>3*px()){n.ho=P(p.x,p.y);n.hi=P(n.x-dx,n.y-dy);n.type='sym'}}renderOv();return}
+ if(!drag)return;
+ if(drag.rb){let w=p.x-drag.p0.x,h=p.y-drag.p0.y;if(e.ctrlKey||e.shiftKey||drag.rb.t==='poly'){const m=Math.max(Math.abs(w),Math.abs(h));w=Math.sign(w||1)*m;h=Math.sign(h||1)*m}drag.rb.w=w;drag.rb.h=h;renderOv();return}
+ if(drag.mv){const o=drag.o,s=drag.s,dx=p.x-drag.p0.x,dy=p.y-drag.p0.y;Object.assign(o,clone(s));mapObj(o,q=>P(q.x+dx,q.y+dy),1,1);render();return}
+ if(drag.hd){const b=drag.b0,o=drag.o;let x0=b.x,y0=b.y,x1=b.x+b.w,y1=b.y+b.h;if(drag.hd.includes('w'))x0=p.x;else x1=p.x;if(drag.hd.includes('n'))y0=p.y;else y1=p.y;
+  if(o.t==='text'||e.ctrlKey||e.shiftKey){const s=Math.max(Math.abs(x1-x0)/b.w,Math.abs(y1-y0)/b.h);if(drag.hd.includes('w'))x0=x1-b.w*s;else x1=x0+b.w*s;if(drag.hd.includes('n'))y0=y1-b.h*s;else y1=y0+b.h*s}
+  if(Math.abs(x1-x0)<4||Math.abs(y1-y0)<4)return;Object.assign(o,clone(drag.s));const nb2={x:Math.min(x0,x1),y:Math.min(y0,y1),w:Math.abs(x1-x0),h:Math.abs(y1-y0)};const[f,sx,sy]=boxMap(b,nb2);mapObj(o,f,sx,sy);render();return}
+ if(drag.node!==undefined){const o=drag.o,s=drag.s,q=o.nodes[drag.node],dx=p.x-drag.p0.x,dy=p.y-drag.p0.y;q.x=s.x+dx;q.y=s.y+dy;q.hi=s.hi&&P(s.hi.x+dx,s.hi.y+dy);q.ho=s.ho&&P(s.ho.x+dx,s.ho.y+dy);flags.nodemove=true;render();return}
+ if(drag.h){const o=drag.o,n=o.nodes[nsel];n[drag.h]=P(p.x,p.y);const ot=drag.h==='hi'?'ho':'hi';
+  if(n.type!=='cusp'&&n[ot]){const dx=n.x-p.x,dy=n.y-p.y,d=Math.hypot(dx,dy)||1;const l=n.type==='sym'?d:Math.hypot(n[ot].x-n.x,n[ot].y-n.y);n[ot]=P(n.x+dx/d*l,n.y+dy/d*l)}flags.nodemove=true;render()}});
+cv.addEventListener('pointerup',e=>{const p=pt(e);
+ if(draw){draw.dn=null;renderOv();updProp();return}
+ if(drag&&drag.rb){const b=drag.rb;drag=null;if(Math.abs(b.w)<6||Math.abs(b.h)<6){renderOv();say('Tarik (klik sambil geser) untuk menggambar bentuk.','info');return}save();let o;
+  if(b.t==='rect')o={t:'rect',x:Math.min(b.x,b.x+b.w),y:Math.min(b.y,b.y+b.h),w:Math.abs(b.w),h:Math.abs(b.h)};
+  else if(b.t==='ell')o={t:'ell',cx:b.x+b.w/2,cy:b.y+b.h/2,rx:Math.abs(b.w/2),ry:Math.abs(b.h/2)};
+  else{const cx=b.x+b.w/2,cy=b.y+b.h/2,R=Math.abs(b.w/2);o={t:'path',closed:true,src:'poly',nodes:[0,1,2,3,4].map(i=>{const a=-Math.PI/2+i*2*Math.PI/5;return{x:cx+R*Math.cos(a),y:cy+R*Math.sin(a),hi:null,ho:null,type:'cusp'}})}}
+  Object.assign(o,{id:uid++,fill:null,stroke:'#000000',sw:2});O.push(o);sel=o.id;flags[b.t]=true;render();return}
+ drag=null});
+cv.addEventListener('dblclick',e=>{if(draw){finishDraw();return}if(tool!=='shape')return;const o=S();if(!o||o.t!=='path')return;const tg=document.elementFromPoint(e.clientX,e.clientY);
+ if(tg&&tg.dataset&&tg.dataset.n!==undefined){delNode(o,+tg.dataset.n);return}addNode(o,pt(e))});
+function bz(a,b,t){const c1=a.ho||a,c2=b.hi||b,u=1-t;return P(u*u*u*a.x+3*u*u*t*c1.x+3*u*t*t*c2.x+t*t*t*b.x,u*u*u*a.y+3*u*u*t*c1.y+3*u*t*t*c2.y+t*t*t*b.y)}
+function addNode(o,p){const n=o.nodes,L=n.length,segs=o.closed?L:L-1;let best=1e9,bi=-1,bt=0;
+ for(let i=0;i<segs;i++)for(let s=1;s<40;s++){const t=s/40,q=bz(n[i],n[(i+1)%L],t),d=Math.hypot(q.x-p.x,q.y-p.y);if(d<best){best=d;bi=i;bt=t}}
+ if(best>12*px()){say('Klik ganda tepat di garis kurva untuk menambah node.','info');return}save();const a=n[bi],b=n[(bi+1)%L];let nn;
+ if(!a.ho&&!b.hi){nn={x:a.x+(b.x-a.x)*bt,y:a.y+(b.y-a.y)*bt,hi:null,ho:null,type:'cusp'}}
+ else{const L2=(p,q,t)=>P(p.x+(q.x-p.x)*t,p.y+(q.y-p.y)*t),P1=a.ho||P(a.x,a.y),P2=b.hi||P(b.x,b.y),q01=L2(a,P1,bt),q12=L2(P1,P2,bt),q23=L2(P2,b,bt),q012=L2(q01,q12,bt),q123=L2(q12,q23,bt),m=L2(q012,q123,bt);
+  a.ho=q01;b.hi=q23;nn={x:m.x,y:m.y,hi:q012,ho:q123,type:'smooth'}}
+ n.splice(bi+1,0,nn);nsel=bi+1;flags.nodeadd=true;render()}
+function finishDraw(){if(!draw)return;const o=draw.o;draw=null;if(o.nodes.length<2){O=O.filter(x=>x!==o)}else{sel=o.id;flags[o.src]=(flags[o.src]||0)+1;if(o.closed)flags.closed=true}render()}
+document.addEventListener('keydown',e=>{const tg=e.target.tagName;if(tg==='INPUT'||tg==='SELECT')return;const k=e.key,c=e.ctrlKey||e.metaKey;
+ if(c&&k.toLowerCase()==='z'){e.preventDefault();act('undo')}else if(c&&k.toLowerCase()==='y'){e.preventDefault();act('redo')}
+ else if(c&&k.toLowerCase()==='d'){e.preventDefault();act('dup')}else if(c&&k.toLowerCase()==='q'){e.preventDefault();act('curve')}
+ else if(k==='Enter'||k==='Escape'){if(draw)finishDraw();else if(k==='Escape'){sel=null;render()}}
+ else if(k==='Delete'||k==='Backspace'){e.preventDefault();if(tool==='shape'&&nsel>=0&&S())delNode(S(),nsel);else act('del')}
+ else if(k==='F10'){e.preventDefault();setTool('shape')}else if(k==='F6'){e.preventDefault();setTool('rect')}else if(k==='F7'){e.preventDefault();setTool('ell')}else if(k==='F8'){e.preventDefault();setTool('text')}
+ else if(k===' '&&!draw){e.preventDefault();setTool(tool==='pick'?'shape':'pick')}else if(k==='y'||k==='Y')setTool('poly')});
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{save();const s=Math.min(360/im.width,360/im.height),w=im.width*s,h=im.height*s;const o={id:uid++,t:'img',href:rd.result,x:200-w/2,y:200-h/2,w,h,op:.5,lock:false};const i=O.findIndex(x=>x.t!=='img');O.splice(i<0?O.length:i,0,o);sel=o.id;setTool('pick');say('Sketsa terpasang. Atur ukuran dan posisinya, lalu klik 🔒 Kunci supaya tidak bergeser saat menjiplak.','info')};im.src=rd.result};rd.readAsDataURL(f);e.target.value=''};
+/* ---------- pesan, ekspor ---------- */
+function say(t,c){const m=$('msg');m.className='msg on '+(c||'info');m.innerHTML=t}
+function svgOut(withImg){let s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="800" height="800"><rect width="400" height="400" fill="#fff"/>';
+ O.forEach(o=>{if(o.t==='img'){if(withImg)s+=`<image href="${o.href}" x="${nb(o).x}" y="${nb(o).y}" width="${nb(o).w}" height="${nb(o).h}" opacity="${o.op||.5}" preserveAspectRatio="none"/>`;return}
+  const st=`fill="${o.fill||'none'}" stroke="${o.stroke||'none'}" stroke-width="${o.stroke?o.sw:0}" stroke-linejoin="round"`;
+  if(o.t==='text')s+=`<text x="${o.x}" y="${o.y}" font-size="${o.size}" font-family='${FONTS[o.font]}' font-weight="${o.font==='script'?400:800}" text-anchor="middle" ${st}>${o.txt.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text>`;else s+=`<path d="${toD(o)}" ${st}/>`});return s+'</svg>'}
+function exportArt(){const s=svgOut(false),url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);$('ovsvg').href=url;const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=800;const x=c.getContext('2d');x.drawImage(im,0,0,800,800);let png=url;try{png=c.toDataURL('image/png')}catch(er){}$('ovimg').src=png;$('ovdl').href=png;$('ov').classList.add('on')};im.src=url;
+ $('ovt').textContent='Sketsa tidak ikut tersimpan. Kalau tombol unduh tidak bereaksi, klik kanan gambar lalu pilih "Simpan gambar sebagai...". Kumpulkan sebagai tugas di LMS.';flags.export=true;check()}
+$('ovx').onclick=()=>$('ov').classList.remove('on');
+/* ---------- pengecekan bentuk (raster IoU) ---------- */
+const MS=140,mc=document.createElement('canvas');mc.width=mc.height=MS;const mx=mc.getContext('2d',{willReadFrequently:true});
+function mask(ds,b){mx.setTransform(1,0,0,1,0,0);mx.clearRect(0,0,MS,MS);const k=MS/400;if(b)mx.setTransform(k*b.w/400,0,0,k*b.h/400,k*b.x,k*b.y);else mx.setTransform(k,0,0,k,0,0);mx.fillStyle='#000';ds.forEach(d=>{try{mx.fill(new Path2D(d))}catch(er){}});const a=mx.getImageData(0,0,MS,MS).data,m=new Uint8Array(MS*MS);for(let i=0;i<m.length;i++)m[i]=a[i*4+3]>100?1:0;return m}
+function iou(a,b){let I=0,U=0;for(let i=0;i<a.length;i++){if(a[i]&&b[i])I++;if(a[i]||b[i])U++}return U?I/U:0}
+function skBox(){const s=O.find(o=>o.sk);return s?nb(s):null}
+function bestFit(td,filter,box){const tm=mask([td],box);let best=0,bo=null;O.forEach(o=>{if(o.t==='img'||o.t==='text'||o.preset||(filter&&!filter(o)))return;const v=iou(tm,mask([toD(o)]));if(v>best){best=v;bo=o}});return[best,bo]}
+/* ---------- misi ---------- */
+const SH={
+ segitiga:{d:'M200 70 L330 310 L70 310 Z',nm:'Segitiga (garis lurus)',tip:'Pakai klik biasa di setiap sudut, lalu klik titik kuning pertama.',min:.86},
+ tetes:{d:'M200 60 C230 120 300 190 300 250 C300 305 255 340 200 340 C145 340 100 305 100 250 C100 190 170 120 200 60 Z',nm:'Tetes air (sudut + lengkung)',tip:'Puncak = klik biasa (tajam). Bagian bawah = klik sambil tarik (lengkung).',min:.84},
+ daun:{d:'M80 300 C100 170 220 90 330 80 C320 200 230 290 80 300 Z',nm:'Daun (dua lengkung)',tip:'Ujung daun tajam = klik biasa. Tengah sisi atas dan tengah sisi bawah = klik sambil tarik searah garis daun. Jadi cukup 4 node.',min:.82},
+ hati:{d:'M200 330 C120 270 60 220 60 155 C60 105 100 75 140 75 C170 75 190 95 200 115 C210 95 230 75 260 75 C300 75 340 105 340 155 C340 220 280 270 200 330 Z',nm:'Hati',tip:'Bagian bawah dan lekuk tengah tajam (cusp), sisanya lengkung.',min:.82}};
+const LOGO={ring:'M50 190A150 150 0 1 0 350 190A150 150 0 1 0 50 190Z',leaf:'M160 245 C160 165 215 112 292 100 C288 182 238 238 160 245 Z',pen:'M112 316 L132 262 L232 116 L258 133 L160 280 Z'};
+function sketchURL(){const g=(d,o)=>`<path d="${d}" fill="none" stroke="#555" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="${o}" opacity=".9"/><path d="${d}" fill="none" stroke="#777" stroke-width="1.2" transform="translate(1.6 -1.2)" opacity=".7"/>`;
+ const s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">${g(LOGO.ring,'14 3 30 2')}${g(LOGO.leaf,'20 3')}${g('M195 170 C220 150 250 125 285 108','8 4')}${g(LOGO.pen,'18 2 9 3')}<text x="200" y="382" font-family="Comic Sans MS,cursive" font-size="22" fill="#666" text-anchor="middle">pekan kreasi santri</text><text x="345" y="40" font-family="Comic Sans MS,cursive" font-size="13" fill="#999" text-anchor="middle">sketsa #2</text></svg>`;
+ return'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s)}
+function grayLogo(){const mk=(d,extra)=>{const o={id:uid++,t:'path',nodes:parseD(d),closed:true,fill:GRAY,stroke:'#555555',sw:1,preset:true};return Object.assign(o,extra||{})};
+ const ring={id:uid++,t:'ell',cx:200,cy:190,rx:150,ry:150,fill:GRAY,stroke:'#555555',sw:1,part:'Lingkaran'};
+ return[ring,mk(LOGO.leaf,{part:'Daun'}),mk(LOGO.pen,{part:'Pena'}),{id:uid++,t:'text',x:200,y:378,txt:'PEKAN KREASI SANTRI',size:26,font:'sans',fill:GRAY,stroke:null,sw:1,part:'Teks'}]}
+function parseD(d){const t=d.match(/[MLCZ]|-?\d+(\.\d+)?/g),n=[];let i=0;while(i<t.length){const c=t[i++];if(c==='M'||c==='L'){n.push({x:+t[i],y:+t[i+1],hi:null,ho:null,type:'cusp'});i+=2}else if(c==='C'){const a=n[n.length-1];a.ho=P(+t[i],+t[i+1]);const nn={x:+t[i+4],y:+t[i+5],hi:P(+t[i+2],+t[i+3]),ho:null,type:'cusp'};i+=6;if(Math.hypot(nn.x-n[0].x,nn.y-n[0].y)<.01&&n.length>1){n[0].hi=nn.hi}else n.push(nn)}else if(c==='Z'){}}
+ const L=n[n.length-1];if(n.length>1&&Math.hypot(L.x-n[0].x,L.y-n[0].y)<.01){n[0].hi=L.hi;n.pop()}return n}
+function wobbly(d,k){/* path kasar banyak node dari bentuk target */const sv=el('path',{d},OV);const len=sv.getTotalLength(),nodes=[];for(let i=0;i<k;i++){const q=sv.getPointAtLength(len*i/k),j=i%2?9:-8;nodes.push({x:q.x+j*.8,y:q.y-j*.6,hi:null,ho:null,type:'cusp'})}sv.remove();return nodes}
+function hue(c){if(!c)return-1;const n=parseInt(c.slice(1),16),R=(n>>16)/255,Gg=(n>>8&255)/255,B=(n&255)/255,mxv=Math.max(R,Gg,B),mn=Math.min(R,Gg,B),d=mxv-mn;if(d<.15)return-1;let h=mxv===R?((Gg-B)/d)%6:mxv===Gg?(B-R)/d+2:(R-Gg)/d+4;h*=60;return h<0?h+360:h}
+function drawTarget(d){TG.innerHTML='';if(d)el('path',{d,fill:'#ffd23f',opacity:.28,stroke:'#b8860b','stroke-width':2,'stroke-dasharray':'7 5'},TG)}
+const MIS={
+ bentuk:{judul:'Misi: Kenalan dengan tools dasar',init(){},items:[
+  ['Buat persegi panjang (Rectangle Tool)',()=>flags.rect],['Buat elips atau lingkaran (Ellipse Tool)',()=>flags.ell],['Beri warna isian (klik kiri palet)',()=>O.some(o=>o.fill&&o.t!=='img')],
+  ['Beri warna/tebal garis tepi (klik kanan palet)',()=>flags.outline],['Duplikat sebuah objek (Ctrl+D)',()=>flags.dup],['Ubah ke kurva (Ctrl+Q), lalu geser satu node dengan Shape Tool',()=>flags.curve&&flags.nodemove]],
+  win:'Hebat! Kamu sudah memakai Rectangle, Ellipse, palet warna, Duplikat, Convert to Curves, dan Shape Tool. Di CorelDRAW caranya sama persis.'},
+ jiplak:{judul:'Misi: Jiplak bentuk dengan Bezier/Pen',init(){this.lv=0;this.levels=(M.p.levels||'segitiga,tetes,daun').split(',');this.show()},
+  show(){const s=SH[this.levels[this.lv]];drawTarget(s.d);O=O.filter(o=>o.t==='img');sel=null;setTool(M.p.tool||'bezier');say(`<b>Level ${this.lv+1}/${this.levels.length}: ${s.nm}.</b> ${s.tip} Jiplak area kuning bergaris putus-putus, lalu klik <b>Periksa</b>.`,'info');this.score=0},
+  items:[],extra(){return'<button class="btn" id="cek">Periksa</button>'},
+  cek(){const s=SH[this.levels[this.lv]];const[v,o]=bestFit(s.d,o=>o.t==='path'&&(o.src==='bezier'||o.src==='pen'));const pc=Math.round(v*100);
+   if(!o){say('Belum ada kurva dari Bezier atau Pen Tool. Pilih alat Bezier/Pen, lalu klik di sudut-sudut bentuk.','warn');return}
+   if(!o.closed){say(`Kemiripan ${pc}%. Path-mu belum tertutup. Akhiri dengan mengklik node kuning pertama.`,'warn');return}
+   if(v<s.min){say(`Kemiripan <b>${pc}%</b> (target ${Math.round(s.min*100)}%). Rapikan dengan Shape Tool: geser node atau tuas birunya. ${s.tip}`,'warn');return}
+   const nn=o.nodes.length,adv=nn>12?' Tapi node-mu '+nn+' buah. Desainer profesional memakai node sesedikit mungkin agar garis halus.':' Jumlah node: '+nn+'. Rapi!';
+   this.lv++;if(this.lv<this.levels.length){say(`<b>Lulus! Kemiripan ${pc}%.</b>${adv} Lanjut level berikutnya…`,'good');setTimeout(()=>this.show(),1600)}else{drawTarget(null);finish(`Semua level lulus (terakhir ${pc}%).${adv} Kamu sudah bisa menjiplak bentuk lurus dan lengkung, inti dari digitalisasi logo.`)}}},
+ rapikan:{judul:'Misi: Rapikan hasil tracing yang kasar',init(){const s=SH[M.p.target||'tetes'];drawTarget(s.d);const o={id:uid++,t:'path',nodes:wobbly(s.d,14),closed:true,fill:null,stroke:'#1f8a4c',sw:3,src:'trace'};O.push(o);sel=o.id;setTool('shape');say('Ini hasil tracing yang terburu-buru: 14 node dan garisnya bergerigi. Kurangi node (klik node lalu <b>Hapus node</b>, atau klik ganda node), lalu jadikan node <b>Smooth</b> dan atur tuasnya sampai pas.','info')},
+  items:[['Jumlah node 6 atau kurang',()=>{const o=O.find(o=>o.src==='trace');return o&&o.nodes.length<=6}],['Ada node yang dibuat Smooth/Symmetrical',()=>flags.nodetype],['Bentuk tetap mirip target (minimal 86%)',()=>{const o=O.find(o=>o.src==='trace');return o&&iou(mask([SH[M.p.target||'tetes'].d]),mask([toD(o)]))>=.86}]],
+  stat(){const o=O.find(o=>o.src==='trace');return o?'Kemiripan: <b>'+Math.round(iou(mask([SH[M.p.target||'tetes'].d]),mask([toD(o)]))*100)+'%</b>':''},
+  win:'Rapi! Sedikit node + node halus = garis mulus dan file ringan. Inilah yang membedakan logo profesional dengan hasil tracing asal-asalan.'},
+ warna:{judul:'Misi: Warnai logo sesuai konsep',init(){O=grayLogo();setTool('pick');say('Konsep logo <b>Pekan Kreasi Santri</b>: kata kunci <b>segar, ceria, santri</b>. Pakai <b>hijau</b> dan <b>kuning</b> sebagai warna utama, boleh tambah 1 warna aksen, maksimal 3 warna (putih tidak dihitung). Pilih bagian dengan Pick Tool, lalu klik palet.','info')},
+  items:[['Semua bagian sudah diwarnai (tidak abu-abu)',()=>O.filter(o=>o.part).every(o=>o.fill&&o.fill!==GRAY)],['Ada warna hijau',()=>O.some(o=>o.part&&hue(o.fill)>=75&&hue(o.fill)<=170)],['Ada warna kuning',()=>O.some(o=>o.part&&hue(o.fill)>=40&&hue(o.fill)<75)],['Maksimal 3 warna (putih tidak dihitung)',()=>new Set(O.filter(o=>o.part&&o.fill&&o.fill!=='#ffffff'&&o.fill!==GRAY).map(o=>o.fill)).size<=3]],
+  win:'Warna sesuai konsep: hijau = segar dan santri, kuning = ceria. Dengan maksimal 3 warna, logo tetap tegas dan hemat saat dicetak.'},
+ logo:{judul:'Misi: Digitalisasi logo dari sketsa',init(){O=[{id:uid++,t:'img',href:sketchURL(),x:14,y:10,w:380,h:380,op:.6,lock:false,sk:true}];sel=O[0].id;setTool('pick');say('Sketsa sudah dimasukkan (seperti <b>Import</b>, Ctrl+I di CorelDRAW), dan sudah diatur ukuran serta posisinya. Langkah 1: kunci sketsa dulu (pilih sketsa, klik <b>🔒 Kunci</b>). Lalu jiplak lingkaran, daun, dan pena satu per satu.','info')},
+  items:[['Sketsa dikunci (🔒)',()=>O.some(o=>o.sk&&o.lock)],['Lingkaran luar dijiplak (Ellipse, tahan Ctrl)',()=>bestFit(LOGO.ring,null,skBox())[0]>=.85],['Daun dijiplak dengan Bezier/Pen',()=>bestFit(LOGO.leaf,o=>o.t==='path',skBox())[0]>=.66],['Pena dijiplak dengan Bezier/Pen',()=>bestFit(LOGO.pen,o=>o.t==='path',skBox())[0]>=.66],['Tambahkan teks nama kegiatan',()=>O.some(o=>o.t==='text'&&o.txt.trim().length>3)]],
+  extraItems(){return M.p.warna?[['Warnai dengan maksimal 3 warna',()=>{const f=O.filter(o=>o.t!=='img'&&o.fill);return f.length>=3&&new Set(f.map(o=>o.fill).filter(c=>c!=='#ffffff')).size<=3}]]:[]},
+  win:'Logo berhasil didigitalkan dari sketsa! Tahapnya sama dengan di CorelDRAW: import sketsa, kunci, jiplak per bagian, rapikan, beri warna. Tekan Unduh untuk menyimpan hasilmu.'},
+ bebas:{judul:'Studio bebas: rancang logomu sendiri',init(){say('Rancang logo pilihanmu. Boleh pasang foto sketsamu sendiri lewat tombol <b>Pasang sketsa</b>. Selesai jika minimal ada 3 objek berwarna dan 1 teks, lalu klik <b>Unduh</b>.','info')},
+  items:[['Minimal 3 objek berwarna',()=>O.filter(o=>o.t!=='img'&&o.t!=='text'&&o.fill).length>=3],['Ada kurva dari Bezier/Pen',()=>O.some(o=>o.src==='bezier'||o.src==='pen')],['Ada teks',()=>O.some(o=>o.t==='text')],['Hasil diunduh',()=>flags.export]],
+  win:'Logomu selesai! Simpan file PNG/SVG-nya dan kumpulkan. Selanjutnya buat versi akhirnya di CorelDRAW di lab, simpan sebagai .CDR dan .PDF.'}};
+function finish(t){if(doneSent)return;doneSent=true;say('<b>Misi selesai!</b> '+t,'good');MPI.done({mission:M.k})}
+function items(){return M.m.items.concat(M.m.extraItems?M.m.extraItems():[])}
+function check(){if(!M)return;const it=items();if(!it.length){return}let ok=0;const lis=$('mis').querySelectorAll('li');it.forEach(([t,f],i)=>{let v=false;try{v=!!f()}catch(e){}if(v)ok++;if(lis[i])lis[i].classList.toggle('ok',v)});
+ if(M.m.stat)$('st2').innerHTML+=' · '+M.m.stat();MPI.progress({ok,total:it.length});if(ok===it.length&&!doneSent)finish(M.m.win)}
+function start(p){p=p||{};const k=MIS[p.mission]?p.mission:'bebas';M={k,m:MIS[k],p};O=[];undo=[];redo=[];flags={};sel=null;doneSent=false;sketchHidden=false;drawTarget(null);$('msg').className='msg';
+ $('mis').innerHTML=`<h3>${p.judul||M.m.judul}</h3>`+(M.m.items.length||M.m.extraItems?'<ul>'+items().map(([t])=>`<li>${t}</li>`).join('')+'</ul>':'');
+ $('act').innerHTML=(M.m.extra?M.m.extra():'')+'<button class="btn ghost" id="exp">Unduh hasil (PNG/SVG)</button><button class="btn ghost" id="rst">Mulai ulang misi</button>';
+ if($('cek'))$('cek').onclick=()=>M.m.cek();$('exp').onclick=exportArt;$('rst').onclick=()=>start(p);
+ setTool('pick');M.m.init.call(M.m);if(M.m.items.length||M.m.extraItems)$('mis').querySelector('ul').innerHTML=items().map(([t])=>`<li>${t}</li>`).join('');render()}
+</script></body></html>

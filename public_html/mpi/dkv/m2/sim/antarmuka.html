@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga antarmuka CorelDRAW</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal">Klik bagian yang diminta pada tampilan di bawah.</div>
+<p class="mute" style="margin:-4px 0 8px">Tampilan disederhanakan, meniru tata letak CorelDRAW.</p>
+<svg id="ui" viewBox="0 0 800 500" style="width:100%;height:auto;border-radius:12px;border:2px solid #cfe0d3;cursor:pointer" role="img" aria-label="Tiruan antarmuka CorelDRAW">
+<rect width="800" height="500" fill="#e9ecea"/>
+<g data-k="title"><rect width="800" height="26" fill="#2f3b35"/><text x="12" y="18" style="fill:#fff;stroke:none;font-size:13px">CorelDRAW  -  Untitled-1</text></g>
+<g data-k="menu"><rect y="26" width="800" height="26" fill="#f7f8f7"/><text x="12" y="44" style="font-size:13px;stroke:none">File   Edit   View   Layout   Object   Effects   Bitmaps   Text   Table   Tools   Window   Help</text></g>
+<g data-k="std"><rect y="52" width="800" height="34" fill="#eef1ef" stroke="#d5dbd7"/><rect x="12" y="59" width="22" height="20" rx="3" fill="#fff" stroke="#b9c2bd"/><rect x="42" y="59" width="22" height="20" rx="3" fill="#fff" stroke="#b9c2bd"/><rect x="72" y="59" width="22" height="20" rx="3" fill="#fff" stroke="#b9c2bd"/><rect x="102" y="59" width="22" height="20" rx="3" fill="#fff" stroke="#b9c2bd"/><rect x="132" y="59" width="22" height="20" rx="3" fill="#fff" stroke="#b9c2bd"/><rect x="162" y="59" width="22" height="20" rx="3" fill="#fff" stroke="#b9c2bd"/><rect x="192" y="59" width="22" height="20" rx="3" fill="#fff" stroke="#b9c2bd"/><rect x="222" y="59" width="22" height="20" rx="3" fill="#fff" stroke="#b9c2bd"/><rect x="252" y="59" width="22" height="20" rx="3" fill="#fff" stroke="#b9c2bd"/><rect x="300" y="59" width="70" height="20" fill="#fff" stroke="#b9c2bd"/><text x="310" y="74" style="font-size:12px;stroke:none">100%</text></g>
+<g data-k="prop"><rect y="86" width="800" height="34" fill="#f7f8f7" stroke="#d5dbd7"/><text x="14" y="108" style="font-size:12px;stroke:none">X: 105 mm   Y: 148 mm      W: 60 mm   H: 40 mm      ⟲ 0°      ⇔ ⇕      Outline: 0.5 pt</text></g>
+<g data-k="tool"><rect y="120" width="44" height="340" fill="#f7f8f7" stroke="#d5dbd7"/><rect x="9" y="128" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/><rect x="9" y="160" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/><rect x="9" y="192" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/><rect x="9" y="224" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/><rect x="9" y="256" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/><rect x="9" y="288" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/><rect x="9" y="320" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/><rect x="9" y="352" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/><rect x="9" y="384" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/><rect x="9" y="416" width="26" height="26" rx="4" fill="#fff" stroke="#b9c2bd"/></g>
+<g data-k="pasteboard"><rect x="44" y="120" width="560" height="340" fill="#cdd3cf"/></g>
+<g data-k="page"><rect x="210" y="150" width="210" height="285" fill="#8f9893"/><rect x="204" y="144" width="210" height="285" fill="#fff"/><circle cx="309" cy="260" r="46" fill="#1f8a4c"/><path d="M285 270 Q309 225 333 270 Q309 295 285 270Z" fill="#ffd23f"/></g>
+<g data-k="docker"><rect x="604" y="120" width="160" height="340" fill="#f7f8f7" stroke="#d5dbd7"/><text x="616" y="142" style="font-size:13px;stroke:none;font-weight:800">Properties</text><rect x="616" y="154" width="136" height="20" fill="#fff" stroke="#ccc"/><rect x="616" y="182" width="136" height="20" fill="#fff" stroke="#ccc"/><rect x="616" y="210" width="60" height="60" fill="#1f8a4c"/><text x="616" y="300" style="font-size:12px;stroke:none">Objects</text><rect x="616" y="308" width="136" height="16" fill="#e1e6e3"/><rect x="616" y="328" width="136" height="16" fill="#e1e6e3"/></g>
+<g data-k="pal"><rect x="764" y="120" width="36" height="340" fill="#f7f8f7" stroke="#d5dbd7"/><rect x="772" y="128" width="20" height="20" fill="#fff" stroke="#888"/><rect x="772" y="152" width="20" height="20" fill="#000" stroke="#888"/><rect x="772" y="176" width="20" height="20" fill="#fff" stroke="#888"/><rect x="772" y="200" width="20" height="20" fill="#e53935" stroke="#888"/><rect x="772" y="224" width="20" height="20" fill="#fb8c00" stroke="#888"/><rect x="772" y="248" width="20" height="20" fill="#ffd23f" stroke="#888"/><rect x="772" y="272" width="20" height="20" fill="#7cb342" stroke="#888"/><rect x="772" y="296" width="20" height="20" fill="#1f8a4c" stroke="#888"/><rect x="772" y="320" width="20" height="20" fill="#1e88e5" stroke="#888"/><rect x="772" y="344" width="20" height="20" fill="#0d3b66" stroke="#888"/><rect x="772" y="368" width="20" height="20" fill="#8e24aa" stroke="#888"/><rect x="772" y="392" width="20" height="20" fill="#ec407a" stroke="#888"/><rect x="772" y="416" width="20" height="20" fill="#6d4c41" stroke="#888"/></g>
+<g data-k="status"><rect y="460" width="800" height="40" fill="#eef1ef" stroke="#d5dbd7"/><text x="14" y="485" style="font-size:12px;stroke:none">Ellipse on Layer 1      Fill: Green      Outline: None      (105.0, 148.0)</text></g>
+<rect id="hl" x="0" y="0" width="0" height="0" fill="none" stroke="#ef5b3f" stroke-width="4" rx="4" pointer-events="none"/>
+</svg>
+<p id="fb" style="font-weight:800;min-height:2.6em;margin:8px 0 0"></p>
+<div class="btns"><span class="chip" id="cnt">0/8</span></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+const PARTS={menu:['Menu Bar','berisi menu perintah: File, Edit, View, Object, dan lainnya.'],std:['Standard Toolbar','tombol cepat: dokumen baru, buka, simpan, undo, zoom, impor dan ekspor.'],prop:['Property Bar','berubah sesuai alat atau objek yang dipilih: posisi, ukuran, putaran, tebal garis.'],tool:['Toolbox','kumpulan alat menggambar: Pick, Shape, Bezier, Pen, Rectangle, Ellipse, Text, dan lainnya.'],page:['Halaman kerja (Page)','area yang akan dicetak atau diekspor. Desain utama ditaruh di sini.'],docker:['Docker (panel Properties/Objects)','panel pengaturan detail objek, warna, dan daftar objek atau layer.'],pal:['Color Palette','palet warna. Klik kiri = warna isian, klik kanan = warna garis tepi.'],status:['Status Bar','menampilkan informasi objek terpilih: jenis objek, warna isi, garis tepi, posisi kursor.']};
+const OTHER={title:'Itu Title Bar (judul jendela dan nama file).',pasteboard:'Itu area abu-abu di luar halaman (pasteboard/drawing window). Objek di sini tidak ikut dicetak.'};
+let order,i,ok;
+function start(){order=['tool','page','menu','prop','pal','std','docker','status'];i=0;ok=0;$('win').classList.remove('on');ask()}
+function ask(){if(i>=order.length){win('Kamu sudah mengenal 8 bagian antarmuka CorelDRAW. Saat praktik di lab, carilah bagian-bagian ini di layar komputermu.');MPI.done({});return}
+ const[n,d]=PARTS[order[i]];$('goal').innerHTML='Klik: <b>'+n+'</b>';$('cnt').textContent=i+'/8'}
+function hl(k){const g=document.querySelector('[data-k='+k+'] rect'),b=document.querySelector('[data-k='+k+']').getBBox();const h=$('hl');h.setAttribute('x',b.x+2);h.setAttribute('y',b.y+2);h.setAttribute('width',b.width-4);h.setAttribute('height',b.height-4)}
+$('ui').addEventListener('click',e=>{const g=e.target.closest('[data-k]');if(!g||i>=order.length)return;const k=g.dataset.k;hl(k);
+ if(k===order[i]){const[n,d]=PARTS[k];$('fb').innerHTML='<span style="color:#1f8a4c">Betul!</span> <b>'+n+'</b>: '+d;i++;MPI.progress({i});ask()}
+ else $('fb').innerHTML='<span style="color:#ef5b3f">Belum tepat.</span> '+(PARTS[k]?'Itu <b>'+PARTS[k][0]+'</b>, '+PARTS[k][1]:OTHER[k])+' Coba cari <b>'+PARTS[order[i]][0]+'</b>.'});</script></body></html>
