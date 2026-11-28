@@ -365,7 +365,7 @@ Pola yang wajib dipakai ulang:
   divalidasi (asal iframe + origin + nonce); laporan skor dari browser tidak terbukti -> hanya untuk latihan.
   Simulasi (langkah `simulation`, `docs/mpi-simulasi.md`): peraga HTML mandiri di `frontend/public/mpi/.../sim/*.html`
   (`src` WAJIB path `/mpi/...html`, URL luar ditolak backend `steps.SIMULATION_SRC` & frontend `mpi/simulation.js` — aturan
-  sama), iframe `sandbox="allow-scripts"` saja, protokol `mpi:ready/resize/progress/done` + `mpi:init {params}`. Tidak
+  sama), iframe `sandbox="allow-scripts allow-downloads"` saja, protokol `mpi:ready/resize/progress/done` + `mpi:init {params}`. Tidak
   berskor; `mpi:done` -> aksi stasiun `complete` (hanya `StepKind.completable`) menandai `run[step].done`, menahan Lanjut
   jika `require_done`; tanpa `mpi:ready` 8 detik = Lanjut dibuka.
   Laporan (MPI-J): `reports.py` (N-Gain dari nilai pengerjaan pertama Tes Awal/Akhir), halaman `MediaReportPage`.

@@ -79,7 +79,8 @@ export function SimulationFrame({ src, params, height, title, onDone, onFail }) 
           src={src}
           title={title || 'Simulasi'}
           // Tanpa allow-same-origin: peraga tidak bisa membaca data/login LMS, membuka jendela, atau pindah halaman.
-          sandbox="allow-scripts"
+          // allow-downloads: peraga boleh menyimpan hasil karya siswa (mis. tombol "Unduh hasil" PNG/SVG).
+          sandbox="allow-scripts allow-downloads"
           referrerPolicy="no-referrer"
           onError={() => {
             statusRef.current = 'failed'

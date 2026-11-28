@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga vektor dan bitmap</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal">Geser penggeser zoom dan bandingkan kedua gambar. Mana yang tetap tajam?</div>
+<div class="row"><div><b>Vektor</b><div style="height:240px;overflow:hidden;border:2px solid #cfe0d3;border-radius:14px;background:#fff;position:relative"><svg id="vec" viewBox="0 0 32 32" style="position:absolute;left:50%;top:50%;transform-origin:center"><circle cx="16" cy="16" r="13" fill="#1f8a4c"/><path d="M9 18 Q16 6 23 18 Q16 26 9 18Z" fill="#ffd23f"/><circle cx="16" cy="17" r="2.2" fill="#ef5b3f"/></svg></div><p class="mute">Disusun dari rumus titik, garis, dan kurva.</p></div>
+<div><b>Bitmap (piksel)</b><div style="height:240px;overflow:hidden;border:2px solid #cfe0d3;border-radius:14px;background:#fff;position:relative"><canvas id="bmp" width="32" height="32" style="position:absolute;left:50%;top:50%;image-rendering:pixelated;transform-origin:center"></canvas></div><p class="mute">Disusun dari kotak-kotak kecil berwarna (piksel).</p></div></div>
+<div class="ctrl"><label for="z">Zoom <output id="zo">1×</output></label><input type="range" id="z" min="1" max="16" value="1"></div>
+<div id="q" style="display:none;background:#dff2e4;border-radius:14px;padding:12px 14px"><b>Saat diperbesar, gambar mana yang tetap tajam?</b><div class="btns" id="opts"><button class="btn ghost" data-k="v">Vektor</button><button class="btn ghost" data-k="b">Bitmap</button><button class="btn ghost" data-k="s">Sama saja</button></div><p id="fb" style="margin:8px 0 0"></p></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+function paint(){const c=$('bmp').getContext('2d');c.clearRect(0,0,32,32);c.fillStyle='#fff';c.fillRect(0,0,32,32);c.fillStyle='#1f8a4c';c.beginPath();c.arc(16,16,13,0,7);c.fill();c.fillStyle='#ffd23f';c.beginPath();c.moveTo(9,18);c.quadraticCurveTo(16,6,23,18);c.quadraticCurveTo(16,26,9,18);c.fill();c.fillStyle='#ef5b3f';c.beginPath();c.arc(16,17,2.2,0,7);c.fill()}
+function zoom(){const z=+$('z').value,s=6*z;$('zo').textContent=z+'×';[$('vec'),$('bmp')].forEach(el=>{el.style.width=(32*s/6)+'px';el.style.height=(32*s/6)+'px';el.style.transform='translate(-50%,-50%) scale('+(s/6)+')'});
+ $('vec').style.width='32px';$('vec').style.height='32px';$('vec').style.transform='translate(-50%,-50%) scale('+s/6*6+')';$('bmp').style.width='32px';$('bmp').style.height='32px';$('bmp').style.transform='translate(-50%,-50%) scale('+s/6*6+')';
+ if(z>=6)$('q').style.display='block';MPI.progress({zoom:z})}
+function start(p){paint();$('z').value=1;$('q').style.display='none';$('fb').textContent='';$('win').classList.remove('on');zoom()}
+$('z').oninput=zoom;
+$('opts').onclick=e=>{const k=e.target.dataset.k;if(!k)return;if(k==='v'){$('fb').innerHTML='<b>Betul!</b>';win('Gambar vektor tetap tajam berapa pun diperbesar, karena dihitung ulang dari rumus. Itulah sebabnya logo dibuat dalam format vektor, misalnya di CorelDRAW (.cdr), lalu bisa dicetak kecil di kartu nama atau besar di spanduk.');MPI.done({choice:k})}
+ else if(k==='b')$('fb').textContent='Perhatikan lagi: gambar bitmap justru pecah menjadi kotak-kotak saat diperbesar.';else $('fb').textContent='Coba geser zoom ke 10× dan bandingkan pinggiran kedua gambar.'};</script></body></html>

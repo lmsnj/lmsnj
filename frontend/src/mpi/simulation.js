@@ -1,6 +1,6 @@
 /**
  * Langkah simulasi: peraga HTML mandiri di frontend/public/mpi/... yang dimuat di iframe
- * sandbox="allow-scripts" (tanpa allow-same-origin -> origin "null", tidak bisa membaca LMS).
+ * sandbox="allow-scripts allow-downloads" (tanpa allow-same-origin -> origin "null", tidak bisa membaca LMS).
  * Protokol postMessage (docs/mpi-simulasi.md):
  *   simulasi -> LMS : mpi:ready, mpi:resize {height}, mpi:progress {detail}, mpi:done {detail}
  *   LMS -> simulasi : mpi:init {params}

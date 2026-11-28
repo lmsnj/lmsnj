@@ -59,7 +59,8 @@ LMS → simulasi:
 | `{type: 'mpi:init', params: {...}}` | Setelah `mpi:ready`, dan lagi setiap siswa menekan **Ulangi** (simulasi sebaiknya mengatur ulang tantangannya). |
 
 Keamanan:
-- Iframe memakai `sandbox="allow-scripts"` saja (tanpa `allow-same-origin`, `allow-top-navigation`,
+- Iframe memakai `sandbox="allow-scripts allow-downloads"` saja (`allow-downloads` agar peraga bisa
+  mengunduh hasil karya siswa, mis. PNG/SVG dari editor logo; tanpa `allow-same-origin`, `allow-top-navigation`,
   `allow-forms`, `allow-popups`), jadi origin-nya `null`: simulasi tidak bisa membaca token, data, atau
   halaman LMS meskipun filenya dari domain yang sama.
 - Karena origin `null`, LMS mengirim pesan dengan targetOrigin `'*'` (isinya hanya `params` dari JSON).
