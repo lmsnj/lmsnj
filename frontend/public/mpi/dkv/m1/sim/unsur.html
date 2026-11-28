@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peraga berburu unsur desain</title>
+<style>
+:root{--g:#1f8a4c;--g2:#dff2e4;--y:#ffd23f;--y2:#fff4c7;--c:#ef5b3f;--c2:#ffe3dc;--ink:#173020;--mute:#4d6655;--line:#cfe0d3;--paper:#fff}
+*{box-sizing:border-box;min-width:0}html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 Nunito,"Segoe UI",Arial,sans-serif}
+.wrap{padding:16px;max-width:900px;margin:auto}
+.goal{background:var(--y2);border-radius:14px;padding:10px 14px;font-weight:800;margin-bottom:12px}
+.win{background:var(--g);color:#fff;border-radius:14px;padding:10px 14px;font-weight:800;margin-top:12px;display:none}
+.win.on{display:block;animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.big{font:800 clamp(36px,7vw,60px)/1.05 "Baloo 2",Nunito,sans-serif;color:var(--g)}.big sup{font-size:.5em;color:var(--c)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:grid;gap:2px;margin:8px 0}.ctrl label{font-weight:800;display:flex;justify-content:space-between}.ctrl output{color:var(--c);font-weight:800;font-size:20px}
+input[type=range]{width:100%;accent-color:var(--g);height:34px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font:800 16px Nunito,sans-serif;cursor:pointer;min-height:44px;background:var(--g);color:#fff}
+.btn.ghost{background:var(--g2);color:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:800 22px "Baloo 2",Nunito,sans-serif;min-width:46px;height:46px;padding:0 10px;border-radius:12px;display:inline-grid;place-items:center;background:var(--g2);color:var(--g)}
+.chip.y{background:var(--y);color:#2b2300}.chip.c{background:var(--c);color:#fff}
+.mute{color:var(--mute);font-size:15px}
+svg text{font:700 14px Nunito,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td.n{background:var(--y2);font-weight:800}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--g2);border-radius:12px;padding:4px;gap:4px}.seg button{border:0;background:none;border-radius:9px;padding:8px 12px;font:800 15px Nunito;color:var(--ink);cursor:pointer;min-height:40px}.seg button[aria-pressed=true]{background:#fff;color:var(--g)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+<div class="goal" id="goal"></div>
+<div class="row"><div><div style="position:relative;border-radius:16px;overflow:hidden;border:2px solid #cfe0d3">
+<svg id="poster" viewBox="0 0 300 400" style="width:100%;display:block;cursor:pointer" role="img" aria-label="Poster contoh berisi unsur-unsur desain">
+<rect width="300" height="400" fill="#fffaf0"/>
+<g data-u="bidang"><rect x="0" y="0" width="300" height="150" fill="#1f8a4c"/><circle cx="235" cy="235" r="48" fill="#ffd23f"/></g>
+<g data-u="titik"><circle cx="30" cy="190" r="3.5" fill="#ef5b3f"/><circle cx="44" cy="190" r="3.5" fill="#ef5b3f"/><circle cx="58" cy="190" r="3.5" fill="#ef5b3f"/><circle cx="72" cy="190" r="3.5" fill="#ef5b3f"/><circle cx="86" cy="190" r="3.5" fill="#ef5b3f"/><circle cx="100" cy="190" r="3.5" fill="#ef5b3f"/><circle cx="30" cy="204" r="3.5" fill="#ef5b3f"/><circle cx="44" cy="204" r="3.5" fill="#ef5b3f"/><circle cx="58" cy="204" r="3.5" fill="#ef5b3f"/><circle cx="72" cy="204" r="3.5" fill="#ef5b3f"/><circle cx="86" cy="204" r="3.5" fill="#ef5b3f"/><circle cx="100" cy="204" r="3.5" fill="#ef5b3f"/><circle cx="30" cy="218" r="3.5" fill="#ef5b3f"/><circle cx="44" cy="218" r="3.5" fill="#ef5b3f"/><circle cx="58" cy="218" r="3.5" fill="#ef5b3f"/><circle cx="72" cy="218" r="3.5" fill="#ef5b3f"/><circle cx="86" cy="218" r="3.5" fill="#ef5b3f"/><circle cx="100" cy="218" r="3.5" fill="#ef5b3f"/><circle cx="30" cy="232" r="3.5" fill="#ef5b3f"/><circle cx="44" cy="232" r="3.5" fill="#ef5b3f"/><circle cx="58" cy="232" r="3.5" fill="#ef5b3f"/><circle cx="72" cy="232" r="3.5" fill="#ef5b3f"/><circle cx="86" cy="232" r="3.5" fill="#ef5b3f"/><circle cx="100" cy="232" r="3.5" fill="#ef5b3f"/><rect x="20" y="180" width="86" height="58" fill="transparent"/></g>
+<g data-u="garis"><line x1="20" y1="268" x2="280" y2="268" stroke="#173020" stroke-width="3"/><line x1="20" y1="278" x2="200" y2="278" stroke="#173020" stroke-width="1.5"/><rect x="18" y="262" width="264" height="22" fill="transparent"/></g>
+<g data-u="tekstur"><rect x="20" y="300" width="120" height="60" fill="#e9d8b4"/><line x1="20" y1="300" x2="50" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="28" y1="300" x2="58" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="36" y1="300" x2="66" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="44" y1="300" x2="74" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="52" y1="300" x2="82" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="60" y1="300" x2="90" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="68" y1="300" x2="98" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="76" y1="300" x2="106" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="84" y1="300" x2="114" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="92" y1="300" x2="122" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="100" y1="300" x2="130" y2="360" stroke="#c9a85a" stroke-width="1.5"/><line x1="108" y1="300" x2="138" y2="360" stroke="#c9a85a" stroke-width="1.5"/></g>
+<g data-u="tipografi"><text x="24" y="70" font-family="Arial Black,Arial" font-weight="900" font-size="30" fill="#ffffff">PEKAN</text><text x="24" y="108" font-family="Arial Black,Arial" font-weight="900" font-size="30" fill="#ffd23f">KREASI</text><text x="24" y="132" font-family="Arial" font-size="14" fill="#ffffff">Santri DKV · 2026</text><rect x="20" y="40" width="190" height="98" fill="transparent"/></g>
+<g data-u="ruang"><rect x="160" y="300" width="125" height="85" fill="transparent"/></g>
+</svg></div></div>
+<div><div id="list" style="display:grid;gap:6px"></div><p class="mute" id="fb" style="min-height:2.5em;margin-top:8px"></p></div></div><div class="win" id="win" role="status"></div></div><script>
+/* Jembatan MPI: menerima mpi:init dari LMS, mengirim mpi:ready, mpi:resize, mpi:progress, mpi:done */
+const MPI={params:{},started:false,_done:false,
+ post(m){try{if(window.parent!==window)window.parent.postMessage(m,'*')}catch(e){}},
+ done(detail){if(this._done)return;this._done=true;this.post({type:'mpi:done',detail:detail||{}})},
+ progress(detail){this.post({type:'mpi:progress',detail})}};
+(function(){
+ const q=new URLSearchParams(location.search);q.forEach((v,k)=>{MPI.params[k]=isNaN(+v)||v===''?v:+v});
+ function go(){MPI.started=true;try{window.start(MPI.params)}catch(e){console.error(e)}}
+ window.addEventListener('message',e=>{const d=e.data;if(d&&d.type==='mpi:init'){Object.assign(MPI.params,d.params||{});MPI._done=false;go()}});
+ const ro=new ResizeObserver(()=>MPI.post({type:'mpi:resize',height:Math.ceil(document.documentElement.scrollHeight)}));ro.observe(document.body);
+ window.addEventListener('load',()=>{MPI.post({type:'mpi:ready'});setTimeout(()=>{if(!MPI.started)go()},400)});
+})();
+const $=id=>document.getElementById(id);
+const fmt=n=>Number.isInteger(n)?n.toLocaleString('id-ID'):n.toLocaleString('id-ID',{maximumFractionDigits:3});
+const sup=n=>'<sup>'+n+'</sup>';
+function win(html){const w=$('win');w.innerHTML=html;w.classList.add('on')}
+</script><script>
+const U={titik:'Titik: unsur paling kecil, bisa berkumpul membentuk pola.',garis:'Garis: jejak titik yang memanjang, untuk memisah atau mengarahkan mata.',bidang:'Bidang: area datar yang dibatasi garis, misalnya persegi dan lingkaran.',tekstur:'Tekstur: kesan permukaan (kasar, halus, bergaris).',tipografi:'Tipografi: huruf yang ditata sebagai unsur visual.',ruang:'Ruang kosong (white space): area kosong yang memberi jeda dan membuat desain lega.'};
+let order=[],k=0,found=new Set();
+function drawList(){$('list').innerHTML=order.map((u,i)=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:12px;background:'+(found.has(u)?'#dff2e4':(i===k?'#fff4c7':'#f3f8ef'))+';font-weight:800"><span>'+(i+1)+'. '+u[0].toUpperCase()+u.slice(1)+'</span><span>'+(found.has(u)?'ditemukan':(i===k?'cari ini':''))+'</span></div>').join('');
+ $('goal').textContent=k<order.length?'Klik bagian poster yang merupakan unsur: '+order[k].toUpperCase():'Semua unsur sudah ditemukan!'}
+function start(p){order=(p.order||'tipografi,garis,bidang,titik,tekstur,ruang').split(',');k=0;found=new Set();$('win').classList.remove('on');$('fb').textContent='';document.querySelectorAll('#poster g').forEach(g=>g.style.opacity=1);drawList()}
+$('poster').addEventListener('click',e=>{const g=e.target.closest('[data-u]');if(k>=order.length)return;const u=g?g.dataset.u:'ruang';
+ if(u===order[k]){found.add(u);$('fb').innerHTML='<b>Tepat!</b> '+U[u];k++;drawList();MPI.progress({found:found.size});
+  if(k>=order.length){win('Hebat! Kamu menemukan 6 unsur desain: titik, garis, bidang, tekstur, tipografi, dan ruang kosong. Warna juga unsur desain, dan akan kita pelajari di stasiun warna.');MPI.done({found:found.size})}}
+ else $('fb').innerHTML='Belum tepat, itu bagian <b>'+u+'</b>. '+U[u]+' Coba cari <b>'+order[k]+'</b>.'});</script></body></html>
